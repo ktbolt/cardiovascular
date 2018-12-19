@@ -1,0 +1,12 @@
+
+- This is a test to see how CMake finds SimVascular.
+
+- CMake looks for a SimVascularConfig.cmake file.
+
+  + if there is no sv built then it can't find SimVascular 
+
+- on MacOS have 
+
+  /Applications/SimVascular.app/Contents/Resources/lib/cmake/simvascular-2018.11/SimVascularConfig.cmake
+
+
