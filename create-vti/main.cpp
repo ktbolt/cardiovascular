@@ -64,6 +64,9 @@ int main ( int argc, char *argv[] )
   ymax = bounds[3]; zmin = bounds[4]; zmax = bounds[5];
   dx = xmax - xmin; dy = ymax - ymin; dz = zmax - zmin;
   cx = xmin + dx / 2.0;    cy = ymin + dy / 2.0;    cz = zmin + dz / 2.0;
+  if (dx == 2.0) dx = 3.0;
+  if (dy == 2.0) dy = 3.0;
+  if (dz == 2.0) dz = 3.0;
   std::cout << "trans: cx " << cx << "  cy " << cy << "  cz " << cz << std::endl;
   std::cout << "dx " << dx << "  dy " << dy << "  dz " << dz << std::endl;
 
