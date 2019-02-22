@@ -16,10 +16,12 @@
 #include <vtkPointData.h>
 #include <vtkPointSet.h>
 #include <vtkPolyData.h>
+#include <vtkTransformPolyDataFilter.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPropPicker.h>
 #include <vtkProperty.h>
+#include <vtkRegularPolygonSource.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
 #include <vtkRenderWindow.h>
@@ -29,17 +31,23 @@
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLPolyDataReader.h>
+#include <vtkXMLPolyDataWriter.h>
 #include <vtkXMLUnstructuredGridReader.h>
+
+//----------------
+// CenterLineEdit 
+//----------------
 
 class CenterLineEdit 
 {
   public:
     CenterLineEdit() {}
-    CenterLineEdit(vtkSmartPointer<vtkPolyData> surface, vtkSmartPointer<vtkPolyData> lines) : 
-        surface(surface), centerlines(lines)
+
+    CenterLineEdit(vtkSmartPointer<vtkPolyData> surface, vtkSmartPointer<vtkPolyData> lines, std::string clFileName) : 
+        surface(surface), centerlines(lines), clFileName(clFileName)
     {
       create_cell_locator();
-
+      numCenterLineVerts = lines->GetNumberOfPoints();
       vtkIdType numberOfPointArrays = lines->GetPointData()->GetNumberOfArrays();
       std::cout << "[CenterLineEdit] " << std::endl;
       std::cout << "[CenterLineEdit] Centerlines: " << std::endl;
@@ -67,10 +75,19 @@ class CenterLineEdit
           abscissaData = vtkDoubleArray::SafeDownCast(lines->GetPointData()->GetArray(arrayName.c_str()));
         }
       }
+
+      // Set material IDs.
+      materialID = 1;
+      for (int i = 0; i < numCenterLineVerts; i++) {
+        centerLineMaterialIDs.push_back(i);
+      } 
     } 
 
-    // Create a vtkCellLocator to find picked points
-    // in centerlines.
+    //---------------------
+    // create_cell_locator
+    //---------------------
+    // Create a vtkCellLocator to find picked points in centerlines.
+    //
     void create_cell_locator()
     {
       cellLocator = vtkSmartPointer<vtkCellLocator>::New();
@@ -81,17 +98,22 @@ class CenterLineEdit
       pointSet->SetPoints(centerlines->GetPoints());
     }
 
+    //-------------
+    // locate_cell
+    //-------------
     // Locate the given point in centerlines.
     //
     void locate_cell(double point[3], int& index, double& radius, double normal[3], double tangent[3])
     {
-      std::cout << "locate_cell point: " << point[0] << " " << point[1] << " " << point[2] << std::endl;
+      auto msg = "[locate_cell] ";
+      std::cout << msg << std::endl;
+      std::cout << msg << "Point: " << point[0] << " " << point[1] << " " << point[2] << std::endl;
 
       // Find the point in centerlines that is closest to the selected point.
       // 
       // Note that cellLocator->FindClosestPoint(point, closestPoint, cellId, subId, closestPointDist2) 
       // does not return the index of the selected point in centerlines in the returned variable 'subId'. 
-      // In fact, it is not ducumented and no one seems to know what is represents.
+      // In fact, it is not ducumented and no one seems to know what is represents!
       //
       double closestPoint[3];
       double closestPointDist2; 
@@ -99,25 +121,25 @@ class CenterLineEdit
       int subId; 
       cellLocator->FindClosestPoint(point, closestPoint, cellId, subId, closestPointDist2);
       index = pointSet->FindPoint(point);
-      std::cout << "Closest point: " << closestPoint[0] << " " << closestPoint[1] << " " << closestPoint[2] << std::endl;
-      std::cout << "Distance to closest point: " << closestPointDist2 << std::endl;
-      std::cout << "CellId: " << cellId << std::endl;
-      std::cout << "index: " << index << std::endl;
+      std::cout << msg << "Closest point: " << closestPoint[0] << " " << closestPoint[1] << " " << closestPoint[2] << std::endl;
+      std::cout << msg << "Distance to closest point: " << closestPointDist2 << std::endl;
+      std::cout << msg << "CellId: " << cellId << std::endl;
+      std::cout << msg << "Index: " << index << std::endl;
 
       if (radiusData) {
         radius = radiusData->GetValue(index);
-        std::cout << "radius: " << radius << std::endl;
+        std::cout << msg << "Radius: " << radius << std::endl;
       }
 
       if (normalData) {
         normalData->GetTuple(index, normal);
-        std::cout << "normal " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+        std::cout << msg << "Normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
       }
 
       // Abscissas measure the distances along the centerline.
       if (abscissaData) {
         auto distance = abscissaData->GetValue(index);
-        std::cout << "distance: " << distance << std::endl;
+        std::cout << msg << "Distance: " << distance << std::endl;
       }
 
       // Compute tangent.
@@ -127,11 +149,67 @@ class CenterLineEdit
       centerlines->GetPoint(index+2, p2);
       vtkMath::Subtract(p2, p1,tangent);
       vtkMath::Normalize(tangent);
-      std::cout << "tangent " << tangent[0] << " " << tangent[1] << " " << tangent[2] << std::endl;
+      std::cout << msg << "Tangent " << tangent[0] << " " << tangent[1] << " " << tangent[2] << std::endl;
+    }
+
+    void write_centerline()
+    {
+      std::cout << "[write_centerline] " << std::endl;
+
+      // Construct Get name of file to store material IDs.
+      //
+      size_t loc = clFileName.find_last_of(".");
+      std::string name;
+      std::string ext; clFileName.substr(loc, clFileName.size() - loc);
+      if (loc != std::string::npos) {
+        name = clFileName.substr(0, loc);
+        ext  = clFileName.substr(loc, clFileName.size() - loc);
+      } else {
+        name = clFileName;
+        ext  = "";
+      }
+      std::string materialFileName = name + "_material" + ext;
+
+      vtkSmartPointer<vtkPolyData> newPolyData = vtkSmartPointer<vtkPolyData>::New();
+      //newPolyData->DeepCopy(centerlines);
+      //newPolyData->SetPoints(centerlines->GetPoints());
+      //newPolyData->SetPolys(centerlines->GetPolys());
+
+      // Set data to store.
+      //vtkSmartPointer<vtkDoubleArray> material = vtkSmartPointer<vtkDoubleArray>::New();
+      //vtkSmartPointer<vtkDoubleArray> materialIDs = vtkSmartPointer<vtkDoubleArray>::New();
+      vtkSmartPointer<vtkIntArray> materialIDs = vtkSmartPointer<vtkIntArray>::New();
+      materialIDs->SetNumberOfComponents(1);
+      materialIDs->SetName("MaterialIDs");
+      //materialIDs->SetNumberOfTuples(centerlines->GetNumberOfPoints());
+      for (auto& id : centerLineMaterialIDs) {
+        materialIDs->InsertNextValue(id);
+      }
+      centerlines->GetFieldData()->AddArray(materialIDs);
+      centerlines->Modified();
+      //newPolyData->GetFieldData()->AddArray(materialIDs);
+      //newPolyData->Modified();
+
+      vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+      writer->SetFileName(materialFileName.c_str());
+      //writer->SetInputData(newPolyData);
+      writer->SetInputData(centerlines);
+      writer->Update();
+      writer->Write();
+
+      vtkIntArray* retrievedArray = vtkIntArray::SafeDownCast(centerlines->GetFieldData()->GetAbstractArray("MaterialIDs"));
+      std::cout << "mat id " << retrievedArray->GetValue(0) << std::endl;
+      std::cout << "mat id " << retrievedArray->GetValue(1) << std::endl;
+
+
     }
 
   private:
 
+    std::string clFileName;
+    int materialID;
+    vtkIdType numCenterLineVerts;
+    std::vector<int> centerLineMaterialIDs;
     vtkSmartPointer<vtkPolyData> surface; 
     vtkSmartPointer<vtkPolyData> centerlines;
     vtkSmartPointer<vtkCellLocator> cellLocator;
@@ -141,10 +219,10 @@ class CenterLineEdit
     vtkSmartPointer<vtkPointSet> pointSet;
 };
 
-//-----------------------
-// MouseInteractorStyle2
-//-----------------------
-// Handle mouse events
+//----------------------
+// MouseInteractorStyle
+//----------------------
+// Handle mouse events for a trackball interactor.
 //
 class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
 {
@@ -162,30 +240,34 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
       clEdit_ = clEdit;
     } 
 
-    // Need to decalre this to prevent Vtk from interpreting pre-defined
+    // Need to declare this to prevent Vtk from interpreting pre-defined
     // shortcut keys (e.g. 'e' to exit).
-    virtual void OnChar() { }
+    virtual void OnChar() override { }
 
     // Process a keyboard press event.
     //
-    virtual void OnKeyPress()
+    virtual void OnKeyPress() override
     {
       // Get the keypress.
       vtkRenderWindowInteractor *rwi = this->Interactor;
       std::string key = rwi->GetKeySym();
 
       // Output the key that was pressed.
-      std::cout << "Pressed " << key << std::endl;
+      //std::cout << "Pressed " << key << std::endl;
       if (key == "s") {
         startSelected = true;
-      } if (key == "t") {
+      } else if (key == "e") {
         startSelected = false;
+      } else if (key == "w") {
+        clEdit_.write_centerline();
+      } else if (key == "Escape") {
+        exit(0);
       }
 
       vtkInteractorStyleTrackballCamera::OnKeyPress();
     }
 
-    virtual void OnLeftButtonDown()
+    virtual void OnLeftButtonDown() override
     {
       // Pick current screen location.
       //
@@ -195,8 +277,8 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
 
       if (picker->GetActor() != nullptr) {
         double* pos = picker->GetPickPosition();
-        std::cout << "Pick position (world coordinates) is: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-        std::cout << "Picked actor: " << picker->GetActor() << std::endl;
+        //std::cout << "Pick position (world coordinates) is: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+        //std::cout << "Picked actor: " << picker->GetActor() << std::endl;
 
         // Create a sphere.
         if (startSphere == nullptr) {
@@ -207,7 +289,9 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
           actor->SetMapper(mapper);
           actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
           this->GetDefaultRenderer()->AddActor(actor);
-          //
+        }
+
+        if (startPlane == nullptr) {
           startPlane = vtkSmartPointer<vtkPlaneSource>::New();
           vtkSmartPointer<vtkPolyDataMapper> pmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
           pmapper->SetInputConnection(startPlane->GetOutputPort());
@@ -215,23 +299,6 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
           startPlaneActor->SetMapper(pmapper);
           startPlaneActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
           this->GetDefaultRenderer()->AddActor(startPlaneActor);
-          //
-          endPlane = vtkSmartPointer<vtkPlaneSource>::New();
-          vtkSmartPointer<vtkPolyDataMapper> emapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-          emapper->SetInputConnection(endPlane->GetOutputPort());
-          vtkSmartPointer<vtkActor> endPlaneActor = vtkSmartPointer<vtkActor>::New();
-          endPlaneActor->SetMapper(emapper);
-          endPlaneActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
-          this->GetDefaultRenderer()->AddActor(endPlaneActor);
-          //
-          line = vtkSmartPointer<vtkLineSource>::New();
-          vtkSmartPointer<vtkPolyDataMapper> lineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-          lineMapper->SetInputConnection(line->GetOutputPort());
-          vtkSmartPointer<vtkActor> lineActor = vtkSmartPointer<vtkActor>::New();
-          lineActor->SetMapper(lineMapper);
-          lineActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
-          lineActor->GetProperty()->SetLineWidth(10.0);
-          this->GetDefaultRenderer()->AddActor(lineActor);
         }
 
         double radius = 0.1;
@@ -240,8 +307,10 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
         double planeWidth, origin[3], point1[3], point2[3], vec1[3], vec2[3];
         int index;
 
+        // Get centerline data at the picked point.
+        clEdit_.locate_cell(pos, index, inscribedRadius, normal, tangent);
+
         if (!startSelected) { 
-          clEdit_.locate_cell(pos, index, inscribedRadius, normal, tangent);
           startSphere->SetCenter(pos[0], pos[1], pos[2]);
           startSphere->SetRadius(radius);
           //startSphere->SetRadius(radius);
@@ -268,14 +337,8 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
           /*
           */
           startPlane->SetCenter(pos[0], pos[1], pos[2]);
-          startPlane->SetNormal(normal[0], normal[1], normal[2]);
           startPlane->SetNormal(tangent[0], tangent[1], tangent[2]);
 
-          line->SetPoint1(pos);
-          line->SetPoint2(p1);
-
-          /*
-          */
         } else {
           if (endSphere == nullptr) {
             endSphere = vtkSmartPointer<vtkSphereSource>::New();
@@ -286,8 +349,20 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
             actor->GetProperty()->SetColor(0.0, 0.0, 0.0);
             this->GetDefaultRenderer()->AddActor(actor);
           }
+          if (endPlane == nullptr) {
+            endPlane = vtkSmartPointer<vtkPlaneSource>::New();
+            vtkSmartPointer<vtkPolyDataMapper> emapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+            emapper->SetInputConnection(endPlane->GetOutputPort());
+            vtkSmartPointer<vtkActor> endPlaneActor = vtkSmartPointer<vtkActor>::New();
+            endPlaneActor->SetMapper(emapper);
+            endPlaneActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+            this->GetDefaultRenderer()->AddActor(endPlaneActor);
+          }
+
           endSphere->SetCenter(pos[0], pos[1], pos[2]);
           endSphere->SetRadius(radius);
+          endPlane->SetCenter(pos[0], pos[1], pos[2]);
+          endPlane->SetNormal(tangent[0], tangent[1], tangent[2]);
         }
 
       }
@@ -301,8 +376,8 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
     bool startSelected;
     vtkSmartPointer<vtkSphereSource> startSphere = nullptr; 
     vtkSmartPointer<vtkSphereSource> endSphere = nullptr; 
-    vtkSmartPointer<vtkPlaneSource> startPlane; 
-    vtkSmartPointer<vtkPlaneSource> endPlane; 
+    vtkSmartPointer<vtkPlaneSource> startPlane = nullptr; 
+    vtkSmartPointer<vtkPlaneSource> endPlane = nullptr; 
     CenterLineEdit clEdit_;
     vtkSmartPointer<vtkLineSource> line; 
 
@@ -310,36 +385,27 @@ class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
 
 vtkStandardNewMacro(MouseInteractorStyle);
 
-// Define interaction style
-class MouseInteractorStylePP : public vtkInteractorStyleTrackballCamera
+// Create a circle
+vtkSmartPointer<vtkActor> create_graphics_circle()
 {
-  public:
-    static MouseInteractorStylePP* New();
-    vtkTypeMacro(MouseInteractorStylePP, vtkInteractorStyleTrackballCamera);
- 
-    virtual void OnLeftButtonDown() 
-    {
-      std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
-      this->Interactor->GetPicker()->Pick(this->Interactor->GetEventPosition()[0], 
-                         this->Interactor->GetEventPosition()[1], 
-                         0,  // always zero.
-                         this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
-      double picked[3];
-      this->Interactor->GetPicker()->GetPickPosition(picked);
-      std::cout << "Picked value: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
-      //std::cout << "Picked actor: " << this->Interactor->GetPicker()->GetActor() << std::endl;
-      // Forward events
-      vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-    }
- 
-};
-vtkStandardNewMacro(MouseInteractorStylePP);
+  vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
+  polygonSource->SetNumberOfSides(50);
+  polygonSource->SetRadius(5);
+  polygonSource->SetCenter(0, 0, 0);
+  
+  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(polygonSource->GetOutputPort());;
+  
+  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+  actor->SetMapper(mapper);
+  return actor;
+}
 
-//-------------------------
-// create_graphic_geometry 
-//-------------------------
+//--------------------------
+// create_graphics_geometry 
+//--------------------------
 //
-vtkSmartPointer<vtkActor> create_graphic_geometry(vtkSmartPointer<vtkPolyData> poly_data)
+vtkSmartPointer<vtkActor> create_graphics_geometry(vtkSmartPointer<vtkPolyData> poly_data)
 {
   vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
   mapper->SetInputData(poly_data);
@@ -373,12 +439,12 @@ int main(int argc, char* argv[])
   vtkObject::GlobalWarningDisplayOff();
 
   // Parse command line arguments
-  if(argc != 3) {
+  if (argc != 3) {
     std::cout << "Usage: " << argv[0] << " SURACE_FILE_NAME(.vtp)  CENTERLINE_FILE_NAME (.vtp)" << std::endl;
     return EXIT_FAILURE;
   }
 
-  // Read display surface.
+  // Read and display surface.
   //
   std::string surf_file_name = argv[1];
   auto surface = read_poly_data(surf_file_name);
@@ -387,7 +453,7 @@ int main(int argc, char* argv[])
   std::cout << "Surface: " << std::endl;
   std::cout << "   Number of vertices " << numSurfVerts << std::endl;
   std::cout << "   Number of polygons " << numPolygons << std::endl;
-  auto gr_surf = create_graphic_geometry(surface);
+  auto gr_surf = create_graphics_geometry(surface);
   gr_surf->GetProperty()->SetColor(0.8, 0.8, 0.8);
   gr_surf->GetProperty()->SetOpacity(0.5);
   //gr_surf->GetProperty()->SetRepresentationToWireframe();
@@ -405,12 +471,12 @@ int main(int argc, char* argv[])
   std::cout << "   Number of vertices " << numLineVerts << std::endl;
   std::cout << "   Number of lines " << numLines << std::endl;
   // Create lines graphics geometry.
-  auto gr_lines = create_graphic_geometry(lines);
+  auto gr_lines = create_graphics_geometry(lines);
   gr_lines->GetProperty()->SetColor(1.0, 0.0, 0.0);
   gr_lines->GetProperty()->SetLineWidth(4.0);
 
   // Create object to edit centerlines.
-  auto clEdit = CenterLineEdit(surface, lines);
+  auto clEdit = CenterLineEdit(surface, lines, cl_file_name);
 
   // Add a renderer.
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
@@ -422,9 +488,6 @@ int main(int argc, char* argv[])
   vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
   renderWindow->AddRenderer(renderer);
   renderWindow->SetSize(1600, 1400); 
-
-  // Create a point picker.
-  //vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
 
   // Add window interactor to use trackball and intercept key presses.
   //
