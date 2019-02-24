@@ -11,11 +11,13 @@
 #include <vtkFloatArray.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkInteractorStyleUser.h>
+#include <vtkLine.h>
 #include <vtkLineSource.h>
 #include <vtkPlaneSource.h>
 #include <vtkPointData.h>
 #include <vtkPointSet.h>
 #include <vtkPolyData.h>
+#include <vtkPolyLine.h>
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyDataNormals.h>
@@ -80,6 +82,7 @@ class CenterLineEdit
       materialID = 1;
       for (int i = 0; i < numCenterLineVerts; i++) {
         centerLineMaterialIDs.push_back(i);
+        //centerLineMaterialIDs.push_back(materialID);
       } 
     } 
 
@@ -125,6 +128,7 @@ class CenterLineEdit
       std::cout << msg << "Distance to closest point: " << closestPointDist2 << std::endl;
       std::cout << msg << "CellId: " << cellId << std::endl;
       std::cout << msg << "Index: " << index << std::endl;
+      std::cout << msg << "Material ID: " << centerLineMaterialIDs[index] << std::endl;
 
       if (radiusData) {
         radius = radiusData->GetValue(index);
@@ -169,38 +173,68 @@ class CenterLineEdit
         ext  = "";
       }
       std::string materialFileName = name + "_material" + ext;
+      std::cout << "[write_centerline] Material file name " << materialFileName << std::endl;
 
+      // Create new poly data.
+      //
       vtkSmartPointer<vtkPolyData> newPolyData = vtkSmartPointer<vtkPolyData>::New();
-      //newPolyData->DeepCopy(centerlines);
-      //newPolyData->SetPoints(centerlines->GetPoints());
-      //newPolyData->SetPolys(centerlines->GetPolys());
+      // Copy points.
+      vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
+      auto points = centerlines->GetPoints();
+      for(vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) {
+        double p[3];
+        points->GetPoint(i,p);
+        newPoints->InsertNextPoint(p);
+      }
+      newPolyData->SetPoints(newPoints);
+      // Copy cells.
+      vtkSmartPointer<vtkCellArray> newCells = vtkSmartPointer<vtkCellArray>::New();
+      for (vtkIdType i = 0; i < centerlines->GetNumberOfCells(); i++) {
+        //std::cout << "[write_centerline] Cell " << i << std::endl;
+        vtkCell* cell = centerlines->GetCell(i);
+        vtkPolyLine* polyLine = dynamic_cast<vtkPolyLine*>(cell);
+        vtkSmartPointer<vtkPolyLine> newPolyLine = vtkSmartPointer<vtkPolyLine>::New();
+        auto ids = polyLine->GetPointIds();
+        //std::cout << "[write_centerline]   IDs: ";
+        newPolyLine->GetPointIds()->SetNumberOfIds(ids->GetNumberOfIds());
+        for (vtkIdType j = 0; j < ids->GetNumberOfIds(); j++) {
+          auto id = ids->GetId(j);
+          //std::cout << j << ":" << id << ",";
+          newPolyLine->GetPointIds()->SetId(j,id);
+        }
+        //std::cout << std::endl;
+        newCells->InsertNextCell(newPolyLine);
+      }
+      newPolyData->SetLines(newCells);
+      //newPolyData->Modified();
+
+      std::cout << "Number of new poly data points: " << newPolyData->GetPoints()->GetNumberOfPoints() << std::endl;
+      std::cout << "Number of material data points: " << centerLineMaterialIDs.size() << std::endl;
 
       // Set data to store.
-      //vtkSmartPointer<vtkDoubleArray> material = vtkSmartPointer<vtkDoubleArray>::New();
-      //vtkSmartPointer<vtkDoubleArray> materialIDs = vtkSmartPointer<vtkDoubleArray>::New();
       vtkSmartPointer<vtkIntArray> materialIDs = vtkSmartPointer<vtkIntArray>::New();
-      materialIDs->SetNumberOfComponents(1);
       materialIDs->SetName("MaterialIDs");
-      //materialIDs->SetNumberOfTuples(centerlines->GetNumberOfPoints());
+      materialIDs->SetNumberOfComponents(1);
+      //materialIDs->SetNumberOfTuples(1);
       for (auto& id : centerLineMaterialIDs) {
+        //std::cout << id << ",";
         materialIDs->InsertNextValue(id);
       }
-      centerlines->GetFieldData()->AddArray(materialIDs);
-      centerlines->Modified();
-      //newPolyData->GetFieldData()->AddArray(materialIDs);
-      //newPolyData->Modified();
+      std::cout << std::endl;
+      newPolyData->GetPointData()->AddArray(materialIDs);
+      newPolyData->Modified();
 
       vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
       writer->SetFileName(materialFileName.c_str());
-      //writer->SetInputData(newPolyData);
-      writer->SetInputData(centerlines);
+      writer->SetInputData(newPolyData);
       writer->Update();
       writer->Write();
 
-      vtkIntArray* retrievedArray = vtkIntArray::SafeDownCast(centerlines->GetFieldData()->GetAbstractArray("MaterialIDs"));
+      /*
+      auto retrievedArray = vtkIntArray::SafeDownCast(newPolyData->GetFieldData()->GetArray("MaterialIDs"));
       std::cout << "mat id " << retrievedArray->GetValue(0) << std::endl;
       std::cout << "mat id " << retrievedArray->GetValue(1) << std::endl;
-
+      */
 
     }
 
