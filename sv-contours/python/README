@@ -1,0 +1,4 @@
+
+python sv-contours.py -s demo.vtp -c aorta.ctgr
+
+
