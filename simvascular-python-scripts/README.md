@@ -46,7 +46,7 @@ The **Contour List:** browser displays a list of segmentation contours number 0 
 </figure>
 <br> <br>
 
-Now copy and past the following Python commands into the **Console** panel
+Now copy and paste the following Python commands into the **Console** panel
 
     # Create contours IDs for the SV Data Manager Segmentations 
     #  'aorta' data node into the Data Manager Repository.
@@ -66,5 +66,5 @@ Now copy and past the following Python commands into the **Console** panel
     id2 = 20
     contour.dist(id1,id2)
      
-
+The commands create a **ContourDist** Python object called **contour** that is used to store information about the contours for the given segment. Its **dist** functionthe distance between the contours with **id1** and **id2**. The IDs are the same IDs displayed in the **Contour List:** browser.
 
