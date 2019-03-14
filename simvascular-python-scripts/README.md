@@ -46,3 +46,25 @@ The **Contour List:** browser displays a list of segmentation contours number 0 
 </figure>
 <br> <br>
 
+Now copy and past the following Python commands into the **Console** panel
+
+     ```## Create contours IDs for the SV Data Manager Segmentations 
+     #  'aorta' data node into the Data Manager Repository.
+     #
+     # The number of contours are the number of contours defined in the
+     # 'SV 2D Segmentation' 'Contour List:'. 
+     #
+     seg_name = 'aorta'
+     num_contours = 39
+     contour_ids = list(range(num_contours))
+
+     # Create a ContourDistance object with contour_ids.
+     contour = ContourDistance(seg_name, contour_ids)
+
+     # Calculate the distance between contour centers.
+     id1 = 4
+     id2 = 20
+     contour.dist(id1,id2)
+     ```
+
+
