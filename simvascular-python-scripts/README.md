@@ -70,7 +70,7 @@ The commands create a **ContourDist** Python object called **contour** that is u
 
 <figure>
 <img src="images/example-1.3.png" alt="Example-1.3" " width=800 style="float: left; margin-right: 10px;" />
-<figcaption>Python Console showing contour distance script.  </figcaption>
+<figcaption>Python Console showing how to calculate distances using a ContourDistance object.  </figcaption>
 </figure>
 <br> <br>
 
