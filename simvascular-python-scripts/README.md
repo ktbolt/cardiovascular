@@ -30,7 +30,7 @@ on a path created by the SimVascular **SV Path Planning** module. **WARNING**: T
 ## Example 1 - Calculating the Distances between Contours for the SimVascular Demo Project
 This example demostrates how to use the **contour_distance.py** script to calculating the distances between contours for the SimVascular [Demo Project](http://simvascular.github.io/docsQuickGuide.html#segmentation) which can be downloaded from [here](https://simtk.org/frs/download_confirm.php/file/5113/DemoProject.zip?group_id=930). 
 
-Load in the **Demo Project** 
+Start SimVascular and open the **Demo Project**. From the **SV Data Manager** select the **aorta** data node under  **Segmentations**. You should now see the panel for the **SV 2D Segmentation** module. 
 
 <img src="images/example-1.1.png" alt="Example-1.1" width=800 style="float: left; margin-right: 10px;" />
 
