@@ -36,7 +36,13 @@ Start SimVascular and open the **Demo Project**. From the **SV Data Manager** se
 <img src="images/example-1.1.png" alt="Example-1.1" " width=800 style="float: left; margin-right: 10px;" />
 <figcaption>SimVascular SV 2D Segmentation Panel </figcaption>
 </figure>
-<br>
+<br> <br>
                                                                                                         
 The **Contour List:** browser displays a list of segmentation contours number 0 to 38. Now open the SimVascular **Python Console**, select the **Text Editor** button at the bottom of the panel and read in the **contour_distance.py** script.
+
+<figure>
+<img src="images/example-1.1.png" alt="Example-1.2" " width=800 style="float: left; margin-right: 10px;" />
+<figcaption>Python Console showing contour distance script.  </figcaption>
+</figure>
+<br> <br>
 
