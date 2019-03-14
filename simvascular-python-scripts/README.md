@@ -18,7 +18,6 @@ The **Text Edit** panel is used to load, run and edit a Python script stored in 
 
 A Python script file is loaded by selecting the <img src="images/load-script.png" alt="drawing" width="20"/> icon located on the top left of the **Python Console**. The script can then be run by selecting the <img src="images/run-script.png" alt="drawing" width="20"/> icon. Write a modified script to a file by selecting the <img src="images/save-script.png" alt="drawing" width="20"/> icon.
 
-<br>
 
 ## List of SimVascular Python Scripts ##
 
