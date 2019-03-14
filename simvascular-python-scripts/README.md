@@ -38,11 +38,33 @@ Start SimVascular and open the **Demo Project**. From the **SV Data Manager** se
 </figure>
 <br> <br>
                                                                                                         
-The **Contour List:** browser displays a list of segmentation contours number 0 to 38. Now open the SimVascular **Python Console**, select the **Text Editor** button at the bottom of the panel and read in the **contour_distance.py** script.
+The **Contour List:** browser displays a list of segmentation contours number 0 to 38. Now open the SimVascular **Python Console**, select the **Text Editor** button at the bottom of the panel, read in the **contour_distance.py** script and run it.
 
 <figure>
-<img src="images/example-1.1.png" alt="Example-1.2" " width=800 style="float: left; margin-right: 10px;" />
+<img src="images/example-1.2.png" alt="Example-1.2" " width=800 style="float: left; margin-right: 10px;" />
 <figcaption>Python Console showing contour distance script.  </figcaption>
 </figure>
 <br> <br>
+
+Now copy and paste the following Python commands into the **Console** panel
+
+    # Create contours IDs for the SV Data Manager Segmentations 
+    #  'aorta' data node into the Data Manager Repository.
+    #
+    # The number of contours are the number of contours defined in the
+    # 'SV 2D Segmentation' 'Contour List:'. 
+    #
+    seg_name = 'aorta'
+    num_contours = 39
+    contour_ids = list(range(num_contours))
+
+    # Create a ContourDistance object with contour_ids.
+    contour = ContourDistance(seg_name, contour_ids)
+
+    # Calculate the distance between contour centers.
+    id1 = 4
+    id2 = 20
+    contour.dist(id1,id2)
+     
+The commands create a **ContourDist** Python object called **contour** that is used to store information about the contours for the given segment. Its **dist** functionthe distance between the contours with **id1** and **id2**. The IDs are the same IDs displayed in the **Contour List:** browser.
 
