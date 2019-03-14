@@ -48,7 +48,7 @@ The **Contour List:** browser displays a list of segmentation contours number 0 
 
 Now copy and past the following Python commands into the **Console** panel
 
-     ## Create contours IDs for the SV Data Manager Segmentations 
+     # Create contours IDs for the SV Data Manager Segmentations 
      #  'aorta' data node into the Data Manager Repository.
      #
      # The number of contours are the number of contours defined in the
