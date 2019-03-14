@@ -32,7 +32,11 @@ This example demostrates how to use the **contour_distance.py** script to calcul
 
 Start SimVascular and open the **Demo Project**. From the **SV Data Manager** select the **aorta** data node under  **Segmentations**. You should now see the panel for the **SV 2D Segmentation** module. 
 
-<img src="images/example-1.1.png" alt="Example-1.1" title="SimVascular SV 2D Segmentation Panel" width=800 style="float: left; margin-right: 10px;" />
+<figure>
+<img src="images/example-1.1.png" alt="Example-1.1" " width=800 style="float: left; margin-right: 10px;" />
+<figcaption>SimVascular SV 2D Segmentation Panel </figcaption>
+</figure>
+
 
 The **Contour List:** browser displays a list of segmentation contours number 0 to 38. Now open the SimVascular **Python Console**, select the **Text Editor** button at the bottom of the panel and read in the **contour_distance.py** script.
 
