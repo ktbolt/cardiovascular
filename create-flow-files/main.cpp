@@ -692,17 +692,17 @@ std::map<OptionType, std::string> ProcessArguments(int argc, char *argv[])
         error = true;
     }
 
-    if (YesNo.count(args[OptionType::SkipWalls]) == 0) {
+    if (!error && YesNo.count(args[OptionType::SkipWalls]) == 0) {
         std::cout << "**** ERROR: Unknown value for skip walls option: " << args[OptionType::SkipWalls] << std::endl;
         error = true;
     }
 
-    if (YesNo.count(args[OptionType::SingleFile]) == 0) {
+    if (!error && YesNo.count(args[OptionType::SingleFile]) == 0) {
         std::cout << "**** ERROR: Unknown value for single file option: " << args[OptionType::SingleFile] << std::endl;
         error = true;
     }
 
-    if (Units.count(args[OptionType::Units]) == 0) {
+    if (!error && Units.count(args[OptionType::Units]) == 0) {
         std::cout << "**** ERROR: Unknown value for units option: " << args[OptionType::Units] << std::endl;
         error = true;
     }
