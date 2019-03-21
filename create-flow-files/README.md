@@ -1,6 +1,6 @@
 # Create Average Flow Files
 
-This program is used to create flow files from the converted simulation results files (.vtp or .vtu) created by the **svpost** program or using the SimVascular **SV Simulation** plugin **Convert Results** options. It reproduces the code SimVascular uses to create the flow files when the **Calculate Flows** option is enabled.
+This program is used to create flow files from the converted simulation results files (.vtp or .vtu) created by the **svpost** program or the SimVascular **SV Simulation** plugin **Convert Results** options. It reproduces the code SimVascular uses to create the flow files when the **Calculate Flows** option is enabled.
 
 The program creates the following files:
 
@@ -10,7 +10,19 @@ The program creates the following files:
     all_results-averages-from_cm-to-mmHg-L_per_min.txt - Same info as in all_results-averages.txt, but pressure is in mmHg, flowrate is L/min.
     
 ## Building the Program ##
-The program is built using CMake:
+
+The program needs CMake and VTK to build. 
+
+Install VTK 
+   
+    Ubuntu 18:  sudo apt-get install libvtk6-dev
+    
+Install CMake:
+
+    Ubuntu 18:  sudo apt-get install cmake
+    
+    
+To build the program executable:
 
     mkdir build
     cd build
