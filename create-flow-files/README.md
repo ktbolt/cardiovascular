@@ -4,10 +4,10 @@ This program is used to create average flow files from converted simulation resu
 
 The program creates the following files:
 
-all_results-pressures.txt
-results-flows.txt
-all_results-averages.txt
-all_results-averages-from_cm-to-mmHg-L_per_min.txt
+    all_results-pressures.txt
+    results-flows.txt
+    all_results-averages.txt
+    all_results-averages-from_cm-to-mmHg-L_per_min.txt
 
 
 ## Example ##
