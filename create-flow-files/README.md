@@ -9,7 +9,7 @@ The program creates the following files:
     all_results-averages.txt - The average, maximum, minimum values of presure, flowrate for each face
     all_results-averages-from_cm-to-mmHg-L_per_min.txt - Same info as in all_results-averages.txt, but pressure is in mmHg, flowrate is L/min.
     
-## Buildin the Program ##
+## Building the Program ##
 The program is built using CMake:
 
     cd build
@@ -29,7 +29,10 @@ The program takes the following options:
     --skip-walls: Skip calculating averages for walls. (yes/no) 
     --units: Units (cm, mm)
 
+All options must be given.
 
 ## Example ##
 
-create-flow-files --mesh-directory $HOME/SimVascular/CylinderProject/Simulations/steady/mesh-complete/mesh-surfaces  --output-directory $HOME/software/ktbolt/cardiovascular/create-flow-files/test  --results-directory  $HOME/SimVascular/CylinderProject/Simulations/steady/4-procs_case/steady-converted-results  --single-file no --skip-walls yes  --units cm
+This is an example showing how to use the program to create the flow files for the **Cylinder Project**. It assumes that the simualtion results have already been converted in the **steady-converted-results** directory.
+
+create-flow-files --mesh-directory $HOME/SimVascular/CylinderProject/Simulations/steady/mesh-complete/mesh-surfaces  --output-directory $HOME/create-flow-files/test  --results-directory  $HOME/SimVascular/CylinderProject/Simulations/steady/4-procs_case/steady-converted-results  --single-file no --skip-walls yes  --units cm
