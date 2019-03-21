@@ -12,6 +12,7 @@ The program creates the following files:
 ## Building the Program ##
 The program is built using CMake:
 
+    mkdir build
     cd build
     cmake ..
     make
