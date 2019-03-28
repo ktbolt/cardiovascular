@@ -26,6 +26,15 @@ int main ( int argc, char *argv[] )
 
   std::string filename = argv[1];
 
+  // Set image dimentions.
+  int idim = 10;
+  int jdim = 10;
+  int kdim = 10;
+  double icx = (idim - 1) / 2.0;
+  double icy = (jdim - 1) / 2.0;
+  double icz = (kdim - 1) / 2.0;
+  std::cout << "icx: " << icx << "  icy: " << icy << "  icz: " << icz << std::endl;
+
   // Read surface data. 
   //
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
@@ -45,27 +54,19 @@ int main ( int argc, char *argv[] )
   std::cout << "xmin: " << xmin << "  xmax: " << xmax << std::endl;
   std::cout << "ymin: " << ymin << "  ymax: " << ymax << std::endl;
   std::cout << "zmin: " << zmin << "  zmax: " << zmax << std::endl;
+  std::cout << "cx: " << cx << "  cy: " << cy << "  cz: " << cz << std::endl;
   std::cout << "dx: " << dx << "  dy: " << dy << "  dz: " << dz << std::endl;
-  std::cout << "orig  cx: " << cx << "  cy: " << cy << "  cz: " << cz << std::endl;
+  double max_dim = dx > dy ? dx : dy;
+  max_dim = max_dim > dz ? max_dim : dz;
 
   double scale = 1.0;
-
-  if ((dx < 1.0) || (dy < 1.0) || (dz < 1.0)) {
-    scale = 10.0;
-  }
-  /*
-  dx *= scale;
-  dy *= scale;
-  dz *= scale;
-  */
   std::cout << "scale: " << scale << std::endl;
 
-  // Translate surface.
+  // Translate surface center to image center.
   //
-  double tx, ty, tz;
-  tx = -xmin;
-  ty = -ymin;
-  tz = -zmin;
+  double tx = icx - cx;
+  double ty = icy - cy;
+  double tz = icz - cz;
 
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->ShallowCopy(polyData->GetPoints());
@@ -85,18 +86,11 @@ int main ( int argc, char *argv[] )
   xmin = bounds[0]; xmax = bounds[1]; ymin = bounds[2];
   ymax = bounds[3]; zmin = bounds[4]; zmax = bounds[5];
   dx = xmax - xmin; dy = ymax - ymin; dz = zmax - zmin;
-  dx *= scale;
-  dy *= scale;
-  dz *= scale;
   cx = xmin + dx / 2.0;    cy = ymin + dy / 2.0;    cz = zmin + dz / 2.0;
-  if (dx == 2.0) dx = 3.0;
-  if (dy == 2.0) dy = 3.0;
-  if (dz == 2.0) dz = 3.0;
   std::cout << "trans xmin: " << xmin << "  xmax: " << xmax << std::endl;
   std::cout << "trans ymin: " << ymin << "  ymax: " << ymax << std::endl;
   std::cout << "trans zmin: " << zmin << "  zmax: " << zmax << std::endl;
   std::cout << "trans: cx " << cx << "  cy " << cy << "  cz " << cz << std::endl;
-  std::cout << "trans: dx " << dx << "  dy " << dy << "  dz " << dz << std::endl;
 
   // Write translated surface.
   //
@@ -119,11 +113,7 @@ int main ( int argc, char *argv[] )
   // Create image data.
   //
   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
-  int idx = int(dx);
-  int idy = int(dy);
-  int idz = int(dz);
-  std::cout << "image idx: " << idx << "  idy: " << idy << "  idz: " << idz << std::endl;
-  imageData->SetDimensions(idx,idy,idz);
+  imageData->SetDimensions(idim, jdim, kdim);
   imageData->AllocateScalars(VTK_DOUBLE, 1);
   int* dims = imageData->GetDimensions();
   std::cout << "image dims[0]:" << dims[0] << "  dims[1]:" << dims[1] << "  dims[2]:" << dims[2] << std::endl;
