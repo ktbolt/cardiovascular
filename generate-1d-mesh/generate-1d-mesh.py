@@ -9,7 +9,7 @@ from centerlines import *
 def parse_args():
     """ Parse command-line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s",   "--surface-directory",    help="Directory containing the surface files")
+    parser.add_argument("--surface-directory",    help="Directory containing the surface files")
     return parser.parse_args(), parser.print_help
 
 def run(**kwargs):
@@ -22,6 +22,7 @@ def run(**kwargs):
     ## Create a Parameters object to store parameters.
     params = Parameters()
 
+    ## Parse arguments.
     for key, value in kwargs.items():
         logger.info("key %s  value %s " % (key, value))
         if value == None:
@@ -29,10 +30,18 @@ def run(**kwargs):
         if key == "surface_directory":
             params.surface_mesh_dir = value
             logger.info("Surface directory: %s" % value)
+        else:
+            logger.error("Unknown parameter name %s" % key)
+            return False
     #__for key, value in kwargs.items
 
     extract_center_lines(params)
 
+    return True
+
 if __name__ == '__main__':
     args, print_help = parse_args()
-    run(**vars(args))
+    if not run(**vars(args)):
+        print_help()
+        sys.exit(1)
+

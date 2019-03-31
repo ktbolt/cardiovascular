@@ -14,4 +14,6 @@ def init_logging():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
+    #logging.basicConfig(format=formatter,  level=logging.DEBUG)
+
 
