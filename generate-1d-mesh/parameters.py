@@ -7,11 +7,13 @@ The Parameter class stores the input parameters for a 1D mesh generation.
 class Parameters():
     def __init__(self):
 
-        # Surface mesh.
-        self.surface_mesh_dir = ''
+        self.boundary_surfaces_dir = None
+        self.surface_model = None
+        self.uniformBC = False
 
         self.inlet_center = None
         self.outlet_centers = []
+        self.outlet_face_names = []
 
         # Physical parameters.
         self.density = 1.055

@@ -11,19 +11,38 @@ import numpy as np
 from manage import get_logger_name
 import vtk
 
+from vmtk import vtkvmtk,vmtkscripts
+
 SurfaceFileFormats = ["vtk", "vtp"] 
 
 logger = logging.getLogger(get_logger_name())
 
 def extract_center_lines(params):
-    """ Extract the centerlines of surface.
+    """ Extract the centerlines of a surface.
     """
-    surf_mesh_dir = Path(params.surface_mesh_dir)
-    outlet_face_names = []
+    ## Read surface model.
+    read_surfaces(params)
+
+    ## Read surface used for centerline calculation.
+    logger.info("Read surface model from %s" % params.surface_model)
+    surface_mesh = read_surface(params.surface_model)
+
+    ## Extract centerlines using vmtk.
+    #centerlines = vmtkscripts.vmtkCenterlines()
+
+
+
+def read_surfaces(params):
+    """ Read surface data and calculate inlet/outlet ceneters.
+
+        Surface inlet and outlets faces are identifed by their file name. 
+    """
+    surf_mesh_dir = Path(params.boundary_surfaces_dir)
+    params.outlet_face_names = []
 
     for face_file in surf_mesh_dir.iterdir():
         file_name = face_file.name
-        logger.debug("Surface file name: %s" % file_name) 
+        logger.debug("Surface file name: %s" % file_name)
         file_suffix = face_file.suffix.lower()[1:]
 
         if file_suffix not in SurfaceFileFormats or file_name.lower().startswith('wall'):
@@ -36,12 +55,13 @@ def extract_center_lines(params):
             params.inlet_start_point = get_polydata_centroid(polydata)
         else:
             outlet_path = str(face_file.absolute())
-            outlet_face_names.append(face_file.stem)
+            params.outlet_face_names.append(face_file.stem)
             logger.info("Outlet: %s" % file_name)
             polydata = read_surface(outlet_path, file_suffix)
             params.outlet_centers.append(get_polydata_centroid(polydata))
-
     #__for face_file in surf_mesh_dir.iterdir()
+
+    logger.info("Number of outlet faces: %d" % len(params.outlet_centers))
 
 
 def get_polydata_centroid(poly_data):
@@ -118,5 +138,52 @@ def read_surface(file_name, file_format="vtp", datatype=None):
     logger.info("Read surface from %s" % file_name)
     logger.info("  Number of polygons %d" % num_polys)
 
-
     return polydata
+
+def read_bc(params):
+    """ Read BC files.
+    
+    """
+    BClist = []
+
+    with open(BCfile) as file:
+        if outflowBC == "RESISTANCE":
+            for line in file:
+                #print "line=",line
+                BClist.append(float(line))
+            #__for line in file
+
+            if len(BClist)!=len(outletfacename):
+                logger.error("The number of BC values %d  is not consistant with the number of outlets %d",
+                  len(BClist), len(outletfacename))
+                exit()
+
+        elif outflowBC == "RCR":
+            keyword = file.readline()
+            # print"keyword=",keyword
+            while True:
+                tmp = file.readline()
+                if tmp == keyword:
+                    RCRval=[]
+                    RCRval.append(float(file.readline()))
+                    RCRval.append(float(file.readline()))
+                    RCRval.append(float(file.readline()))
+                    BClist.append(RCRval)
+                if len(tmp) == 0:
+                    break
+           #__while True
+        #__if outflowBC=="RCR"
+    #__with open(BCfile) as file
+  
+    user_outlet_names = []
+
+    with open(useroutletfile) as file:
+        for line in file:
+            useroutletname.extend(line.splitlines())
+
+    logger.info("Number of user provided model outlet names: %d" % len(useroutletname))
+
+    if len(useroutletname)!=len(outletfacename):
+        logger.error("The number of user provided outlets is not consistant with the number of outlets in mesh-surfaces. Exit.")
+        exit()
+
