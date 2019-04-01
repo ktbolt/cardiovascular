@@ -26,16 +26,22 @@ def extract_center_lines(params):
     ## Read surface used for centerline calculation.
     logger.info("Read surface model from %s" % params.surface_model)
     surface_mesh = read_surface(params.surface_model)
+    #print(surface_mesh)
 
     ## Extract centerlines using vmtk.
-    #centerlines = vmtkscripts.vmtkCenterlines()
-
-
+    centerlines = vmtkscripts.vmtkCenterlines()
+    centerlines.Surface = surface_mesh 
+    centerlines.SeedSelectorName = "pointlist"
+    centerlines.AppendEndPoints = 1
+    centerlines.SourcePoints = params.inlet_center
+    centerlines.TargetPoints = params.outlet_centers
+    centerlines.Execute()
+    #centerlines_output = centerlines.Centerlines
 
 def read_surfaces(params):
     """ Read surface data and calculate inlet/outlet ceneters.
 
-        Surface inlet and outlets faces are identifed by their file name. 
+        Surface inlet and outlet faces are identifed by their file name. 
     """
     surf_mesh_dir = Path(params.boundary_surfaces_dir)
     params.outlet_face_names = []
@@ -52,13 +58,13 @@ def read_surfaces(params):
             inlet_path = str(face_file.absolute())
             logger.info("Inlet file: %s" % inlet_path)
             polydata = read_surface(inlet_path, file_suffix)
-            params.inlet_start_point = get_polydata_centroid(polydata)
+            params.inlet_center = get_polydata_centroid(polydata)
         else:
             outlet_path = str(face_file.absolute())
             params.outlet_face_names.append(face_file.stem)
             logger.info("Outlet: %s" % file_name)
             polydata = read_surface(outlet_path, file_suffix)
-            params.outlet_centers.append(get_polydata_centroid(polydata))
+            params.outlet_centers.extend(get_polydata_centroid(polydata))
     #__for face_file in surf_mesh_dir.iterdir()
 
     logger.info("Number of outlet faces: %d" % len(params.outlet_centers))
