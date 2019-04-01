@@ -3,6 +3,7 @@
 #include <vtkImageData.h>
 #include <vtkImageDataGeometryFilter.h>
 #include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkOBJReader.h>
 #include <vtkPolyData.h>
 #include <vtkPointData.h>
 #include <vtkPolyDataMapper.h>
@@ -11,16 +12,18 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
+#include <vtkPolyDataAlgorithm.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkXMLImageDataWriter.h>
 #include <vtkXMLImageDataReader.h>
 #include <vtkXMLPolyDataReader.h>
+#include <vtkSTLReader.h>
 
 int main ( int argc, char *argv[] )
 {
   // Parse command line arguments
   if(argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " Filename(.vtp)" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " Filename(.vtp, .stl)" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -37,16 +40,42 @@ int main ( int argc, char *argv[] )
 
   // Read surface data. 
   //
-  vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-  reader->SetFileName(filename.c_str());
-  reader->Update();
-  vtkPolyData* polyData = NULL;
-  polyData = reader->GetOutput();
+  vtkPolyDataAlgorithm* reader; 
+  vtkPolyData* polyData = nullptr;
+  vtkSTLReader* stlReader = nullptr; 
+  vtkXMLPolyDataReader* polyReader = nullptr; 
+
+  if (filename.substr(filename.find_last_of(".") + 1) == "stl") {
+      std::cout << "STL format detected" << std::endl;
+      stlReader = vtkSTLReader::New();
+      stlReader->SetFileName(filename.c_str());
+      stlReader->Update();
+      polyData = stlReader->GetOutput();
+
+  } else if (filename.substr(filename.find_last_of(".") + 1) == "vtp") {
+      std::cout << "VTP format detected" << std::endl;
+      polyReader = vtkXMLPolyDataReader::New();
+      polyReader->SetFileName(filename.c_str());
+      polyReader->Update();
+      polyData = polyReader->GetOutput();
+  }
+
+  if (polyData == nullptr) { 
+      std::cout << "**** ERROR: Unable to read file." << std::endl;
+      exit(1);
+  }
+
+  //polyData->Print(cout);
+  auto numPolygons = polyData->GetNumberOfCells();
+  std::cout << "Number of polygons: " << numPolygons << std::endl;
 
   // Get points bounds.
   //
   double bounds[6];
+  std::cout << "get bounds " << std::endl;
   polyData->GetBounds(bounds);
+  std::cout << "done " << std::endl;
+
   double xmin = bounds[0]; double xmax = bounds[1]; double ymin = bounds[2];
   double ymax = bounds[3]; double zmin = bounds[4]; double zmax = bounds[5];
   double dx = xmax - xmin; double dy = ymax - ymin; double dz = zmax - zmin;
@@ -104,6 +133,9 @@ int main ( int argc, char *argv[] )
     name = filename;
     ext  = "";
   }
+  if (ext == ".stl") {
+      ext = ".vtp";
+  }
   std::string trans_filename = name + "_trans" + ext; 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(trans_filename.c_str());
@@ -154,7 +186,8 @@ int main ( int argc, char *argv[] )
   // Create surface graphics geometry.
   //
   vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputConnection(reader->GetOutputPort());
+  mapper->SetInputData(polyData);
+  //mapper->SetInputConnection(reader->GetOutputPort());
   mapper->ScalarVisibilityOff();
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
   actor->SetMapper(mapper);
