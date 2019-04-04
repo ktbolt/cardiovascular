@@ -7,11 +7,15 @@ class Parameters():
     def __init__(self):
 
         self.boundary_surfaces_dir = None
+        self.output_directory = None
         self.centerlines_input_file = None
         self.centerlines_output_file = None
         self.compute_centerlines = True
         self.surface_model = None
-        self.uniformBC = False
+        self.uniform_bc = False
+        self.uniform_material = True
+        self.wall_properties_input_file = None
+        self.wall_properties_output_file = None
 
         # Physical parameters.
         self.c1 = 0.0e7
