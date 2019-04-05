@@ -20,7 +20,9 @@ class Args(object):
     CENTERLINE_INPUT_FILE = "centerlines_input_file"
     CENTERLINE_OUTPUT_FILE = "centerlines_output_file"
     COMPUTE_CENTERLINES = "compute_centerlines"
+    OUTFLOW_BC_TYPE = "outflow_bc_type"
     OUTPUT_DIRECTORY = "output_directory"
+    SOLVER_OUTPUT_FILE = "solver_output_file"
     SURFACE_MODEL = "surface_model"
     UNIFORM_BC = "uniform_bc"
     WALL_PROPERTIES_INPUT_FILE = "wall_properties_input_file"
@@ -47,8 +49,14 @@ def parse_args():
     parser.add_argument(cmd(Args.COMPUTE_CENTERLINES), const=True, nargs='?', default=False, 
       help="If given or value is set to 1 then compute centerlines.")
 
+    parser.add_argument(cmd(Args.OUTFLOW_BC_TYPE), 
+      help="The output boundary condition type (RESISTANCE, RCR).")
+
     parser.add_argument(cmd(Args.OUTPUT_DIRECTORY), required=True, 
       help="The directory where output files are written.")
+
+    parser.add_argument(cmd(Args.SOLVER_OUTPUT_FILE), required=True,
+      help="The name of the file to write the solver input to.")
 
     parser.add_argument(cmd(Args.SURFACE_MODEL), 
       help="The surface model used to compute centerlines.")
@@ -104,6 +112,20 @@ def set_parameters(**kwargs):
     if not os.path.exists(params.output_directory):
         logger.error("The output directory '%s' was not found." % params.output_directory)
         return None
+
+    if kwargs.get(Args.OUTFLOW_BC_TYPE):
+        bc_type = kwargs.get(Args.OUTFLOW_BC_TYPE).lower()
+        if not bc_type in self.outflow_bc_types:
+            logger.error("Unknown BC type '%s'." % bc_type) 
+            return None
+        params.outflow_bc_type = bc_type
+        params.outflow_bc_file = self.outflow_bc_types[bc_type]
+        logger.info("Outflow bc type: %s" % params.outflow_bc_type)
+        logger.info("Outflow bc file: %s" % params.outflow_bc_file)
+
+    if kwargs.get(Args.SOLVER_OUTPUT_FILE):
+        params.solver_output_file = kwargs.get(Args.SOLVER_OUTPUT_FILE)
+        logger.info("Solver output file: %s" % params.solver_output_file)
 
     if kwargs.get(Args.SURFACE_MODEL):
         params.surface_model = kwargs.get(Args.SURFACE_MODEL)
@@ -206,7 +228,7 @@ def run(**kwargs):
 
     ## Generate a 1D mesh.
     mesh = Mesh()
-    mesh.generate(params, centerlines.branch_geometry)
+    mesh.generate(params, centerlines)
 
     return True
 
