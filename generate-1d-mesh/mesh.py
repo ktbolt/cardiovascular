@@ -799,7 +799,7 @@ class Mesh(object):
         uniform_material = params.uniform_material
         dx = params.dx 
         minnumfe = params.minnumfe
-        inflow_file = params.inflow_file 
+        inflow_file = params.inflow_input_file 
         timestep = params.timestep 
         numtimesteps = params.numtimesteps
         tincr = params.tincr 
@@ -851,7 +851,7 @@ class Mesh(object):
         
         file.write("\n\n")
         file.write("DATATABLE INFLOW LIST \n")
-        if len(inflow_file) == 0:
+        if not inflow_file:
          file.write("Copy and paste inflow data here. \n")
         else:
            with open(inflow_file) as inflow:

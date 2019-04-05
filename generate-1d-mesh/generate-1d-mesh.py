@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+""" 
+This module provides the interface to the modules creating a 1D mesh used for 1D simulations. 
+
+"""
 import argparse
 import sys
 from os import path
@@ -13,13 +17,14 @@ from utils import write_polydata, read_polydata
 logger = logging.getLogger(get_logger_name())
 
 class Args(object):
-    """ This class defines the valid command line arguments to the generate-1d-mesh script.
+    """ This class defines the command line arguments to the generate-1d-mesh script.
     """
     PREFIX = "--"
     BOUNDARY_SURFACE_DIR = "boundary_surfaces_directory"
     CENTERLINE_INPUT_FILE = "centerlines_input_file"
     CENTERLINE_OUTPUT_FILE = "centerlines_output_file"
     COMPUTE_CENTERLINES = "compute_centerlines"
+    INFLOW_INPUT_FILE = "inflow_input_file"
     OUTFLOW_BC_TYPE = "outflow_bc_type"
     OUTPUT_DIRECTORY = "output_directory"
     SOLVER_OUTPUT_FILE = "solver_output_file"
@@ -49,6 +54,9 @@ def parse_args():
     parser.add_argument(cmd(Args.COMPUTE_CENTERLINES), const=True, nargs='?', default=False, 
       help="If given or value is set to 1 then compute centerlines.")
 
+    parser.add_argument(cmd(Args.INFLOW_INPUT_FILE), 
+      help="The name of the file to read inflow data from.")
+
     parser.add_argument(cmd(Args.OUTFLOW_BC_TYPE), 
       help="The output boundary condition type (RESISTANCE, RCR).")
 
@@ -76,37 +84,48 @@ def set_parameters(**kwargs):
     """ Set the values of parameters input from the command line.
     """
     logger.info("Parse arguments ...")
-    true_values = ["on", "true", "1"]
 
     ## Create a Parameters object to store parameters.
     params = Parameters()
 
     ## Process arguments.
     #
+    true_values = ["on", "true", "1"]
+
     if kwargs.get(Args.BOUNDARY_SURFACE_DIR): 
         params.boundary_surfaces_dir = kwargs.get(Args.BOUNDARY_SURFACE_DIR)
         logger.info("Surface directory: %s" % params.boundary_surfaces_dir)
         if not os.path.exists(params.boundary_surfaces_dir):
-            logger.error("Surface directory '%s' was not found." % params.boundary_surfaces_dir)
+            logger.error("The surface directory '%s' was not found." % params.boundary_surfaces_dir)
             return None
 
     if kwargs.get(Args.CENTERLINE_INPUT_FILE):
         params.centerlines_input_file = kwargs.get(Args.CENTERLINE_INPUT_FILE)
         logger.info("Centerlines input file: %s" % params.centerlines_input_file)
         if not os.path.exists(params.centerlines_input_file):
-            logger.error("Centerlines input file '%s' was not found." % params.centerlines_input_file)
+            logger.error("The centerlines input file '%s' was not found." % params.centerlines_input_file)
             return None
 
     if kwargs.get(Args.CENTERLINE_OUTPUT_FILE): 
         params.centerlines_output_file = kwargs.get(Args.CENTERLINE_OUTPUT_FILE)
         logger.info("Centerlines output file: %s" % params.centerlines_output_file)
         if not os.path.exists(params.centerlines_output_file):
-            logger.error("Centerlines output file '%s' was not found." % params.centerlines_output_file)
+            logger.error("The centerlines output file '%s' was not found." % 
+              params.centerlines_output_file)
             return None
 
+    # The 'compute_centerlines' parameter is set to True if the COMPUTE_CENTERLINES 
+    # argument is given with no value. Otherwise it is set to the value given.
     params.compute_centerlines = (kwargs.get(Args.COMPUTE_CENTERLINES) == True) or \
       (kwargs.get(Args.COMPUTE_CENTERLINES) in true_values)
     logger.info("Compute centerlines: %s" % params.compute_centerlines) 
+
+    if kwargs.get(Args.INFLOW_INPUT_FILE):
+        params.inflow_input_file = kwargs.get(Args.INFLOW_INPUT_FILE)
+        logger.info("Inflow input file: %s" % params.inflow_input_file)
+        if not os.path.exists(params.surface_model):
+            logger.error("The inflow input file '%s' was not found." % params.inflow_input_file) 
+            return None
 
     params.output_directory = kwargs.get(Args.OUTPUT_DIRECTORY)
     if not os.path.exists(params.output_directory):
@@ -131,14 +150,15 @@ def set_parameters(**kwargs):
         params.surface_model = kwargs.get(Args.SURFACE_MODEL)
         logger.info("Surface model: %s" % params.surface_model)
         if not os.path.exists(params.surface_model):
-            logger.error("Surface model file '%s' was not found." % params.surface_model)
+            logger.error("The surface model file '%s' was not found." % params.surface_model)
             return None
 
     if kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE):
         params.wall_properties_input_file = kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE)
         logger.info("Wall properties input file: %s" % params.wall_properties_input_file)
         if not os.path.exists(params.wall_properties_input_file):
-            logger.error("Wal properties input file '%s' was not found." % params.wall_properties_input_file)
+            logger.error("The wall properties input file '%s' was not found." % 
+              params.wall_properties_input_file)
             return None
         params.uniform_material = False
         logger.info("Wall properties are not uniform.")

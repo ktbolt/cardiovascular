@@ -22,7 +22,7 @@ class Parameters():
 
         self.outputformat = "TEXT"
 
-        self.inflow_file = "inflow.flow"
+        self.inflow_input_file = None
 
         self.uniform_bc = True
         self.outflow_bc_type = OutflowBoundaryConditionType.RCR 
