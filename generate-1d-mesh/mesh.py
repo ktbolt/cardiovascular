@@ -30,18 +30,44 @@ class Mesh(object):
     """
 
     class OutputFileNames(object):
+        """ This class defines the output file names for writing connectivity information.
+        """
         CONNECTIVITY_GROUP_ID = "connectivity_groupid.dat"
         OUTLET_FACE_GROUP_ID = "outletface_groupid.dat"
         CENTERLINE_GROUP_ID = "centerline_groupid.dat"
 
     class CellDataFields(object):
+        """ This class defines the required field cell data field names.
+        """
         CENTERLINE_IDS = "CenterlineIds" 
         BLANKING = "Blanking" 
         GROUP_IDS = "GroupIds" 
         TRACT_IDS = "TractIds"
 
     class PointDataFields(object):
+        """ This class defines the required field point data field names.
+        """
         MAX_INSCRIBED_RADIUS = "MaximumInscribedSphereRadius" 
+
+    class Open(object):
+        """ This class wraps the 'open' class and adds a method to automatically 
+            write newlines. 
+        """ 
+        def __init__(self, *args, **kwds):
+            self.args = args
+            self.kwds = kwds
+            self.file_obj = open(*self.args, **self.kwds)
+        def __enter__(self):
+            self.file_obj = open(*self.args, **self.kwds)
+            return self
+        def __exit__(self, *args):
+            self.file_obj.close()
+        def close(self):
+            self.file_obj.close()
+        def writeln(self, string):
+            self.file_obj.write(string + '\n')
+        def write(self, string):
+            self.file_obj.write(string)
 
     def __init__(self):
         self.centerlines = None
@@ -335,6 +361,7 @@ class Mesh(object):
         user_outlet_names = []
         outlet_face_names = self.centerlines.outlet_face_names
         bc_file = params.outflow_bc_file
+        outflow_bc = params.outflow_bc_type
 
         with open(bc_file) as file:
          if outflow_bc == params.OutflowBoundaryConditionType.RESISTANCE:
@@ -694,96 +721,103 @@ class Mesh(object):
 
 
     def write_solver_file(self, params, centerline_list):
-        """ Write an solver input file.
+        """ Write a solver input file.
         """
         solver_file = params.solver_output_file
         model_name, sep, tail = solver_file.partition('.')
+        sp = " "
+        endl = "\n"
 
         # Open file
-        #file = open(model_name + ".in", "w")
-        file = open(solver_file, "w")
+        file = self.Open(solver_file, "w")
+        #file = open(solver_file, "w")
         
         # Write header
-        file.write("# ================================\n")
-        file.write("# " + model_name + " MODEL - UNITS IN CGS\n")
-        file.write("# ================================\n\n")
+        file.writeln("# ================================")
+        file.writeln("# " + model_name + " MODEL - UNITS IN CGS")
+        file.writeln("# ================================\n")
           
         # Model Header
-        file.write("# ==========\n")
-        file.write("# MODEL CARD\n")
-        file.write("# ==========\n")
-        file.write("# - Name of the model (string)\n\n")
-        file.write("MODEL " + model_name + " \n\n")
+        file.writeln("# ==========")
+        file.writeln("# MODEL CARD")
+        file.writeln("# ==========")
+        file.writeln("# - Name of the model (string)\n")
+        file.writeln("MODEL " + model_name + " \n")
 
-        # Node Header
+        # Write node section.
         nodes = self.nodes
         lcoef = self.lcoef
-        file.write("\n\n### DO NOT CHANGE THIS SECTION - generated automatically \n")
-        file.write("#\n")
-        file.write("# ==========\n")
-        file.write("# NODE CARD\n")
-        file.write("# ==========\n")
-        file.write("# - Node Name (double)\n")
-        file.write("# - Node X Coordinate (double)\n")
-        file.write("# - Node Y Coordinate (double)\n")
-        file.write("# - Node Z Coordinate (double)\n\n")
-        
+        file.writeln("\n\n### DO NOT CHANGE THIS SECTION - generated automatically")
+        file.writeln("#")
+        file.writeln("# ==========")
+        file.writeln("# NODE CARD")
+        file.writeln("# ==========")
+        file.writeln("# - Node Name (double)")
+        file.writeln("# - Node X Coordinate (double)")
+        file.writeln("# - Node Y Coordinate (double)")
+        file.writeln("# - Node Z Coordinate (double)\n")
+
         for i in range(0,len(nodes)):
-          file.write("NODE " + str(i) + " ".join(str(nodes[i][j]*lcoef) for j in range(3)) )
+          file.writeln("NODE " + str(i) + " ".join(str(lcoef*nodes[i][j]) for j in range(3)) )
          
         # Joint Header
-        file.write("\n\n\n### DO NOT CHANGE THIS SECTION - generated automatically \n#")
-        file.write("# ==========\n")
-        file.write("# JOINT CARD\n")
-        file.write("# ==========\n")
-        file.write("# - Joint Name (string)\n")
-        file.write("# - Joint Node (double)\n")
-        file.write("# - Joint Inlet Name (string)\n")
-        file.write("# - Joint Outlet Name (string)\n\n")
+        file.writeln("\n\n\n### DO NOT CHANGE THIS SECTION - generated automatically")
+        file.writeln("#")
+        file.writeln("# ==========")
+        file.writeln("# JOINT CARD")
+        file.writeln("# ==========")
+        file.writeln("# - Joint Name (string)")
+        file.writeln("# - Joint Node (double)")
+        file.writeln("# - Joint Inlet Name (string)")
+        file.writeln("# - Joint Outlet Name (string)\n")
         
         # JointInlet and JointOutlet Header
-        file.write("\n### DO NOT CHANGE THIS SECTION - generated automatically \n#")
-        file.write("# ================================\n")
-        file.write("# JOINTINLET AND JOINTOUTLET CARDS\n")
-        file.write("# ================================\n")
-        file.write("# - Inlet/Outlet Name (string)\n")
-        file.write("# - Total Number of segments (int)\n")
-        file.write("# - List of segments (list of int)\n\n")            
+        file.writeln("\n### DO NOT CHANGE THIS SECTION - generated automatically")
+        file.writeln("#")
+        file.writeln("# ================================")
+        file.writeln("# JOINTINLET AND JOINTOUTLET CARDS")
+        file.writeln("# ================================")
+        file.writeln("# - Inlet/Outlet Name (string)")
+        file.writeln("# - Total Number of segments (int)")
+        file.writeln("# - List of segments (list of int)\n")
         
         seg_connectivity = self.seg_connectivity
         seg_rear = self.seg_rear 
 
         for i in range(0,len(seg_connectivity)):
           pargroupid = seg_connectivity[i][0]
-          file.write("JOINT J" + str(i) + " " + str(seg_rear[pargroupid]) + " IN" + str(i) + " OUT" + str(i) + "\n")
-          file.write("JOINTINLET IN" + str(i) + " " + "1 " + str(seg_connectivity[i][0]) + "\n")
-          file.write("JOINTOUTLET OUT" + str(i) + " " + str(len(seg_connectivity[i])-1))
+          joint = "JOINT J" + str(i) + sp + str(seg_rear[pargroupid])
+          jin = "IN" + str(i)
+          jout = "OUT" + str(i)
+          file.writeln(joint + sp + jin + sp + jout)
+          file.writeln("JOINTINLET IN" + str(i) + sp + "1 " + str(seg_connectivity[i][0]))
+          file.write("JOINTOUTLET OUT" + str(i) + sp + str(len(seg_connectivity[i])-1))
           for j in range(1,len(seg_connectivity[i])): 
-             file.write(" " + str(seg_connectivity[i][j]))
+             file.write(sp + str(seg_connectivity[i][j]))
           file.write("\n\n")
 
-          # Segment Header
-        file.write("# ============")
-        file.write("# SEGMENT CARD")
-        file.write("# ============")
-        file.write("# - Segment Name (string)")
-        file.write("# - Segment ID (int)")
-        file.write("# - Segment Length (double)")
-        file.write("# - Total Finite Elements in Segment (int)")
-        file.write("# - Segment Inlet Node (int)")
-        file.write("# - Segment Outlet Node (int)")
-        file.write("# - Segment Inlet Area (double)")
-        file.write("# - Segment Outlet Area (double)")
-        file.write("# - Segment Inflow Value (double)")
-        file.write("# - Segment Material (string)")
-        file.write("# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',")
-        file.write("#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')")
-        file.write("# - Branch Angle (double)")
-        file.write("# - Upstream Segment ID (int)")
-        file.write("# - Branch Segment ID (int)")
-        file.write("# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',")
-        file.write("#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')")
-        file.write("# - Data Table Name (string)\n\n") 
+        # Segment Header
+        file.writeln("# ============")
+        file.writeln("# SEGMENT CARD")
+        file.writeln("# ============")
+        file.writeln("# - Segment Name (string)")
+        file.writeln("# - Segment ID (int)")
+        file.writeln("# - Segment Length (double)")
+        file.writeln("# - Total Finite Elements in Segment (int)")
+        file.writeln("# - Segment Inlet Node (int)")
+        file.writeln("# - Segment Outlet Node (int)")
+        file.writeln("# - Segment Inlet Area (double)")
+        file.writeln("# - Segment Outlet Area (double)")
+        file.writeln("# - Segment Inflow Value (double)")
+        file.writeln("# - Segment Material (string)")
+        file.writeln("# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',")
+        file.writeln("#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')")
+        file.writeln("# - Branch Angle (double)")
+        file.writeln("# - Upstream Segment ID (int)")
+        file.writeln("# - Branch Segment ID (int)")
+        file.writeln("# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',")
+        file.writeln("#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')")
+        file.writeln("# - Data Table Name (string)\n") 
         
         num_seg = self.num_seg
         seg_list = self.seg_list
@@ -795,7 +829,7 @@ class Mesh(object):
         group_Ain = self.group_Ain 
         group_Aout = self.group_Aout 
         uniform_bc = params.uniform_bc
-        outflow_bc = params.outflow_bc_type
+        outflow_bc = params.outflow_bc_type.upper()
         uniform_material = params.uniform_material
         dx = params.dx 
         minnumfe = params.minnumfe
@@ -815,7 +849,10 @@ class Mesh(object):
            if numfe < minnumfe:
              numfe = minnumfe
 
-           file.write("SEGMENT" + " " + "Group"+ str(seg_list[i])+"_Seg"+str(i) + " " + str(i) + " "+ str(group_length[seg_list[i]]) + " " + str(numfe) + " "+ str(seg_head[i]) + " " + str(seg_rear[i]) + " " + str(group_Ain[seg_list[i]])+ " " + str(group_Aout[seg_list[i]])+ " " +"0.0 "+ matname + " NONE 0.0 0 0 ")
+           file.write("SEGMENT" + sp + "Group"+ str(seg_list[i])+"_Seg"+str(i) + sp + str(i) + sp + 
+             str(group_length[seg_list[i]]) + sp + str(numfe) + sp + str(seg_head[i]) + sp + 
+             str(seg_rear[i]) + sp + str(group_Ain[seg_list[i]]) + sp + str(group_Aout[seg_list[i]])+ sp +
+             "0.0 " + matname + " NONE 0.0 0 0 ")
 
            if group_terminal[seg_list[i]] == 1:
               if uniform_bc:
@@ -825,48 +862,59 @@ class Mesh(object):
                 tempgroupid = seg_list[i]
                 tempelemid = group_elems[tempgroupid][0]
                 temppathid = centerline_list[tempelemid]
-                file.write(outflow_bc+ " "+ outflow_bc +"_"+str(path2useroutlet[temppathid])+ " \n")
+                file.writeln(outflow_bc+ " "+ outflow_bc +"_"+str(path2useroutlet[temppathid]))
            else:
-              file.write("NOBOUND NONE \n")   
+              file.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)
-        
         
         file.write("\n\n")
         if uniform_bc == 1:
-           file.write("DATATABLE " + outflow_bc +"_1 LIST \n")
-           file.write(" \n")
-           file.write("ENDDATATABLE \n \n")
+           file.writeln("DATATABLE " + outflow_bc +"_1 LIST")
+           file.writeln(sp)
+           file.writeln("ENDDATATABLE \n")
         else:
            if outflow_bc =="RCR":
             for i in range(0,num_path):
-             file.write("DATATABLE " + outflow_bc +"_"+str(i)+" LIST \n")
+             file.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
              for j in range(0, len(BClist[i])):
-              file.write("0.0 "+ str(BClist[i][j]) +" \n")
-             file.write("ENDDATATABLE \n \n")
+              file.writeln("0.0 "+ str(BClist[i][j]))
+             file.writeln("ENDDATATABLE \n")
            if outflow_bc =="RESISTANCE":
             for i in range(0,num_path):
-             file.write("DATATABLE " + outflow_bc +"_"+str(i)+" LIST \n")
-             file.write("0.0 "+ str(BClist[i]) +" \n")
-             file.write("ENDDATATABLE \n \n")   
+             file.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
+             file.writeln("0.0 "+ str(BClist[i]))
+             file.writeln("ENDDATATABLE \n")   
         
         file.write("\n\n")
-        file.write("DATATABLE INFLOW LIST \n")
+        file.writeln("DATATABLE INFLOW LIST")
         if not inflow_file:
-         file.write("Copy and paste inflow data here. \n")
+         file.writeln("Copy and paste inflow data here.")
         else:
            with open(inflow_file) as inflow:
              for line in inflow:
                file.write(line)
-        file.write("ENDDATATABLE \n")  
+        file.writeln("ENDDATATABLE")  
         file.write("\n\n")
         
         # SolverOptions Header
-        file.write("#  ==================\n# SOLVEROPTIONS CARD\n# ==================\n# - Solver Time Step (double), \n# - Steps Between Saves (int), \n# - Max Number of Steps (int)\n# - Number of quadrature points for finite elements (int), \n# - Name of Datatable for inlet conditions (string)\n# - Type of boundary condition (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',\n#                                        'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')\n# - Convergence tolerance (double), \n# - Formulation Type (int - 0 Advective, 1 Conservative), \n# - Stabilization (int - 0 No stabilization, 1 With stabilization)\n\n")
-        file.write("SOLVEROPTIONS "+ str(timestep)+ " "+ str(tincr) +" "+ str(numtimesteps) + " 2 INFLOW FLOW 1.0e-5 1 1\n\n")
+        file.writeln("# ==================")
+        file.writeln("# SOLVEROPTIONS CARD")
+        file.writeln("# ==================")
+        file.writeln("# - Solver Time Step (double), ")
+        file.writeln("# - Steps Between Saves (int), ")
+        file.writeln("# - Max Number of Steps (int)")
+        file.writeln("# - Number of quadrature points for finite elements (int), ")
+        file.writeln("# - Name of Datatable for inlet conditions (string)")
+        file.writeln("# - Type of boundary condition (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',")
+        file.writeln("#                                        'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')")
+        file.writeln("# - Convergence tolerance (double), ")
+        file.writeln("# - Formulation Type (int - 0 Advective, 1 Conservative), ")
+        file.writeln("# - Stabilization (int - 0 No stabilization, 1 With stabilization)")
+
+        file.writeln("SOLVEROPTIONS "+ str(timestep)+ " "+ str(tincr) +" "+ str(numtimesteps) + " 2 INFLOW FLOW 1.0e-5 1 1\n")
         
         
-        
-          # Material Header
+        # Material section.
         mattype = params.mattype
         density = params.density 
         viscosity = params.viscosity 
@@ -874,19 +922,40 @@ class Mesh(object):
         c2 = params.c2 
         c3 = params.c3 
 
-        file.write("#  =============\n# MATERIAL CARD\n# =============\n# - Material Name (string)\n# - Material Type (string - 'LINEAR','OLUFSEN')\n# - Material Density (double)\n# - Material Viscosity (double)\n# - Material Exponent (double)\n# - Material Parameter 1 (double)\n# - Material Parameter 2 (double)\n# - Material Parameter 3 (double)\n\n")
-        
+        file.writeln("# =============")
+        file.writeln("# MATERIAL CARD")
+        file.writeln("# =============")
+        file.writeln("# - Material Name (string)")
+        file.writeln("# - Material Type (string - 'LINEAR','OLUFSEN')")
+        file.writeln("# - Material Density (double)")
+        file.writeln("# - Material Viscosity (double)")
+        file.writeln("# - Material Exponent (double)")
+        file.writeln("# - Material Parameter 1 (double)")
+        file.writeln("# - Material Parameter 2 (double)")
+        file.writeln("# - Material Parameter 3 (double)")
+
         if uniform_material:
-           file.write("MATERIAL MAT1 " + mattype+" " + str(density)+" "+str(viscosity)+" " + "0.0 1.0 "+str(c1)+" "+str(c2)+" "+str(c3)+ " \n")
+           file.writeln("MATERIAL MAT1 " + mattype + sp + str(density) + sp + str(viscosity) + sp + 
+             "0.0 1.0 "+str(c1)+sp+str(c2)+sp+str(c3))
         
         if not uniform_material:
            for i in range(0,num_seg):
              tmp = 4.0/3.0*matlist[seg_list[i]][0]*matlist[seg_list[i]][1]/math.sqrt((group_Ain[seg_list[i]]+group_Aout[seg_list[i]])/2/3.14)
-             file.write("MATERIAL MAT_group"+str(seg_list[i])+ " " + mattype+" " + str(density)+" "+str(viscosity)+" " + "0.0 1.0 "+str(c1)+" "+str(c2)+" "+str(tmp)+ " \n") 
+             file.writeln("MATERIAL MAT_group"+str(seg_list[i])+ sp  + mattype+sp  + str(density)+sp +str(viscosity)+sp  + 
+               "0.0 1.0 "+str(c1)+sp +str(c2)+sp +str(tmp)) 
         
         
         # Output Header
-        file.write("\n#  ============\n# OUTPUT CARD\n# ============\n#\n# 1. Output file format. The following output types are supported:\n#\t\tTEXT. The output of every segment is written in separate text files for the flow rate, pressure, area and Reynolds number. The rows contain output values at varying locations along the segment while columns contains results at various time instants.\n#\t\tVTK. The results for all time steps are plotted to a 3D-like model using the XML VTK file format.\n# 2. VTK export option. Two options are available for VTK file outputs:\n#\t\t0 - Multiple files (default). A separate file is written for each saved increment. A pvd file is also provided which contains the time information of the sequence. This is the best option to create animations.\n#\t\t1 - The results for all time steps are plotted to a single XML VTK file.\n\n")  
+        file.writeln("# ============")
+        file.writeln("# OUTPUT CARD")
+        file.writeln("# ============")
+        file.writeln("#")
+        file.writeln("# 1. Output file format. The following output types are supported:")
+        file.writeln("#\t\tTEXT. The output of every segment is written in separate text files for the flow rate, pressure, area and Reynolds number. The rows contain output values at varying locations along the segment while columns contains results at various time instants.")
+        file.writeln("#\t\tVTK. The results for all time steps are plotted to a 3D-like model using the XML VTK file format.")
+        file.writeln("# 2. VTK export option. Two options are available for VTK file outputs:")
+        file.writeln("#\t\t0 - Multiple files (default). A separate file is written for each saved increment. A pvd file is also provided which contains the time information of the sequence. This is the best option to create animations.")
+        file.writeln("#\t\t1 - The results for all time steps are plotted to a single XML VTK file.")
 
         # Output properties
         outputformat = params.outputformat
