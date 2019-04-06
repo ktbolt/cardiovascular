@@ -72,13 +72,6 @@ class Mesh(object):
     def __init__(self):
         self.centerlines = None
         self.logger = logging.getLogger(get_logger_name())
-
-    def generate(self, params, centerlines):
-        """ Generate a mesh.
-        """
-        self.centerlines = centerlines
-        self.logger.info("Generate the 1D mesh ...")
-        self.centerlines_geometry = centerlines.branch_geometry
         self.num_cells = None
         self.num_paths = None
         self.path_elems = None
@@ -99,10 +92,20 @@ class Mesh(object):
         self.user_outlet_path = None 
         self.bc_list = None
         self.user_outlet_names = None
+        self.solver_file_msg = "\n\n### DO NOT CHANGE THIS SECTION - generated automatically"
+        self.space = " "
+        self.endl = "\n"
 
-        # if the geometry is in mm, convert to cgs
+        # Units conversion from mm to cgs.
         self.lcoef = 0.1 
         self.Acoef = 0.01
+
+    def generate(self, params, centerlines):
+        """ Generate a mesh.
+        """
+        self.centerlines = centerlines
+        self.logger.info("Generate the 1D mesh ...")
+        self.centerlines_geometry = centerlines.branch_geometry
 
         # Check that centerline geometry has the required data fields.
         if not self.check_centerlines_data():
@@ -725,62 +728,104 @@ class Mesh(object):
         """
         solver_file = params.solver_output_file
         model_name, sep, tail = solver_file.partition('.')
-        sp = " "
-        endl = "\n"
+        sp = self.space
 
         # Open file
-        file = self.Open(solver_file, "w")
+        ofile = self.Open(solver_file, "w")
         #file = open(solver_file, "w")
         
         # Write header
-        file.writeln("# ================================")
-        file.writeln("# " + model_name + " MODEL - UNITS IN CGS")
-        file.writeln("# ================================\n")
+        ofile.writeln("# ================================")
+        ofile.writeln("# " + model_name + " MODEL - UNITS IN CGS")
+        ofile.writeln("# ================================")
+        ofile.writeln("")
           
-        # Model Header
-        file.writeln("# ==========")
-        file.writeln("# MODEL CARD")
-        file.writeln("# ==========")
-        file.writeln("# - Name of the model (string)\n")
-        file.writeln("MODEL " + model_name + " \n")
+        # Write model header.
+        ofile.writeln("# ==========")
+        ofile.writeln("# MODEL CARD")
+        ofile.writeln("# ==========")
+        ofile.writeln("# - Name of the model (string)")
+        ofile.writeln("")
+        ofile.writeln("MODEL " + model_name)
+        ofile.writeln("")
 
         # Write node section.
+        self.write_solver_nodes(ofile, params)
+         
+        # Write joint section.
+        self.write_solver_joints(ofile, params)
+
+        # Write segment section.
+        self.write_solver_segments(ofile, params, centerline_list)
+        
+        # Write SolverOptions section. 
+        self.write_solver_options(ofile, params)
+        
+        # Write material section.
+        self.write_solver_material(ofile, params)
+
+        # Write output section.
+        self.write_solver_output(ofile, params)
+
+        ofile.close()
+        
+    def write_solver_nodes(self, ofile, params):
+        """ Write a solver input file nodes section.
+        """
+        header = [
+          "#", 
+          "# ==========",
+          "# NODE CARD",
+          "# ==========",
+          "# - Node Name (double)",
+          "# - Node X Coordinate (double)",
+          "# - Node Y Coordinate (double)",
+          "# - Node Z Coordinate (double)",
+          "" ]
+
+        ofile.writeln(self.solver_file_msg)
+        self.write_solver_section_header(ofile, header)
+
         nodes = self.nodes
         lcoef = self.lcoef
-        file.writeln("\n\n### DO NOT CHANGE THIS SECTION - generated automatically")
-        file.writeln("#")
-        file.writeln("# ==========")
-        file.writeln("# NODE CARD")
-        file.writeln("# ==========")
-        file.writeln("# - Node Name (double)")
-        file.writeln("# - Node X Coordinate (double)")
-        file.writeln("# - Node Y Coordinate (double)")
-        file.writeln("# - Node Z Coordinate (double)\n")
+        sp = self.space
 
         for i in range(0,len(nodes)):
-          file.writeln("NODE " + str(i) + " ".join(str(lcoef*nodes[i][j]) for j in range(3)) )
-         
-        # Joint Header
-        file.writeln("\n\n\n### DO NOT CHANGE THIS SECTION - generated automatically")
-        file.writeln("#")
-        file.writeln("# ==========")
-        file.writeln("# JOINT CARD")
-        file.writeln("# ==========")
-        file.writeln("# - Joint Name (string)")
-        file.writeln("# - Joint Node (double)")
-        file.writeln("# - Joint Inlet Name (string)")
-        file.writeln("# - Joint Outlet Name (string)\n")
+            ofile.writeln("NODE " + str(i) + " ".join(str(lcoef*nodes[i][j]) for j in range(3)) )
+
+    def write_solver_joints(self, ofile, params):
+        """ Write a solver input file joints section.
+        """
+        header1 = [ 
+          "#",
+          "# ==========",
+          "# JOINT CARD",
+          "# ==========",
+          "# - Joint Name (string)",
+          "# - Joint Node (double)",
+          "# - Joint Inlet Name (string)",
+          "# - Joint Outlet Name (string)",
+          ""]
+
+        header2 = [ 
+          "#",
+          "# ================================",
+          "# JOINTINLET AND JOINTOUTLET CARDS",
+          "# ================================",
+          "# - Inlet/Outlet Name (string)",
+          "# - Total Number of segments (int)",
+          "# - List of segments (list of int)",
+          ""]
         
-        # JointInlet and JointOutlet Header
-        file.writeln("\n### DO NOT CHANGE THIS SECTION - generated automatically")
-        file.writeln("#")
-        file.writeln("# ================================")
-        file.writeln("# JOINTINLET AND JOINTOUTLET CARDS")
-        file.writeln("# ================================")
-        file.writeln("# - Inlet/Outlet Name (string)")
-        file.writeln("# - Total Number of segments (int)")
-        file.writeln("# - List of segments (list of int)\n")
+        # Joint header.
+        ofile.writeln(self.solver_file_msg)
+        self.write_solver_section_header(ofile, header1)
+
+        # JointInlet and JointOutlet header.
+        ofile.writeln(self.solver_file_msg)
+        self.write_solver_section_header(ofile, header2)
         
+        sp = self.space
         seg_connectivity = self.seg_connectivity
         seg_rear = self.seg_rear 
 
@@ -789,36 +834,42 @@ class Mesh(object):
           joint = "JOINT J" + str(i) + sp + str(seg_rear[pargroupid])
           jin = "IN" + str(i)
           jout = "OUT" + str(i)
-          file.writeln(joint + sp + jin + sp + jout)
-          file.writeln("JOINTINLET IN" + str(i) + sp + "1 " + str(seg_connectivity[i][0]))
-          file.write("JOINTOUTLET OUT" + str(i) + sp + str(len(seg_connectivity[i])-1))
+          ofile.writeln(joint + sp + jin + sp + jout)
+          ofile.writeln("JOINTINLET IN" + str(i) + sp + "1 " + str(seg_connectivity[i][0]))
+          ofile.write("JOINTOUTLET OUT" + str(i) + sp + str(len(seg_connectivity[i])-1))
           for j in range(1,len(seg_connectivity[i])): 
-             file.write(sp + str(seg_connectivity[i][j]))
-          file.write("\n\n")
+             ofile.write(sp + str(seg_connectivity[i][j]))
+          ofile.write("\n\n")
 
-        # Segment Header
-        file.writeln("# ============")
-        file.writeln("# SEGMENT CARD")
-        file.writeln("# ============")
-        file.writeln("# - Segment Name (string)")
-        file.writeln("# - Segment ID (int)")
-        file.writeln("# - Segment Length (double)")
-        file.writeln("# - Total Finite Elements in Segment (int)")
-        file.writeln("# - Segment Inlet Node (int)")
-        file.writeln("# - Segment Outlet Node (int)")
-        file.writeln("# - Segment Inlet Area (double)")
-        file.writeln("# - Segment Outlet Area (double)")
-        file.writeln("# - Segment Inflow Value (double)")
-        file.writeln("# - Segment Material (string)")
-        file.writeln("# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',")
-        file.writeln("#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')")
-        file.writeln("# - Branch Angle (double)")
-        file.writeln("# - Upstream Segment ID (int)")
-        file.writeln("# - Branch Segment ID (int)")
-        file.writeln("# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',")
-        file.writeln("#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')")
-        file.writeln("# - Data Table Name (string)\n") 
+    def write_solver_segments(self, ofile, params, centerline_list):
+        """ Write a solver input file joints section.
+        """
+        header = [
+          "# ============",
+          "# SEGMENT CARD",
+          "# ============",
+          "# - Segment Name (string)",
+          "# - Segment ID (int)",
+          "# - Segment Length (double)",
+          "# - Total Finite Elements in Segment (int)",
+          "# - Segment Inlet Node (int)",
+          "# - Segment Outlet Node (int)",
+          "# - Segment Inlet Area (double)",
+          "# - Segment Outlet Area (double)",
+          "# - Segment Inflow Value (double)",
+          "# - Segment Material (string)",
+          "# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',",
+          "#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')",
+          "# - Branch Angle (double)",
+          "# - Upstream Segment ID (int)",
+          "# - Branch Segment ID (int)",
+          "# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',",
+          "#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')",
+          "# - Data Table Name (string)", 
+          ""]
+        self.write_solver_section_header(ofile, header)
         
+        sp = self.space
         num_seg = self.num_seg
         seg_list = self.seg_list
         seg_rear = self.seg_rear 
@@ -834,9 +885,6 @@ class Mesh(object):
         dx = params.dx 
         minnumfe = params.minnumfe
         inflow_file = params.inflow_input_file 
-        timestep = params.timestep 
-        numtimesteps = params.numtimesteps
-        tincr = params.tincr 
 
         for i in range(0,num_seg):
            if uniform_material:
@@ -849,119 +897,149 @@ class Mesh(object):
            if numfe < minnumfe:
              numfe = minnumfe
 
-           file.write("SEGMENT" + sp + "Group"+ str(seg_list[i])+"_Seg"+str(i) + sp + str(i) + sp + 
+           ofile.write("SEGMENT" + sp + "Group"+ str(seg_list[i])+"_Seg"+str(i) + sp + str(i) + sp + 
              str(group_length[seg_list[i]]) + sp + str(numfe) + sp + str(seg_head[i]) + sp + 
              str(seg_rear[i]) + sp + str(group_Ain[seg_list[i]]) + sp + str(group_Aout[seg_list[i]])+ sp +
              "0.0 " + matname + " NONE 0.0 0 0 ")
 
            if group_terminal[seg_list[i]] == 1:
               if uniform_bc:
-                file.write(outflow_bc+ " " + outflow_bc +"_1 \n")
+                ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
                 #print("###### bug: group_terminal[seg_list[i]] == 1")
               else:
                 tempgroupid = seg_list[i]
                 tempelemid = group_elems[tempgroupid][0]
                 temppathid = centerline_list[tempelemid]
-                file.writeln(outflow_bc+ " "+ outflow_bc +"_"+str(path2useroutlet[temppathid]))
+                ofile.writeln(outflow_bc+ " "+ outflow_bc +"_"+str(path2useroutlet[temppathid]))
            else:
-              file.writeln("NOBOUND NONE")   
+              ofile.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)
-        
-        file.write("\n\n")
+
+        ofile.writeln("")
+        ofile.writeln("")
         if uniform_bc == 1:
-           file.writeln("DATATABLE " + outflow_bc +"_1 LIST")
-           file.writeln(sp)
-           file.writeln("ENDDATATABLE \n")
+           ofile.writeln("DATATABLE " + outflow_bc +"_1 LIST")
+           ofile.writeln(sp)
+           ofile.writeln("ENDDATATABLE")
+           ofile.writeln("")
         else:
            if outflow_bc =="RCR":
             for i in range(0,num_path):
-             file.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
+             ofile.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
              for j in range(0, len(BClist[i])):
-              file.writeln("0.0 "+ str(BClist[i][j]))
-             file.writeln("ENDDATATABLE \n")
+              ofile.writeln("0.0 "+ str(BClist[i][j]))
+             ofile.writeln("ENDDATATABLE")
+             ofile.writeln("")
            if outflow_bc =="RESISTANCE":
             for i in range(0,num_path):
-             file.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
-             file.writeln("0.0 "+ str(BClist[i]))
-             file.writeln("ENDDATATABLE \n")   
+             ofile.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
+             ofile.writeln("0.0 "+ str(BClist[i]))
+             ofile.writeln("ENDDATATABLE")   
+             ofile.writeln("")
         
-        file.write("\n\n")
-        file.writeln("DATATABLE INFLOW LIST")
+        ofile.writeln("")
+        ofile.writeln("")
+        ofile.writeln("DATATABLE INFLOW LIST")
         if not inflow_file:
-         file.writeln("Copy and paste inflow data here.")
+         ofile.writeln("Copy and paste inflow data here.")
         else:
            with open(inflow_file) as inflow:
              for line in inflow:
-               file.write(line)
-        file.writeln("ENDDATATABLE")  
-        file.write("\n\n")
-        
-        # SolverOptions Header
-        file.writeln("# ==================")
-        file.writeln("# SOLVEROPTIONS CARD")
-        file.writeln("# ==================")
-        file.writeln("# - Solver Time Step (double), ")
-        file.writeln("# - Steps Between Saves (int), ")
-        file.writeln("# - Max Number of Steps (int)")
-        file.writeln("# - Number of quadrature points for finite elements (int), ")
-        file.writeln("# - Name of Datatable for inlet conditions (string)")
-        file.writeln("# - Type of boundary condition (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',")
-        file.writeln("#                                        'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')")
-        file.writeln("# - Convergence tolerance (double), ")
-        file.writeln("# - Formulation Type (int - 0 Advective, 1 Conservative), ")
-        file.writeln("# - Stabilization (int - 0 No stabilization, 1 With stabilization)")
+               ofile.write(line)
+        ofile.writeln("ENDDATATABLE")  
+        ofile.writeln("")
+        ofile.writeln("")
 
-        file.writeln("SOLVEROPTIONS "+ str(timestep)+ " "+ str(tincr) +" "+ str(numtimesteps) + " 2 INFLOW FLOW 1.0e-5 1 1\n")
-        
-        
-        # Material section.
+    def write_solver_options(self, ofile, params):
+        """ Write a solver input file options section.
+        """
+        header = [
+          "# ==================",
+          "# SOLVEROPTIONS CARD",
+          "# ==================",
+          "# - Solver Time Step (double), ",
+          "# - Steps Between Saves (int), ",
+          "# - Max Number of Steps (int)",
+          "# - Number of quadrature points for finite elements (int), ",
+          "# - Name of Datatable for inlet conditions (string)",
+          "# - Type of boundary condition (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',",
+          "#                                        'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')",
+          "# - Convergence tolerance (double), ",
+          "# - Formulation Type (int - 0 Advective, 1 Conservative), ",
+          "# - Stabilization (int - 0 No stabilization, 1 With stabilization)",
+          ""]
+        self.write_solver_section_header(ofile, header)
+
+        sp = self.space
+        timestep = params.timestep
+        numtimesteps = params.numtimesteps
+        tincr = params.tincr
+
+        ofile.writeln("SOLVEROPTIONS "+ str(timestep)+ " "+ str(tincr) +" "+ str(numtimesteps) + " 2 INFLOW FLOW 1.0e-5 1 1")
+        ofile.writeln("")
+
+    def write_solver_material(self, ofile, params):
+        """ Write a solver input file material section.
+        """
+        header = [
+          "# =============",
+          "# MATERIAL CARD",
+          "# =============",
+          "# - Material Name (string)",
+          "# - Material Type (string - 'LINEAR','OLUFSEN')",
+          "# - Material Density (double)",
+          "# - Material Viscosity (double)",
+          "# - Material Exponent (double)",
+          "# - Material Parameter 1 (double)",
+          "# - Material Parameter 2 (double)",
+          "# - Material Parameter 3 (double)",
+          ""]
+        self.write_solver_section_header(ofile, header)
+
+        sp = self.space
         mattype = params.mattype
-        density = params.density 
-        viscosity = params.viscosity 
-        c1 = params.c1 
-        c2 = params.c2 
-        c3 = params.c3 
-
-        file.writeln("# =============")
-        file.writeln("# MATERIAL CARD")
-        file.writeln("# =============")
-        file.writeln("# - Material Name (string)")
-        file.writeln("# - Material Type (string - 'LINEAR','OLUFSEN')")
-        file.writeln("# - Material Density (double)")
-        file.writeln("# - Material Viscosity (double)")
-        file.writeln("# - Material Exponent (double)")
-        file.writeln("# - Material Parameter 1 (double)")
-        file.writeln("# - Material Parameter 2 (double)")
-        file.writeln("# - Material Parameter 3 (double)")
+        density = params.density
+        viscosity = params.viscosity
+        c1 = params.c1
+        c2 = params.c2
+        c3 = params.c3
+        uniform_material = params.uniform_material
 
         if uniform_material:
-           file.writeln("MATERIAL MAT1 " + mattype + sp + str(density) + sp + str(viscosity) + sp + 
+           ofile.writeln("MATERIAL MAT1 " + mattype + sp + str(density) + sp + str(viscosity) + sp +
              "0.0 1.0 "+str(c1)+sp+str(c2)+sp+str(c3))
-        
+
         if not uniform_material:
            for i in range(0,num_seg):
              tmp = 4.0/3.0*matlist[seg_list[i]][0]*matlist[seg_list[i]][1]/math.sqrt((group_Ain[seg_list[i]]+group_Aout[seg_list[i]])/2/3.14)
-             file.writeln("MATERIAL MAT_group"+str(seg_list[i])+ sp  + mattype+sp  + str(density)+sp +str(viscosity)+sp  + 
-               "0.0 1.0 "+str(c1)+sp +str(c2)+sp +str(tmp)) 
-        
-        
-        # Output Header
-        file.writeln("# ============")
-        file.writeln("# OUTPUT CARD")
-        file.writeln("# ============")
-        file.writeln("#")
-        file.writeln("# 1. Output file format. The following output types are supported:")
-        file.writeln("#\t\tTEXT. The output of every segment is written in separate text files for the flow rate, pressure, area and Reynolds number. The rows contain output values at varying locations along the segment while columns contains results at various time instants.")
-        file.writeln("#\t\tVTK. The results for all time steps are plotted to a 3D-like model using the XML VTK file format.")
-        file.writeln("# 2. VTK export option. Two options are available for VTK file outputs:")
-        file.writeln("#\t\t0 - Multiple files (default). A separate file is written for each saved increment. A pvd file is also provided which contains the time information of the sequence. This is the best option to create animations.")
-        file.writeln("#\t\t1 - The results for all time steps are plotted to a single XML VTK file.")
+             ofile.writeln("MATERIAL MAT_group"+str(seg_list[i])+ sp  + mattype+sp  + str(density)+sp +str(viscosity)+sp  +
+               "0.0 1.0 "+str(c1)+sp +str(c2)+sp +str(tmp))
 
-        # Output properties
+    def write_solver_output(self, ofile, params):
+        """ Write a solver input file output section.
+        """
+        header = [
+          "# ============",
+          "# OUTPUT CARD",
+          "# ============",
+          "#",
+          "# 1. Output file format. The following output types are supported:",
+          "#\t\tTEXT. The output of every segment is written in separate text files for the flow rate, pressure, area and Reynolds number. The rows contain output values at varying locations along the segment while columns contains results at various time instants.",
+          "#\t\tVTK. The results for all time steps are plotted to a 3D-like model using the XML VTK file format.",
+          "# 2. VTK export option. Two options are available for VTK file outputs:",
+          "#\t\t0 - Multiple files (default). A separate file is written for each saved increment. A pvd file is also provided which contains the time information of the sequence. This is the best option to create animations.",
+          "#\t\t1 - The results for all time steps are plotted to a single XML VTK file.",
+          ""]
+        ofile.writeln("")
+        self.write_solver_section_header(ofile, header)
+
         outputformat = params.outputformat
-        file.write("OUTPUT "+outputformat)
-        file.write("\n") 
-        
-        # Close file
-        file.close()
-        
+        ofile.writeln("OUTPUT "+outputformat)
+ 
+    def write_solver_section_header(self, ofile, header):
+        """ Write a solver input file section header.
+        """
+        endl = self.endl
+        hdr = endl.join(line for line in header)
+        ofile.writeln(hdr)
+
