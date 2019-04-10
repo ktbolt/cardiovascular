@@ -13,12 +13,16 @@ class Parameters():
         self.centerlines_input_file = None
         self.centerlines_output_file = None
         self.compute_centerlines = True
+        self.compute_mesh = False
+        self.mesh_output_file = None
         self.reorganize_seqments = False
         self.solver_output_file = None
         self.surface_model = None
         self.uniform_material = True
         self.wall_properties_input_file = None
         self.wall_properties_output_file = None
+        self.write_mesh_file = False
+        self.write_solver_file = False
 
         self.outputformat = "TEXT"
 

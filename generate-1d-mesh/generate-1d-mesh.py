@@ -24,7 +24,9 @@ class Args(object):
     CENTERLINE_INPUT_FILE = "centerlines_input_file"
     CENTERLINE_OUTPUT_FILE = "centerlines_output_file"
     COMPUTE_CENTERLINES = "compute_centerlines"
+    COMPUTE_MESH = "compute_mesh"
     INFLOW_INPUT_FILE = "inflow_input_file"
+    MESH_OUTPUT_FILE = "mesh_output_file"
     OUTFLOW_BC_TYPE = "outflow_bc_type"
     OUTPUT_DIRECTORY = "output_directory"
     SOLVER_OUTPUT_FILE = "solver_output_file"
@@ -32,6 +34,8 @@ class Args(object):
     UNIFORM_BC = "uniform_bc"
     WALL_PROPERTIES_INPUT_FILE = "wall_properties_input_file"
     WALL_PROPERTIES_OUTPUT_FILE = "wall_properties_output_file"
+    WRITE_MESH_FILE = "write_mesh_file"
+    WRITE_SOLVER_FILE = "write_solver_file"
     
 def cmd(name):
     """ Create an argparse command argument.
@@ -54,8 +58,14 @@ def parse_args():
     parser.add_argument(cmd(Args.COMPUTE_CENTERLINES), const=True, nargs='?', default=False, 
       help="If given or value is set to 1 then compute centerlines.")
 
+    parser.add_argument(cmd(Args.COMPUTE_MESH), const=True, nargs='?', default=False, 
+      help="If given or value is set to 1 then compute a mesh from centerlines..")
+
     parser.add_argument(cmd(Args.INFLOW_INPUT_FILE), 
       help="The name of the file to read inflow data from.")
+
+    parser.add_argument(cmd(Args.MESH_OUTPUT_FILE), 
+      help="The name of the file to write the mesh to.")
 
     parser.add_argument(cmd(Args.OUTFLOW_BC_TYPE), 
       help="The output boundary condition type (RESISTANCE, RCR).")
@@ -63,7 +73,7 @@ def parse_args():
     parser.add_argument(cmd(Args.OUTPUT_DIRECTORY), required=True, 
       help="The directory where output files are written.")
 
-    parser.add_argument(cmd(Args.SOLVER_OUTPUT_FILE), required=True,
+    parser.add_argument(cmd(Args.SOLVER_OUTPUT_FILE), 
       help="The name of the file to write the solver input to.")
 
     parser.add_argument(cmd(Args.SURFACE_MODEL), 
@@ -78,12 +88,19 @@ def parse_args():
     parser.add_argument(cmd(Args.WALL_PROPERTIES_OUTPUT_FILE), 
       help = "The name of the file write grouped wall material properties to.")
 
+    parser.add_argument(cmd(Args.WRITE_MESH_FILE), const=True, nargs='?', default=False, 
+      help="If given or value is set to 1 then write a mesh file..")
+
+    parser.add_argument(cmd(Args.WRITE_SOLVER_FILE), const=True, nargs='?', default=False, 
+      help="If given or value is set to 1 then write a solver file..")
+
     return parser.parse_args(), parser.print_help
 
 def set_parameters(**kwargs):
     """ Set the values of parameters input from the command line.
     """
     logger.info("Parse arguments ...")
+    print(kwargs)
 
     ## Create a Parameters object to store parameters.
     params = Parameters()
@@ -120,6 +137,11 @@ def set_parameters(**kwargs):
       (kwargs.get(Args.COMPUTE_CENTERLINES) in true_values)
     logger.info("Compute centerlines: %s" % params.compute_centerlines) 
 
+    # The 'compute_mesh' parameter is set to True if the COMPUTE_MESH 
+    # argument is given with no value. Otherwise it is set to the value given.
+    params.compute_mesh = (kwargs.get(Args.COMPUTE_MESH) == True) or \
+      (kwargs.get(Args.COMPUTE_MESH) in true_values)
+
     if kwargs.get(Args.INFLOW_INPUT_FILE):
         params.inflow_input_file = kwargs.get(Args.INFLOW_INPUT_FILE)
         logger.info("Inflow input file: %s" % params.inflow_input_file)
@@ -131,6 +153,11 @@ def set_parameters(**kwargs):
     if not os.path.exists(params.output_directory):
         logger.error("The output directory '%s' was not found." % params.output_directory)
         return None
+
+    if kwargs.get(Args.MESH_OUTPUT_FILE):
+        params.mesh_output_file = kwargs.get(Args.MESH_OUTPUT_FILE)
+        if not os.path.exists(params.mesh_output_file):
+            logger.info("Mesh output file: %s" % params.mesh_output_file)
 
     if kwargs.get(Args.OUTFLOW_BC_TYPE):
         bc_type = kwargs.get(Args.OUTFLOW_BC_TYPE).lower()
@@ -168,6 +195,19 @@ def set_parameters(**kwargs):
     if kwargs.get(Args.WALL_PROPERTIES_OUTPUT_FILE):
         params.wall_properties_output_file = kwargs.get(Args.WALL_PROPERTIES_OUTPUT_FILE)
         logger.info("Wall properties output file: %s" % params.wall_properties_output_file)
+
+    # The 'write_mesh_file' parameter is set to True if the WRITE_MESH_FILE
+    # argument is given with no value. Otherwise it is set to the value given.
+    params.write_mesh_file = (kwargs.get(Args.WRITE_MESH_FILE) == True) or \
+      (kwargs.get(Args.WRITE_MESH_FILE) in true_values)
+    logger.info("Write mesh file: %s" % params.write_mesh_file)
+
+    # The 'write_solver_file' parameter is set to True if the WRITE_SOLVER_FILE
+    # argument is given with no value. Otherwise it is set to the value given.
+    params.write_solver_file = (kwargs.get(Args.WRITE_SOLVER_FILE) == True) or \
+      (kwargs.get(Args.WRITE_SOLVER_FILE) in true_values)
+    logger.info("Write solver file: %s" % params.write_solver_file)
+
 
     ## Check for argument consistency.
     #

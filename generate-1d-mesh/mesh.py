@@ -20,6 +20,7 @@ import numpy as np
 from vmtk import vtkvmtk,vmtkscripts
 import vtk.util.numpy_support as nps
 from vtk import vtkIdList
+from vtk import vtkPoints, vtkLine, vtkCellArray, vtkPolyData, vtkXMLPolyDataWriter
 from utils import SurfaceFileFormats, read_polydata, write_polydata
 
 class Mesh(object):
@@ -142,10 +143,12 @@ class Mesh(object):
         if params.reorganize_seqments:
             self.reorganize_child_segments(centerline_list, group_list, tract_list)
 
-        self.write_solver_file(params, centerline_list)
+        if params.write_mesh_file:
+            self.write_mesh(params, centerline_list, group_list)
 
-        self.write_results(params, centerline_list, group_list)
-        
+        if params.write_solver_file:
+            self.write_solver_file(params, centerline_list)
+            self.write_results(params, centerline_list, group_list)
 
     def calculate_connectivity(self, params, blank_list, centerline_list, group_list, tract_list):
         """ calculate connectivity.
@@ -219,6 +222,46 @@ class Mesh(object):
         self.group_terminal = group_terminal 
         self.connectivity = connectivity
         self.seg_connectivity = seg_connectivity
+
+    def write_mesh(self, params, centerline_list, group_list):
+        ## Write the 1D mesh to a VTK VTP format file. 
+        #
+        output_dir = params.output_directory
+        file_name = path.join(output_dir, params.mesh_output_file) 
+
+        # Add nodes.
+        nodes = self.nodes
+        lcoef = self.lcoef
+        points = vtkPoints()
+        for i in range(0,len(nodes)):
+            points.InsertNextPoint([lcoef*nodes[i][0], lcoef*nodes[i][1], lcoef*nodes[i][2]])
+
+        # Add connectivity.
+        seg_head = self.seg_head
+        seg_rear = self.seg_rear
+        num_seg = self.num_seg
+        lines = vtkCellArray()
+
+        for i in range(0,num_seg):
+           id1 = seg_head[i]
+           id2 = seg_rear[i]
+           line = vtkLine()
+           line.GetPointIds().SetId(0,id1) 
+           line.GetPointIds().SetId(1,id2)
+           lines.InsertNextCell(line)
+        #__for i in range(0,num_seg)
+
+        # Create polydata.
+        polydata = vtkPolyData()
+        polydata.SetPoints(points)
+        polydata.SetLines(lines)
+        polydata.Modified()
+
+        # Write the VTP file.
+        writer = vtkXMLPolyDataWriter();
+        writer.SetFileName(file_name);
+        writer.SetInputData(polydata)
+        writer.Write()
 
     def write_results(self, params, centerline_list, group_list):
         ## Write connectivity and other information.
@@ -726,6 +769,7 @@ class Mesh(object):
     def write_solver_file(self, params, centerline_list):
         """ Write a solver input file.
         """
+        self.logger.info("Write solver file.")
         solver_file = params.solver_output_file
         model_name, sep, tail = solver_file.partition('.')
         sp = self.space
@@ -791,7 +835,7 @@ class Mesh(object):
         sp = self.space
 
         for i in range(0,len(nodes)):
-            ofile.writeln("NODE " + str(i) + " ".join(str(lcoef*nodes[i][j]) for j in range(3)) )
+            ofile.writeln("NODE " + str(i) + sp + sp.join(str(lcoef*nodes[i][j]) for j in range(3)) )
 
     def write_solver_joints(self, ofile, params):
         """ Write a solver input file joints section.
