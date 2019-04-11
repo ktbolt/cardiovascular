@@ -12,7 +12,8 @@ import logging
 from manage import get_logger_name
 
 import vtk
-from vmtk import vtkvmtk,vmtkscripts
+#[DaveP] this does not work in sv.
+#from vmtk import vtkvmtk,vmtkscripts
 
 from utils import SurfaceFileFormats, read_surface, get_polydata_centroid
 

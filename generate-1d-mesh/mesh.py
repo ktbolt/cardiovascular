@@ -17,7 +17,8 @@ from manage import get_logger_name
 from parameters import OutflowBoundaryConditionType 
 
 import numpy as np
-from vmtk import vtkvmtk,vmtkscripts
+#[DaveP] this does not work in sv.
+#from vmtk import vtkvmtk,vmtkscripts
 import vtk.util.numpy_support as nps
 from vtk import vtkIdList
 from vtk import vtkPoints, vtkLine, vtkCellArray, vtkPolyData, vtkXMLPolyDataWriter

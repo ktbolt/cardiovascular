@@ -6,7 +6,7 @@ This module provides the interface to the modules creating a 1D mesh used for 1D
 """
 import argparse
 import sys
-from os import path
+import os 
 
 from manage import get_logger_name, init_logging
 from parameters import Parameters
