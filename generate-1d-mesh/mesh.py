@@ -98,10 +98,6 @@ class Mesh(object):
         self.space = " "
         self.endl = "\n"
 
-        # Units conversion from mm to cgs.
-        self.lcoef = 0.1 
-        self.Acoef = 0.01
-
     def generate(self, params, centerlines):
         """ Generate a mesh.
         """
@@ -137,7 +133,7 @@ class Mesh(object):
 
         self.calculate_connectivity(params, blank_list, centerline_list, group_list, tract_list)
 
-        self.calculate_seg_lengths(centerline_list, group_list, tract_list)
+        self.calculate_seg_lengths(params, centerline_list, group_list, tract_list)
 
         self.calculate_node_coordinates(centerline_list, group_list, tract_list)
 
@@ -232,7 +228,7 @@ class Mesh(object):
 
         # Add nodes.
         nodes = self.nodes
-        lcoef = self.lcoef
+        lcoef = params.lcoef
         points = vtkPoints()
         for i in range(0,len(nodes)):
             points.InsertNextPoint([lcoef*nodes[i][0], lcoef*nodes[i][1], lcoef*nodes[i][2]])
@@ -327,8 +323,8 @@ class Mesh(object):
         #__for i in range(num_groups)
 
         if (tmp != len(self.group_elems[0])) or (tmp != num_outlet) or (self.num_paths != num_outlet):
-            print( "warning: inlet group id is not 0 or number of centerlines is not equal to the number of outlets")
-            print( "num_path=",num_path,"num_outlet=",num_outlet,"len(group_elems[0])=",len(group_elems[0]),"tmp=",tmp)
+            print( "Warning: inlet group id is not 0 or number of centerlines is not equal to the number of outlets")
+            print( "num_path=",self.num_paths,"num_outlet=",num_outlet,"len(group_elems[0])=",len(self.group_elems[0]),"tmp=",tmp)
             exit()
 
         num_seg = self.num_groups - num_bif
@@ -502,7 +498,7 @@ class Mesh(object):
         return nps.vtk_to_numpy(cell_data)
 
 
-    def calculate_seg_lengths(self, centerline_list, group_list, tract_list):
+    def calculate_seg_lengths(self, params, centerline_list, group_list, tract_list):
         """ calculate seg length, Ain and Aout
         """
         num_groups = self.num_groups
@@ -545,9 +541,9 @@ class Mesh(object):
                 #__for k in range(0,num_ids-2)
             #__for j in range(0,len(group_elems[i]))
          
-            tmpl = self.lcoef * tmpl/len(group_elems[i])
-            tmpAin = self.Acoef * tmpAin/len(group_elems[i])
-            tmpAout = self.Acoef * tmpAout/len(group_elems[i])
+            tmpl = params.lcoef * tmpl/len(group_elems[i])
+            tmpAin = params.Acoef * tmpAin/len(group_elems[i])
+            tmpAout = params.Acoef * tmpAout/len(group_elems[i])
  
             if (tmpAin < tmpAout) and (group_terminal[i] != 2):
                 print("warning! Ain<Aout in group id = ",i)
@@ -832,7 +828,7 @@ class Mesh(object):
         self.write_solver_section_header(ofile, header)
 
         nodes = self.nodes
-        lcoef = self.lcoef
+        lcoef = params.lcoef
         sp = self.space
 
         for i in range(0,len(nodes)):

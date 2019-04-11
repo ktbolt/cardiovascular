@@ -15,7 +15,8 @@ import vtk
 #[DaveP] this does not work in sv.
 #from vmtk import vtkvmtk,vmtkscripts
 
-from utils import SurfaceFileFormats, read_surface, get_polydata_centroid
+from utils import SurfaceFileFormats, read_surface, get_polydata_centroid, read_polydata
+
 
 class Centerlines(object):
     """ The Centerlines class is used to encapsulate centerline calculations.
@@ -24,6 +25,7 @@ class Centerlines(object):
     """
     def __init__(self):
 
+        self.inlet_face_name = None
         self.inlet_center = None
         self.outlet_centers = []
         self.outlet_face_names = []
@@ -62,7 +64,7 @@ class Centerlines(object):
     def extract_branches(self, params):
         """ Split and group centerlines along branches. 
         """
-        self.logger.info("Split and group centerlines along branche ...");
+        self.logger.info("Split and group centerlines along branches ...");
         branch_extractor = vmtkscripts.vmtkBranchExtractor()
         branch_extractor.Centerlines = self.geometry 
         branch_extractor.Execute()
@@ -70,12 +72,20 @@ class Centerlines(object):
         #print(self.centerlines_branch_geometry)
         self.logger.info("The centerlines branches have been calculated.");
 
+    def read(self, params, file_name):
+        """ Read centerlines from a .vtp file.
+
+        The centerlines must have been split and grouped along branches.
+        """
+        self.branch_geometry = read_polydata(file_name)
+
     def get_inlet_outlet_centers(self, params):
         """ Get the centers of the inlet and outlet surface geometry.
 
             Surface inlet and outlet faces are identifed by their file name. 
         """
         surf_mesh_dir = Path(params.boundary_surfaces_dir)
+        inlet_file_name = params.inlet_face_input_file
         self.outlet_face_names = []
 
         for face_file in surf_mesh_dir.iterdir():
@@ -86,11 +96,12 @@ class Centerlines(object):
             if file_suffix not in SurfaceFileFormats or file_name.lower().startswith('wall'):
                 continue
 
-            if (face_file.stem == "inflow"):
+            if (file_name == inlet_file_name):
                 inlet_path = str(face_file.absolute())
                 self.logger.info("Inlet file: %s" % inlet_path)
                 polydata = read_surface(inlet_path, file_suffix)
                 self.inlet_center = get_polydata_centroid(polydata)
+                self.inlet_face_name = face_file.stem 
             else:
                 outlet_path = str(face_file.absolute())
                 self.outlet_face_names.append(face_file.stem)
@@ -99,6 +110,9 @@ class Centerlines(object):
                 # Use extend because vmtk expects a list of floats.
                 self.outlet_centers.extend(get_polydata_centroid(polydata))
         #__for face_file in surf_mesh_dir.iterdir()
+
+        if (not self.inlet_face_name):
+            raise RuntimeError("No inlet face found in the boundary surface directory '%s'" % params.boundary_surfaces_dir)
 
         self.logger.info("Number of outlet faces: %d" % len(self.outlet_centers))
 

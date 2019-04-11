@@ -3,6 +3,9 @@
 """ 
 This module provides the interface to the modules creating a 1D mesh used for 1D simulations. 
 
+Centerlines can be computed or read in. If centerline are read from a file then they must have 
+been split and grouped along branches. If you are reading the centerlines computed by the SimVascular 
+Models plugin then the Full_Centerlines.vtp file must be used.
 """
 import argparse
 import sys
@@ -25,6 +28,7 @@ class Args(object):
     CENTERLINE_OUTPUT_FILE = "centerlines_output_file"
     COMPUTE_CENTERLINES = "compute_centerlines"
     COMPUTE_MESH = "compute_mesh"
+    INLET_FACE_INPUT_FILE = "inlet_face_input_file"
     INFLOW_INPUT_FILE = "inflow_input_file"
     MESH_OUTPUT_FILE = "mesh_output_file"
     OUTFLOW_BC_TYPE = "outflow_bc_type"
@@ -63,6 +67,9 @@ def parse_args():
 
     parser.add_argument(cmd(Args.INFLOW_INPUT_FILE), 
       help="The name of the file to read inflow data from.")
+
+    parser.add_argument(cmd(Args.INLET_FACE_INPUT_FILE), 
+      help="The name of the file (.vtp) defining the inlet face geometry.")
 
     parser.add_argument(cmd(Args.MESH_OUTPUT_FILE), 
       help="The name of the file to write the mesh to.")
@@ -126,10 +133,6 @@ def set_parameters(**kwargs):
     if kwargs.get(Args.CENTERLINE_OUTPUT_FILE): 
         params.centerlines_output_file = kwargs.get(Args.CENTERLINE_OUTPUT_FILE)
         logger.info("Centerlines output file: %s" % params.centerlines_output_file)
-        if not os.path.exists(params.centerlines_output_file):
-            logger.error("The centerlines output file '%s' was not found." % 
-              params.centerlines_output_file)
-            return None
 
     # The 'compute_centerlines' parameter is set to True if the COMPUTE_CENTERLINES 
     # argument is given with no value. Otherwise it is set to the value given.
@@ -148,6 +151,18 @@ def set_parameters(**kwargs):
         if not os.path.exists(params.surface_model):
             logger.error("The inflow input file '%s' was not found." % params.inflow_input_file) 
             return None
+
+    if kwargs.get(Args.INLET_FACE_INPUT_FILE):
+        params.inlet_face_input_file = kwargs.get(Args.INLET_FACE_INPUT_FILE)
+        if os.path.dirname(params.inlet_face_input_file):
+            logger.error("The inlet face input file '%s' should not have a full path." % params.inlet_face_input_file) 
+            return None
+        inlet_file = os.path.join(params.boundary_surfaces_dir,params.inlet_face_input_file)
+        if not os.path.exists(inlet_file):
+            logger.error("The inlet face input file '%s' was not found in the boundary surfaces diretory '%s'." % \
+                (params.inlet_face_input_file,params.boundary_surfaces_dir))
+            return None
+        logger.info("Inlet face input file: %s" % params.inlet_face_input_file)
 
     params.output_directory = kwargs.get(Args.OUTPUT_DIRECTORY)
     if not os.path.exists(params.output_directory):
@@ -215,6 +230,10 @@ def set_parameters(**kwargs):
         logger.error("Both compute centerlines and read centerlines are given.")
         return None
 
+    if params.compute_centerlines and not params.inlet_face_input_file:
+        logger.error("An inlet face file must be given when computing centerlines.")
+        return None
+
     if params.wall_properties_input_file and not params.wall_properties_output_file: 
         logger.error("If a wall properties input file is given then a wall properties output file must also be given.")
         return None
@@ -223,9 +242,11 @@ def set_parameters(**kwargs):
 
 def read_centerlines(params):
     """ Read centerlines for a surface model from a file.
+    
+    The centerlines must have had 
     """
     centerlines = Centerlines()
-    centerlines.branch_geometry = read_polydata(params.centerlines_input_file)
+    centerlines.read(params, params.centerlines_input_file)
 
     logger.info("Read centerlines from the file: %s", params.centerlines_input_file) 
     logger.info("   Number of points: %d ", centerlines.branch_geometry.GetNumberOfPoints())
@@ -296,6 +317,6 @@ if __name__ == '__main__':
     init_logging()
     args, print_help = parse_args()
     if not run(**vars(args)):
-        print_help()
+        #print_help()
         sys.exit(1)
 

@@ -7,6 +7,10 @@ class OutflowBoundaryConditionType(object):
 class Parameters():
     """ The Parameter class stores the input parameters for a 1D mesh generation.
     """
+    class Units(object):
+        MM = "mm"
+        CM = "cm"
+
     def __init__(self):
         self.boundary_surfaces_dir = None
         self.output_directory = None
@@ -27,6 +31,7 @@ class Parameters():
         self.outputformat = "TEXT"
 
         self.inflow_input_file = None
+        self.inlet_face_input_file = None 
 
         self.uniform_bc = True
         self.outflow_bc_type = OutflowBoundaryConditionType.RCR 
@@ -34,13 +39,20 @@ class Parameters():
         self.outflow_bc_types = {OutflowBoundaryConditionType.RCR : "rcrt.dat", 
                                  OutflowBoundaryConditionType.RESISTANCE : "resistance.dat"}
 
-        #mesh size in a vessel segment
+        # Mesh size in a vessel segment.
         self.dx = 0.1
-        #min number of elements for a segment
+        # Min number of elements for a segment.
         self.minnumfe = 10
         self.timestep = 0.000588
         self.numtimesteps = 2000
         self.tincr = 20
+
+        # Units conversion from mm to cgs.
+        self.units = self.Units.MM
+        self.lcoef = 1.0
+        self.Acoef = 1.0
+        #self.lcoef = 0.1
+        #self.Acoef = 0.01
 
         # Physical parameters.
         self.c1 = 0.0e7
