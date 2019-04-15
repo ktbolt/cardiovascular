@@ -16,6 +16,7 @@ test_name="wall_props"
 test_name="read_centerlines"
 test_name="compute_centerlines"
 test_name="compute_mesh"
+test_name="write_solver_file"
 
 if [ $test_name  == "compute_centerlines" ]; then
 
@@ -40,11 +41,19 @@ elif [ $test_name  == "read_centerlines" ]; then
 elif [ $test_name  == "wall_props" ]; then
     python generate_1d_mesh.py \
         --output-directory $PWD/output \
-        --centerlines-input-file ${cl_file} \ 
+        --centerlines-input-file ${cl_file} \
         --wall-properties-input-file example/SU201_2005_RPA1_wallprop.vtp \
         --wall-properties-output-file output/wall_prop_grouped.vtp \
         --write-solver-file   \
         --solver-output-file mesh.in
+
+elif [ $test_name  == "write_solver_file" ]; then
+    python generate_1d_mesh.py \
+        --output-directory $PWD/output \
+        --centerlines-input-file ${cl_file} \
+        --write-solver-file   \
+        --solver-output-file mesh.in
+
 
 # Compute mesh only.
 #

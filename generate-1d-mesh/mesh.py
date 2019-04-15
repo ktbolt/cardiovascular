@@ -766,14 +766,16 @@ class Mesh(object):
     def write_solver_file(self, params, centerline_list):
         """ Write a solver input file.
         """
+        print("Write solver file.")
         self.logger.info("Write solver file.")
-        solver_file = params.solver_output_file
-        model_name, sep, tail = solver_file.partition('.')
+        output_dir = params.output_directory
+        file_name = path.join(output_dir, params.solver_output_file) 
+        model_name, sep, tail = file_name.partition('.')
         sp = self.space
+        print("Solver file %s" % file_name)
 
         # Open file
-        ofile = self.Open(solver_file, "w")
-        #file = open(solver_file, "w")
+        ofile = self.Open(file_name, "w")
         
         # Write header
         ofile.writeln("# ================================")
