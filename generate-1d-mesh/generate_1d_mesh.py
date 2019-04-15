@@ -36,6 +36,7 @@ class Args(object):
     SOLVER_OUTPUT_FILE = "solver_output_file"
     SURFACE_MODEL = "surface_model"
     UNIFORM_BC = "uniform_bc"
+    UNITS = "units"
     WALL_PROPERTIES_INPUT_FILE = "wall_properties_input_file"
     WALL_PROPERTIES_OUTPUT_FILE = "wall_properties_output_file"
     WRITE_MESH_FILE = "write_mesh_file"
@@ -88,6 +89,9 @@ def parse_args():
 
     parser.add_argument(cmd(Args.UNIFORM_BC),
       help = "If set to (true,1,on) then read BC files")
+
+    parser.add_argument(cmd(Args.UNITS),
+      help = "The units used to scale geometry. (cm or mm)")
 
     parser.add_argument(cmd(Args.WALL_PROPERTIES_INPUT_FILE), 
       help = "The name of the file read surface wall material properties from.")
@@ -194,6 +198,15 @@ def set_parameters(**kwargs):
         if not os.path.exists(params.surface_model):
             logger.error("The surface model file '%s' was not found." % params.surface_model)
             return None
+
+    if kwargs.get(Args.UNITS):
+        units = kwargs.get(Args.UNITS)
+        if params.set_units(units):
+            params.units = units
+        else:
+            logger.error("The units value '%s' was not recognized. Valid values are mm or cm." % units)
+            return None
+    logger.info("Units: %s" % params.units)
 
     if kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE):
         params.wall_properties_input_file = kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE)

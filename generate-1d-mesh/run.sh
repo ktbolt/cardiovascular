@@ -1,9 +1,9 @@
 
-cl_file=example/SU201_2005_RPA1_cl.vtp
 cl_file=/home/davep/software/ktbolt/cardiovascular/generate-1d-mesh/output/centerlines.vtp
 # Can't use Merged_Centerlines.vtp.
 #cl_file=/home/davep/Simvascular/sim-1d-demo/Models/Merged_Centerlines.vtp
 cl_file=/home/davep/Simvascular/sim-1d-demo/Models/Full_Centerlines.vtp
+cl_file=example/SU201_2005_RPA1_cl.vtp
 
 surfaces_dir=example/mesh-surfaces
 surfaces_dir=/home/davep/Simvascular/DemoProject/Simulations/demojob/mesh-complete/mesh-surfaces
@@ -50,6 +50,7 @@ elif [ $test_name  == "wall_props" ]; then
 elif [ $test_name  == "write_solver_file" ]; then
     python generate_1d_mesh.py \
         --output-directory $PWD/output \
+        --units mm \
         --centerlines-input-file ${cl_file} \
         --write-solver-file   \
         --solver-output-file mesh.in

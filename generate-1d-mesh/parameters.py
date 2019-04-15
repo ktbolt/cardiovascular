@@ -48,11 +48,9 @@ class Parameters():
         self.tincr = 20
 
         # Units conversion from mm to cgs.
-        self.units = self.Units.MM
+        self.units = self.Units.CM
         self.lcoef = 1.0
         self.Acoef = 1.0
-        #self.lcoef = 0.1
-        #self.Acoef = 0.01
 
         # Physical parameters.
         self.c1 = 0.0e7
@@ -61,4 +59,20 @@ class Parameters():
         self.density = 1.055
         self.mattype = "OLUFSEN"
         self.viscosity = 0.04
+
+    def set_units(self, units):
+        units = units.lower()
+        units_ok = True
+
+        if units == self.Units.MM:
+            self.lcoef = 0.1
+            self.Acoef = 0.01
+        elif units == self.Units.CM:
+            self.lcoef = 1.0
+            self.Acoef = 1.0
+        else:
+            units_ok = False 
+
+        return units_ok
+ 
 
