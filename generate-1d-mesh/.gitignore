@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+*.dat
+*.in
+example/
+output/

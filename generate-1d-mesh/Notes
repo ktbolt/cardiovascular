@@ -1,5 +1,84 @@
 
-python3 generate-1d-mesh.py --surface-directory example/mesh-surfaces
+==========================================================================================
+rcrt.dat file
+==========================================================================================
+- RCR boundary conditions are defined through the rcrt.dat file 
+
+-----------------------------------------------------------------------------------------
+format
+-----------------------------------------------------------------------------------------
+  - nptsRCRmax: defines the maximum number of time points for the curves defined at each 
+    outlet 
+
+  - This quantity is followed by one block for each outlet, containing numDataRCR_i, 
+    i.e., the number of time point for RCR outlet i. 
+
+  - The three values Rp_i, C_i, Rd_i are defined for the proximal resistance, compliance 
+    and distal vessel resistance, respectively. 
+
+  - A time series follows, defining the evolution in time of the reference pressure at 
+    the distal end of the RCR block.
+
+  nptsRCRmax
+  numDataRCR_1
+  Rp_1
+  C_1
+  Rd_1
+  time_1_1 Pdist_1_1
+  ... 
+  ... 
+  time_1_numDataRCR Pdist_1_numDataRCR
+  ...
+  ...
+  numDataRCR_i
+  Rp_i
+  C_i
+  Rd_i
+  time_i_1 Pdist_i_1
+  ... 
+  ... 
+  time_i_numDataRCR Pdist_i_numDataRCR
+
+==========================================================================================
+
+
+outletfacename:  ['cap_RPA1_3', 'cap_RPA1_2', 'cap_RPA1_1',   'cap_RPA1',   'cap_RPA1_1_1']
+
+useroutletname:  ['cap_RPA1',   'cap_RPA1_1', 'cap_RPA1_1_1', 'cap_RPA1_2', 'cap_RPA1_3']
+                      0              1            2             3           4
+
+path2useroutlet:  maps names in outletfacename[] to those in useroutletname[]
+[4, 3, 1, 0, 2]
+
+outletfacename[0] == useroutletname[path2useroutlet[0]] 
+
+
+-----------------------------
+useroutletfile="outlets.dat"
+-----------------------------
+- 3Doutlet list for BCfile 
+- the order of outlet names should be consistent with rcrt.dat and resistance.dat 
+
+----------------------------------------------------------
+outletface_groupid.dat - from mesh-surfaces cap file names
+----------------------------------------------------------
+cap_RPA1_3   GroupId 5
+cap_RPA1_2   GroupId 6
+cap_RPA1_1   GroupId 10
+cap_RPA1     GroupId 11
+cap_RPA1_1_1 GroupId 12
+
+
+SEGMENT Group0_Seg0 0   NOBOUND   NONE
+SEGMENT Group1_Seg1 1   NOBOUND   NONE
+SEGMENT Group3_Seg2 2   NOBOUND   NONE
+SEGMENT Group5_Seg3 3   RCR       RCR_4
+SEGMENT Group6_Seg4 4   RCR       RCR_3
+SEGMENT Group8_Seg5 5   NOBOUND   NONE
+SEGMENT Group10_Seg6 6  RCR       RCR_1
+SEGMENT Group11_Seg7 7  RCR       RCR_0
+SEGMENT Group12_Seg8 8  RCR       RCR_2
+
 
 
 

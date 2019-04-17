@@ -34,10 +34,13 @@ class Parameters():
         self.inlet_face_input_file = None 
 
         self.uniform_bc = True
-        self.outflow_bc_type = OutflowBoundaryConditionType.RCR 
+        self.outflow_bc_type = None 
         self.outflow_bc_file = None
-        self.outflow_bc_types = {OutflowBoundaryConditionType.RCR : "rcrt.dat", 
+        self.OUTFLOW_BC_TYPES = {OutflowBoundaryConditionType.RCR : "rcrt.dat", 
                                  OutflowBoundaryConditionType.RESISTANCE : "resistance.dat"}
+
+        self.user_outlet_face_names_file = None
+        self.CENTERLINES_OUTLET_FILE_NAME = "centerlines_outlets.dat"
 
         # Mesh size in a vessel segment.
         self.dx = 0.1

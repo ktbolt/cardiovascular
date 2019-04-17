@@ -202,27 +202,28 @@ for facefile in meshsurfacedir.iterdir():
   if not filename.lower().startswith('wall'):
     if facefile.stem=="inflow" and (facefile.suffix ==".vtk" or facefile.suffix ==".vtp"):
       inletpath=str(facefile.absolute())
-      print "inlet= ",filename
+      print( "inlet= ",filename)
       polydata=read_polydata(inletpath)
       inletcenter=centroid(inletpath)
     #  print "inletcenters: ",inletcenter
     if facefile.stem!="inflow" and (facefile.suffix ==".vtk" or facefile.suffix ==".vtp"):
       outletpath=str(facefile.absolute())
       outletfacename.append(facefile.stem)
-      print "outlet=",filename
+      print( "outlet=",filename)
       outletcenters.extend(centroid(outletpath))
  
-print "Number of outletfacenames=",len(outletfacename)
+print ("Number of outletfacenames=",len(outletfacename))
 #1.2 read BC files if uniformBC!=1
 if uniformBC==0:
+  print("####### outletfacename: ", outletfacename)
   BClist=[]
   with open(BCfile) as file:
    if outflowBC=="RESISTANCE":
      for line in file:
-      print "line=",line
+      print ("line=",line)
       BClist.append(float(line))
      if len(BClist)!=len(outletfacename):
-      print "The number of BC values =",len(BClist)," is not consistant with the number of outlets=",len(outletfacename),"exit."
+      print( "The number of BC values =",len(BClist)," is not consistant with the number of outlets=",len(outletfacename),"exit.")
       exit()
    if outflowBC=="RCR":
       keyword = file.readline()
@@ -243,9 +244,9 @@ if uniformBC==0:
   with open(useroutletfile) as file:
    for line in file:
      useroutletname.extend(line.splitlines())
-  print "Number of user provided model outlet names=",len(useroutletname)  
+  print( "Number of user provided model outlet names=",len(useroutletname)  )
   if len(useroutletname)!=len(outletfacename):
-      print "The number of user provided outlets is not consistant with the number of outlets in mesh-surfaces. Exit."
+      print( "The number of user provided outlets is not consistant with the number of outlets in mesh-surfaces. Exit.")
       exit()
 
 #1.4 call vmtkcenterlines by providing source points and endpoints
@@ -292,15 +293,15 @@ if icomputecenterlines==1:
 #2.1 read centerline polydata
 model=read_polydata(centerline_outputfile)
 num_pts=model.GetNumberOfPoints()
-print "Number of Points:", model.GetNumberOfPoints()
+print ("Number of Points:", model.GetNumberOfPoints())
 
-print "Number of arrays:", model.GetCellData().GetNumberOfArrays()
+print ("Number of arrays:", model.GetCellData().GetNumberOfArrays())
 
 #a cell/element (named as LINE) is a segment/line that consists of n points.
 # A centerline consists of m cells, m=number of tract ids, the length of a cell/line is an approximation of a group. 
 # In Cell Data, lines are listed from 0 to m. For each line, the first number is the number of points for this line followed by 1st point to the last point.
 num_cells=model.GetNumberOfCells()
-print "Number of Cells:", model.GetNumberOfCells()
+print ("Number of Cells:", model.GetNumberOfCells())
 
 ###read cell data, for each cell (line), the lists record its centerline id (n lines starting from the inlet to outlets), blanking (0 non bifurcation, 1 bifurcation), 
 ###group ids (vessels are splitted into single segments/branches and a bifurcation region, 
@@ -324,10 +325,10 @@ tract_list = nps.vtk_to_numpy(celldata)
 
 
 num_path=centerline_list[-1]+1
-print "number of paths=", num_path
+print ("number of paths=", num_path)
 
 num_group=max(group_list)+1
-print "number of groups=",num_group
+print ("number of groups=",num_group)
 
 
 ###path_elems[i] records the element(line) indices for centerline id=i
@@ -367,6 +368,10 @@ if uniformBC==0:
      if outletfacename[i]==useroutletname[j]:
        path2useroutlet.append(j)
        break
+
+ print("####### outletfacename: ", outletfacename)
+ print("####### useroutletname: ", useroutletname)
+ print("####### path2useroutlet: ", path2useroutlet)
 
 # print "path to user outlet=",path2useroutlet
 
@@ -426,14 +431,14 @@ for i in range(0,num_group):
   
  if len(group_elems[i])>tmp and blank_list[group_elems[i][0]]!=1:
   tmp=len(group_elems[i])
-  print"A group with id>0 contains more centerlines than group 0" 
+  print("A group with id>0 contains more centerlines than group 0" )
 
 
 
 
 if tmp!=len(group_elems[0]) or tmp!=num_outlet or num_path!=num_outlet:
- print "warning: inlet group id is not 0 or number of centerlines is not equal to the number of outlets"
- print "num_path=",num_path,"num_outlet=",num_outlet,"len(group_elems[0])=",len(group_elems[0]),"tmp=",tmp
+ print ("warning: inlet group id is not 0 or number of centerlines is not equal to the number of outlets")
+ print ("num_path=",num_path,"num_outlet=",num_outlet,"len(group_elems[0])=",len(group_elems[0]),"tmp=",tmp)
  exit()
 # non-bifurcation groups are trated as segments in the 1D solver
 num_seg=num_group-num_bif
@@ -446,6 +451,8 @@ num_node=num_bif+num_outlet+1
 seg_list=[]
 group_seg=[]
 
+print ("group_terminal=",group_terminal)
+
 
 for i in range(0,num_group):
  if group_terminal[i]!=2:
@@ -454,22 +461,28 @@ for i in range(0,num_group):
  else:
    group_seg.append(-1)
 
-print "seg_list=",seg_list
-print "group_seg=",group_seg
+print ("seg_list=",seg_list)
+print ("group_seg=",group_seg)
+print ("group_elems=",group_elems)
+print ("group_list=",group_list)
+
 if len(seg_list)!=num_seg:
- print "Error! length of seg_list is not equal to num_seg"
+ print ("Error! length of seg_list is not equal to num_seg")
  exit()
 
 ### create connectivity for segments
 connectivity=[]
 
+print ("centerline_list=",centerline_list)
+
 for i in range(0,num_seg):
+     print ("----- i ",i)
   ##if  groupid is not a terminal seg, then it is a parent seg
      if group_terminal[seg_list[i]]==0:
        pargroupid=seg_list[i]
        temp_conn=[]
        temp_conn.append(pargroupid)
-       print "parent group id=",pargroupid
+       print ("parent group id=",pargroupid)
   ## for each non-terminal group, at least there are 2 paths going through the child segments and sharing this group   
        pathid1=centerline_list[group_elems[pargroupid][0]]
        tractid1=tract_list[group_elems[pargroupid][0]]
@@ -491,10 +504,10 @@ for i in range(0,num_seg):
          if repeat==0:
           temp_conn.append(tempgroupid)
        if len(temp_conn)>3:
-         print "there are more than 2 child segments for groupid=",pargroupid
+         print ("there are more than 2 child segments for groupid=",pargroupid)
        connectivity.append(temp_conn)
 
-print "connectivity in terms of groups",connectivity    
+print ("connectivity in terms of groups",connectivity    )
 
 seg_connectivity=[]
 for i in range(0, len(connectivity)):
@@ -505,7 +518,7 @@ for i in range(0, len(connectivity)):
   seg_connectivity.append(temp_conn)
 
 
-print "connectivity in terms of segments",seg_connectivity 
+print ("connectivity in terms of segments",seg_connectivity )
 
 #output some axuiliary files
 file = open("connectivity_groupid.dat", "w")
@@ -571,14 +584,14 @@ for i in range(0,num_group):
    tmpAin=tmpAin/len(group_elems[i])*Acoef
    tmpAout=tmpAout/len(group_elems[i])*Acoef
    if tmpAin<tmpAout and group_terminal[i] !=2 :
-     print"warning! Ain<Aout in group id=",i
-     print"set Ain=Aout"
+     print("warning! Ain<Aout in group id=",i)
+     print("set Ain=Aout")
      tmpAin=tmpAout
   # for bifurcation group, approximate as a straight uniform cylinder
    if group_terminal[i] ==2 :
      tmpAin=(tmpAin+tmpAout)/2.0
      tmpAout=tmpAin
-#   print "group id=",i,"averaged length=", tmpl,"averaged Ain and Aout",tmpAin,tmpAout
+   print( "group id=",i,"averaged length=", tmpl,"averaged Ain and Aout",tmpAin,tmpAout)
    group_length.append(tmpl)
    group_Ain.append(tmpAin)
    group_Aout.append(tmpAout)
@@ -594,7 +607,7 @@ for i in range(0,num_seg):
     bifelem=path_elems[pathid1][tractid1+1]
     bifgroupid=group_list[bifelem]
     #add the bifurcation group length to the parent group
-   # print "biflength ",group_length[bifgroupid],"ratio to parent group length",group_length[bifgroupid]/group_length[pargroupid]
+    print( "biflength ",group_length[bifgroupid],"ratio to parent group length",group_length[bifgroupid]/group_length[pargroupid])
     group_length[pargroupid]=group_length[pargroupid]+group_length[bifgroupid]
    
 #2.4 get node coordinates
@@ -617,8 +630,8 @@ for i in range(0,num_group):
   else:
      # bifurcation group doesn't get a node id, use nodeid=-1 
      grouprearnodeid.append(-1)
-print "number of nodes= ",len(nodes)
-print "group rear node id", grouprearnodeid     
+print ("number of nodes= ",len(nodes))
+print ("group rear node id", grouprearnodeid     )
 
 for i in range(0,num_seg):
   tempgroupid=seg_list[i]
@@ -633,16 +646,16 @@ for i in range(0,num_seg):
  
   seg_rear.append(grouprearnodeid[tempgroupid])
 
-#print "seg_head", seg_head
-#print "seg_rear", seg_rear
+print( "seg_head", seg_head)
+print( "seg_rear", seg_rear)
 
 #2.5 reorgazie child segments when ireorgseg==1 and the number of child segments>3
-print "num_seg= line601",len(seg_list)
+print ("num_seg= line601",len(seg_list))
 if ireorgseg==1:
  i=0
  while i < len(seg_connectivity):
    if len(seg_connectivity[i])>4:
-      print "reorganize seg connectivity=",seg_connectivity[i]
+      print ("reorganize seg connectivity=",seg_connectivity[i])
       parsegid=seg_connectivity[i][0]
       pargroupid=seg_list[parsegid]
       num_child=len(seg_connectivity[i])-1
@@ -672,10 +685,10 @@ if ireorgseg==1:
         id2=ids.GetId(0) # first node in each child seg
         pt2=np.array([model.GetPoints().GetPoint(id2)[0],model.GetPoints().GetPoint(id2)[1],model.GetPoints().GetPoint(id2)[2]])
         childseg_dist.append(np.linalg.norm(pt2-pt1))
-      print "childsegs=",childsegs
-      print "dist=",childseg_dist
+      print ("childsegs=",childsegs)
+      print ("dist=",childseg_dist)
       dist_order=np.argsort(childseg_dist)
-      print "order=",dist_order
+      print ("order=",dist_order)
       # define bif group starting point and tangential vector
       ids=vtk.vtkIdList()
       model.GetCellPoints(group_elems[bifgroupid][0],ids)
@@ -690,7 +703,7 @@ if ireorgseg==1:
       first_new_seg=len(seg_list)
       parrearnodeid=seg_rear[parsegid]
       if len(seg_list)!=len(seg_head) or len(seg_list)!=len(seg_rear):
-        print "Something wrong! length of seg_list != length seg_head/seg_rear"
+        print ("Something wrong! length of seg_list != length seg_head/seg_rear")
       # split the bif group into n-2 pieces and change the corresponding group length 
       for j in range(0,num_child-2):
         seg_list.append(bifgroupid)
@@ -732,9 +745,9 @@ if ireorgseg==1:
       seg_head[childsegs[dist_order[num_child-1]]]=seg_rear[-1]
 
    i=i+1
-print "num_seg=",num_seg
+print ("num_seg=",num_seg)
 num_seg=len(seg_list)   
-print "redefine num_seg=",num_seg
+print ("redefine num_seg=",num_seg)
 #Step 3 output a 1D input file
 #
 # Open file
@@ -789,11 +802,20 @@ for i in range(0,num_seg):
    numfe=int(round(group_length[seg_list[i]]/dx))
    if numfe<minnumfe:
      numfe=minnumfe
-   file.write("SEGMENT" + " " + "Group"+ str(seg_list[i])+"_Seg"+str(i) + " " + str(i) + " "+ str(group_length[seg_list[i]]) + " " + str(numfe) + " "+ str(seg_head[i]) + " " + str(seg_rear[i]) + " " + str(group_Ain[seg_list[i]])+ " " + str(group_Aout[seg_list[i]])+ " " +"0.0 "+ matname + " NONE 0.0 0 0 ")
+
+   file.write("SEGMENT" + " " + 
+     "Group"+ str(seg_list[i])+"_Seg"+str(i) + " " + str(i) + " "+ 
+     str(group_length[seg_list[i]]) + " " + str(numfe) + " "+ 
+     str(seg_head[i]) + " " + str(seg_rear[i]) + " " + 
+     str(group_Ain[seg_list[i]])+ " " + 
+     str(group_Aout[seg_list[i]])+ " " +"0.0 "+ 
+     matname + " NONE 0.0 0 0 ")
+
    if group_terminal[seg_list[i]]==1:
       if uniformBC==1:
         file.write(outflowBC+ " " + outflowBC +"_1 \n")
       else:
+        print("######## outflowBC ", outflowBC)
         tempgroupid=seg_list[i]
         tempelemid=group_elems[tempgroupid][0]
         temppathid=centerline_list[tempelemid]

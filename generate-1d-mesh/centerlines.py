@@ -12,8 +12,7 @@ import logging
 from manage import get_logger_name
 
 import vtk
-#[DaveP] this does not work in sv.
-#from vmtk import vtkvmtk,vmtkscripts
+from vmtk import vtkvmtk,vmtkscripts
 
 from utils import SurfaceFileFormats, read_surface, get_polydata_centroid, read_polydata
 
@@ -27,8 +26,8 @@ class Centerlines(object):
 
         self.inlet_face_name = None
         self.inlet_center = None
-        self.outlet_centers = []
-        self.outlet_face_names = []
+        self.outlet_centers = None
+        self.outlet_face_names = None
 
         self.geometry = None
         self.branch_geometry = None
@@ -61,6 +60,9 @@ class Centerlines(object):
         self.geometry = centerlines.Centerlines
         self.logger.info("The surface centerlines have been calculated.");
 
+        # Write outlet face names.
+        self.write_outlet_face_names(params)
+
     def extract_branches(self, params):
         """ Split and group centerlines along branches. 
         """
@@ -87,6 +89,7 @@ class Centerlines(object):
         surf_mesh_dir = Path(params.boundary_surfaces_dir)
         inlet_file_name = params.inlet_face_input_file
         self.outlet_face_names = []
+        self.outlet_centers = []
 
         for face_file in surf_mesh_dir.iterdir():
             file_name = face_file.name
@@ -115,4 +118,13 @@ class Centerlines(object):
             raise RuntimeError("No inlet face found in the boundary surface directory '%s'" % params.boundary_surfaces_dir)
 
         self.logger.info("Number of outlet faces: %d" % len(self.outlet_centers))
+
+    def write_outlet_face_names(self, params):
+        """ Write outlet face names.
+        """
+        file_name = os.path.join(params.output_directory, params.CENTERLINES_OUTLET_FILE_NAME)
+        self.logger.info("Write outlet face names to: %s" % file_name) 
+        with open(file_name, "w") as fp:
+            for name in self.outlet_face_names:
+                fp.write(name+"\n")
 

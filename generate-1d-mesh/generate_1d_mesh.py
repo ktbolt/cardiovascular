@@ -37,6 +37,7 @@ class Args(object):
     SURFACE_MODEL = "surface_model"
     UNIFORM_BC = "uniform_bc"
     UNITS = "units"
+    USER_OUTLET_FACE_NAMES_FILE = "user_outlet_face_names_file"
     WALL_PROPERTIES_INPUT_FILE = "wall_properties_input_file"
     WALL_PROPERTIES_OUTPUT_FILE = "wall_properties_output_file"
     WRITE_MESH_FILE = "write_mesh_file"
@@ -92,6 +93,9 @@ def parse_args():
 
     parser.add_argument(cmd(Args.UNITS),
       help = "The units used to scale geometry. (cm or mm)")
+
+    parser.add_argument(cmd(Args.USER_OUTLET_FACE_NAMES_FILE),
+      help = "The file containing user-define outlet face names.")
 
     parser.add_argument(cmd(Args.WALL_PROPERTIES_INPUT_FILE), 
       help = "The name of the file read surface wall material properties from.")
@@ -152,7 +156,7 @@ def set_parameters(**kwargs):
     if kwargs.get(Args.INFLOW_INPUT_FILE):
         params.inflow_input_file = kwargs.get(Args.INFLOW_INPUT_FILE)
         logger.info("Inflow input file: %s" % params.inflow_input_file)
-        if not os.path.exists(params.surface_model):
+        if not os.path.exists(params.inflow_input_file):
             logger.error("The inflow input file '%s' was not found." % params.inflow_input_file) 
             return None
 
@@ -175,16 +179,15 @@ def set_parameters(**kwargs):
 
     if kwargs.get(Args.MESH_OUTPUT_FILE):
         params.mesh_output_file = kwargs.get(Args.MESH_OUTPUT_FILE)
-        if not os.path.exists(params.mesh_output_file):
-            logger.info("Mesh output file: %s" % params.mesh_output_file)
+        logger.info("Mesh output file: %s" % params.mesh_output_file)
 
     if kwargs.get(Args.OUTFLOW_BC_TYPE):
         bc_type = kwargs.get(Args.OUTFLOW_BC_TYPE).lower()
-        if not bc_type in self.outflow_bc_types:
+        if not bc_type in params.OUTFLOW_BC_TYPES:
             logger.error("Unknown BC type '%s'." % bc_type) 
             return None
         params.outflow_bc_type = bc_type
-        params.outflow_bc_file = self.outflow_bc_types[bc_type]
+        params.outflow_bc_file = params.OUTFLOW_BC_TYPES[bc_type]
         logger.info("Outflow bc type: %s" % params.outflow_bc_type)
         logger.info("Outflow bc file: %s" % params.outflow_bc_file)
 
@@ -199,6 +202,10 @@ def set_parameters(**kwargs):
             logger.error("The surface model file '%s' was not found." % params.surface_model)
             return None
 
+    if kwargs.get(Args.UNIFORM_BC):
+        params.uniform_bc = (kwargs.get(Args.UNIFORM_BC) in true_values)
+    logger.info("Uniform boundary conditions: %s" % params.uniform_bc)
+
     if kwargs.get(Args.UNITS):
         units = kwargs.get(Args.UNITS)
         if params.set_units(units):
@@ -207,6 +214,13 @@ def set_parameters(**kwargs):
             logger.error("The units value '%s' was not recognized. Valid values are mm or cm." % units)
             return None
     logger.info("Units: %s" % params.units)
+
+    if kwargs.get(Args.USER_OUTLET_FACE_NAMES_FILE):
+        params.user_outlet_face_names_file = kwargs.get(Args.USER_OUTLET_FACE_NAMES_FILE)
+        if not os.path.exists(params.user_outlet_face_names_file):
+            logger.error("The user outlet face names file '%s' was not found." % params.user_outlet_face_names_file)
+            return None
+        logger.info("User outlet face names file: '%s'." % params.user_outlet_face_names_file)
 
     if kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE):
         params.wall_properties_input_file = kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE)
@@ -250,6 +264,21 @@ def set_parameters(**kwargs):
     if params.wall_properties_input_file and not params.wall_properties_output_file: 
         logger.error("If a wall properties input file is given then a wall properties output file must also be given.")
         return None
+
+    if params.write_solver_file: 
+        if not params.user_outlet_face_names_file: 
+            logger.error("No user outlet face names file was given.")
+            return None
+
+    # Uniform / Non-uniform BCs.
+    if params.uniform_bc:
+        if params.outflow_bc_type != None:
+            logger.error("An outflow BC type can't be given with uniform BCs.")
+            return None
+    else:
+        if params.outflow_bc_type == None:
+            logger.error("An outflow BC type must be given for non-uniform BCs.")
+            return None
 
     return params 
 

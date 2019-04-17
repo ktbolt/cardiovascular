@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
 """
-The module is used to create a 1D mesh from centerline geometry.
+This module is used to create an input file for the SimVascular 1D solver (https://github.com/SimVascular/oneDSolver).
 
 A 1D mesh is generated from the centerline geometry caculated from a closed polygonal surface.
 
 A centerline consists of m cells, m=number of tract ids, the length of a cell/line is an approximation of a group. 
-In Cell Data, lines are listed from 0 to m. For each line, the first number is the number of points for this line followed by 1st point to the last point.
+In Cell Data, lines are listed from 0 to m. For each line, the first number is the number of points for this line 
+followed by 1st point to the last point.
 
-a cell/element (named as LINE) is a segment/line that consists of n points.
 """
-
 from os import path 
 import logging
 from manage import get_logger_name
@@ -23,6 +22,10 @@ import vtk.util.numpy_support as nps
 from vtk import vtkIdList
 from vtk import vtkPoints, vtkLine, vtkCellArray, vtkPolyData, vtkXMLPolyDataWriter
 from utils import SurfaceFileFormats, read_polydata, write_polydata
+from collections import namedtuple
+
+# Define flow data tuple.
+FlowData = namedtuple('FlowData', 'time flow')
 
 class Mesh(object):
     """ The Mesh class is used to encapsulate 1D mesh calculations.
@@ -91,9 +94,17 @@ class Mesh(object):
         self.seg_head = None
         self.seg_rear = None 
         self.nodes = None 
-        self.user_outlet_path = None 
+        self.user_outlet_paths = None 
         self.bc_list = None
-        self.user_outlet_names = None
+        self.inflow_data = None
+
+        self.user_outlet_face_names = None
+        self.outlet_face_names = None
+
+        self.centerlines = None
+        self.centerlines_geometry = None 
+
+        # Some constansts for writing the solver file.
         self.solver_file_msg = "\n\n### DO NOT CHANGE THIS SECTION - generated automatically"
         self.space = " "
         self.endl = "\n"
@@ -104,6 +115,9 @@ class Mesh(object):
         self.centerlines = centerlines
         self.logger.info("Generate the 1D mesh ...")
         self.centerlines_geometry = centerlines.branch_geometry
+
+        # Set outlet face names.
+        self.outlet_face_names = self.centerlines.outlet_face_names
 
         # Check that centerline geometry has the required data fields.
         if not self.check_centerlines_data():
@@ -122,11 +136,15 @@ class Mesh(object):
         self.logger.info("Number of paths: %d" % self.num_paths) 
         self.logger.info("Number of groups: %d" % self.num_groups) 
 
-        self.get_path_elements(centerline_list)
-        self.get_group_elements(group_list)
+        self.set_path_elements(centerline_list)
+        self.set_group_elements(group_list)
+        self.set_user_outlet_names(params)
 
         if not params.uniform_bc:
-            self.get_variable_outflow_bcs(params)
+            self.set_variable_outflow_bcs(params)
+
+        if params.inflow_input_file:
+            self.read_inflow_file(params)
 
         if not params.uniform_material:
             materials = self.generate_grouped_wall_properties(params)
@@ -158,6 +176,11 @@ class Mesh(object):
         ## Create connectivity for segments.
         connectivity = []
 
+        #print ("group_terminal=",group_terminal)
+        #print ("centerline_list=",centerline_list)
+        #print ("group_elems=",self.group_elems)
+        #print ("group_list=",group_list)
+
         for i in range(num_seg):
             # If  groupid is not a terminal seg, then it is a parent seg.
             if group_terminal[seg_list[i]] != 0:
@@ -165,7 +188,6 @@ class Mesh(object):
             pargroupid = seg_list[i]
             temp_conn = []
             temp_conn.append(pargroupid)
-            print( "parent group id=",pargroupid)
 
             # For each non-terminal group, at least there are 2 paths going through 
             # the child segments and sharing this group.
@@ -189,18 +211,18 @@ class Mesh(object):
                     if tempgroupid == temp_conn[k]:
                         repeat = 1
                         break
-                    if repeat == 0:
-                       temp_conn.append(tempgroupid)
                 #__for k in range (1,len(temp_conn))
+                if repeat == 0:
+                    temp_conn.append(tempgroupid)
             #__for j in range(len(group_elems[pargroupid])-1,0,-1)
 
             if len(temp_conn)>3:
-                print( "there are more than 2 child segments for groupid=",pargroupid)
+                self.logger.error( "there are more than 2 child segments for groupid %s" % str(pargroupid))
 
             connectivity.append(temp_conn)
         #__for i in range(num_seg)
 
-        print( "connectivity in terms of groups",connectivity)
+        #print( "connectivity in terms of groups",connectivity)
 
         seg_connectivity = []
 
@@ -211,7 +233,7 @@ class Mesh(object):
             seg_connectivity.append(temp_conn)
         #__for i in range(len(connectivity))
 
-        print("connectivity in terms of segments",seg_connectivity)
+        #print("connectivity in terms of segments",seg_connectivity)
 
         self.num_seg = num_seg         
         self.seg_list = seg_list         
@@ -219,6 +241,24 @@ class Mesh(object):
         self.group_terminal = group_terminal 
         self.connectivity = connectivity
         self.seg_connectivity = seg_connectivity
+
+    def read_inflow_file(self, params):
+        """ Read the inflow file.
+
+        Format:   
+            <time1>  <flow1>
+            <time2>  <flow2>
+            ...
+            <timeN>  <flowN>
+        """
+        inflow_data = []
+        inflow_file = params.inflow_input_file 
+        with open(inflow_file, "r") as ofile:
+            for line in ofile:
+                values = line.strip().split()
+                inflow_data.append(FlowData(time=float(values[0]), flow=float(values[1])))
+        #__with open(inflow_file, "r") as ofile
+        self.inflow_data = inflow_data
 
     def write_mesh(self, params, centerline_list, group_list):
         ## Write the 1D mesh to a VTK VTP format file. 
@@ -275,8 +315,8 @@ class Mesh(object):
 
         ## Output outlet face names with the corresponding group id
         #
-        if len(self.centerlines.outlet_face_names) != 0:
-            outlet_face_names = self.centerlines.outlet_face_names
+        if self.outlet_face_names:
+            outlet_face_names = self.outlet_face_names
             file_name = path.join(output_dir, self.OutputFileNames.OUTLET_FACE_GROUP_ID)
             with open(file_name, "w") as file:
                 for i in range(self.num_groups):
@@ -285,7 +325,7 @@ class Mesh(object):
                         temppathid = centerline_list[tempelemid]
                         file.write(outlet_face_names[temppathid]+" "+"GroupId "+str(i)+"\n")
             #__with open(file_name, "w") as file
-        #__if len(self.centerlines.self.outlet_face_names) ! = 0
+        #__if len(self.outlet_face_names) ! = 0
 
         file_name = path.join(output_dir, self.OutputFileNames.CENTERLINE_GROUP_ID)
         with open(file_name, "w") as file:
@@ -340,8 +380,8 @@ class Mesh(object):
             else:
                 group_seg.append(-1)
 
-        print( "seg_list=",seg_list)
-        print( "group_seg=",group_seg)
+        #print( "seg_list=",seg_list)
+        #print( "group_seg=",group_seg)
 
         if len(seg_list) != num_seg:
             print( "Error! length of seg_list is not equal to num_seg")
@@ -395,54 +435,101 @@ class Mesh(object):
 
         return materials
 
-    def get_variable_outflow_bcs(self, params):
-        """ Read in data for variable flow boundary conditions.
+    def set_user_outlet_names(self, params):
+        """ Read in user outlet face names file.
+
+        This file contains the names of outlet faces. This is file automatically created 
+        when extracting centerlines.
+
+	The program currently requires both 'outlet_face_names' and 'user_outlet_names' but
+        'outlet_face_names' are only defined when calculating centerlines.
         """
-        self.logger.info("Get variable outflow boundary conditions ...")
-        user_outlet_path = []
-        bc_list = []
-        user_outlet_names = []
-        outlet_face_names = self.centerlines.outlet_face_names
+        outlet_face_names = self.outlet_face_names
+        user_outlet_face_names = []
+        self.logger.info("Read user provided model outlet names from: %s" % params.user_outlet_face_names_file) 
+        with open(params.user_outlet_face_names_file) as file:
+            for line in file:
+               user_outlet_face_names.extend(line.splitlines())
+        self.logger.info("Number of user provided model outlet names: %d" % len(user_outlet_face_names))
+
+        if outlet_face_names == None:
+            self.outlet_face_names = user_outlet_face_names 
+        else:
+            self.logger.info("Number of outlets in the mesh-surfaces: %d" % len(outlet_face_names))
+
+            if len(user_outlet_names) != len(outlet_face_names):
+                print( "The number of user provided outlets is not consistant with the number of outlets in mesh-surfaces. Exit.")
+                exit()
+
+        self.user_outlet_face_names = user_outlet_face_names 
+
+
+    def set_variable_outflow_bcs(self, params):
+        """ Read in data for variable flow boundary conditions.
+
+        Parameters for outflow BCs (resistance or RCR) are read from a file.
+        """
+        self.logger.info("Set variable outflow boundary conditions ...")
+        outlet_face_names = self.outlet_face_names
+
+        ## Read outflow BCs parameters from a file. 
+        #
         bc_file = params.outflow_bc_file
         outflow_bc = params.outflow_bc_type
+        bc_list = []
 
-        with open(bc_file) as file:
-         if outflow_bc == params.OutflowBoundaryConditionType.RESISTANCE:
-           for line in file:
-            print ("line=",line)
-            bc_list.append(float(line))
-           if len(bc_list) != len(outlet_face_names):
-            print( "The number of BC values =",len(bc_list)," is not consistant with the number of outlets=",len(outlet_face_names),"exit.")
-            exit()
+        if outflow_bc == OutflowBoundaryConditionType.RESISTANCE:
+            with open(bc_file) as rfile:
+                for line in rfile:
+                    bc_list.append(float(line))
+            #__with open(bc_file) as rfile
 
-         if outflow_bc == params.OutflowBoundaryConditionType.RCR:
-            keyword = file.readline()
-           # print"keyword=",keyword
-            while True:
-              tmp = file.readline()
-              if tmp == keyword:
-               RCRval=[]
-               RCRval.append(float(file.readline()))
-               RCRval.append(float(file.readline()))
-               RCRval.append(float(file.readline()))
-               BClist.append(RCRval)
-              if len(tmp) == 0:
-             #   print "eof"
-                break
+            if len(bc_list) != len(outlet_face_names):
+                msg = "The number of BC values %d do not match the number of outlets %d." % (len(bc_list), len(outlet_face_names))
+                self.logger.error(msg)
+                raise RuntimeError(msg)
 
-        for i in range(num_path):
-            for j in range(0,len(user_outlet_names)):
-                if outlet_face_names[i] == user_outlet_names[j]:
-                    user_outlet_path.append(j)
-                    break
-        #__for i in range(num_path)
+        elif outflow_bc == OutflowBoundaryConditionType.RCR:
+            with open(bc_file, "r") as rfile:
+                keyword = rfile.readline()
+                print(">>>>> keyword: ", keyword)
+                while True:
+                    tmp = rfile.readline()
+                    if tmp == keyword:
+                        RCRval = []
+                        RCRval.append(float(rfile.readline()))
+                        RCRval.append(float(rfile.readline()))
+                        RCRval.append(float(rfile.readline()))
+                        bc_list.append(RCRval)
+                        print(">>>>> RCRval: ", RCRval)
+                    if len(tmp) == 0:
+                        break
+                #__while True
+        #__elif outflow_bc == OutflowBoundaryConditionType.RCR
 
-        self.user_outlet_path = user_outlet_path 
         self.bc_list = bc_list
-        self.user_outlet_names = user_outlet_names
+
+        ## Create a mapping from the pathlist (outlet_face_names) to user-provided 
+        #  face names from user_outlet_face_names' read from a file.
+        #
+        num_paths = self.num_paths 
+        user_outlet_paths = []
+
+        for i in range(0,num_paths):
+            for j in range(0,len(outlet_face_names)):
+                if self.outlet_face_names[i] == self.user_outlet_face_names[j]:
+                    user_outlet_paths.append(j)
+                    break
+            #__for j in range(0,len(useroutletname))
+        #__for i in range(0,num_paths)
+
+        print("###### self.user_outlet_paths: ", user_outlet_paths)
+        print("###### self.outlet_face_names: ", self.outlet_face_names)
+        print("###### self.user_outlet_face_names: ", self.user_outlet_face_names)
+        self.user_outlet_paths = user_outlet_paths
 
 
-    def get_group_elements(self, group_list):
+    def set_group_elements(self, group_list):
         """
         group_elems[i] records the element(line) indices for group id=i
         """
@@ -455,7 +542,7 @@ class Mesh(object):
  
         self.group_elems = group_elems
 
-    def get_path_elements(self, centerline_list):
+    def set_path_elements(self, centerline_list):
         """
         path_elems[i] records the element(line) indices for centerline id=i.
         """
@@ -555,7 +642,7 @@ class Mesh(object):
                 tmpAin = (tmpAin+tmpAout)/2.0
                 tmpAout = tmpAin
 
-            print( "group id = ",i,"averaged length = ", tmpl,"averaged Ain and Aout",tmpAin,tmpAout)
+            #print( "group id = ",i,"averaged length = ", tmpl,"averaged Ain and Aout",tmpAin,tmpAout)
             group_length.append(tmpl)
             group_Ain.append(tmpAin)
             group_Aout.append(tmpAout)
@@ -571,7 +658,7 @@ class Mesh(object):
                 bifelem = path_elems[pathid1][tractid1+1]
                 bifgroupid = group_list[bifelem]
                 # Add the bifurcation group length to the parent group.
-                print("biflength ",group_length[bifgroupid],"ratio to parent group length",group_length[bifgroupid]/group_length[pargroupid])
+                #print("biflength ",group_length[bifgroupid],"ratio to parent group length",group_length[bifgroupid]/group_length[pargroupid])
                 group_length[pargroupid] = group_length[pargroupid]+group_length[bifgroupid]
             #__if group_terminal[seg_list[i]]!=1
 
@@ -613,8 +700,8 @@ class Mesh(object):
              # bifurcation group doesn't get a node id, use nodeid = -1 
              grouprearnodeid.append(-1)
         #__for i in range(num_groups)
-        print ("number of nodes =  ",len(nodes))
-        print ("group rear node id", grouprearnodeid     )
+        #print ("number of nodes =  ",len(nodes))
+        #print ("group rear node id", grouprearnodeid     )
         seg_head = []
         seg_rear = []
 
@@ -632,8 +719,8 @@ class Mesh(object):
         #_for i in range(0,num_seg)
 
 
-        print( "seg_head", seg_head)
-        print( "seg_rear", seg_rear)
+        #print( "seg_head", seg_head)
+        #print( "seg_rear", seg_rear)
 
         self.seg_head = seg_head 
         self.seg_rear = seg_rear
@@ -653,12 +740,12 @@ class Mesh(object):
         cl_geom = self.centerlines_geometry
         points = cl_geom.GetPoints()
 
-        print ("seg list: ",len(seg_list))
+        #print ("seg list: ",len(seg_list))
         i = 0
 
         while i < len(seg_connectivity):
            if len(seg_connectivity[i])>4:
-              print ("reorganize seg connectivity = ",seg_connectivity[i])
+              #print ("reorganize seg connectivity = ",seg_connectivity[i])
               parsegid = seg_connectivity[i][0]
               pargroupid = seg_list[parsegid]
               num_child = len(seg_connectivity[i])-1
@@ -692,10 +779,10 @@ class Mesh(object):
                   childseg_dist.append(np.linalg.norm(pt2-pt1))
               #__for j in range(0, len(childsegs))
 
-              print ("childsegs = ",childsegs)
-              print ("dist = ",childseg_dist)
+              #print ("childsegs = ",childsegs)
+              #print ("dist = ",childseg_dist)
               dist_order = np.argsort(childseg_dist)
-              print ("order = ",dist_order)
+              #print ("order = ",dist_order)
 
               # define bif group starting point and tangential vector
               ids = vtkIdList()
@@ -758,21 +845,22 @@ class Mesh(object):
            i = i+1
         #__while i < len(seg_connectivity)
 
-        print ("num_seg = ",num_seg)
+        #print ("num_seg = ",num_seg)
         num_seg = len(seg_list)   
-        print ("redefine num_seg = ",num_seg)
+        #print ("redefine num_seg = ",num_seg)
 
 
     def write_solver_file(self, params, centerline_list):
         """ Write a solver input file.
         """
-        print("Write solver file.")
+        #print("Write solver file.")
         self.logger.info("Write solver file.")
         output_dir = params.output_directory
         file_name = path.join(output_dir, params.solver_output_file) 
-        model_name, sep, tail = file_name.partition('.')
+        #model_name, sep, tail = file_name.partition('.')
+        model_name = "model"
         sp = self.space
-        print("Solver file %s" % file_name)
+        #print("Solver file %s" % file_name)
 
         # Open file
         ofile = self.Open(file_name, "w")
@@ -911,8 +999,10 @@ class Mesh(object):
           "# - Data Table Name (string)", 
           ""]
         self.write_solver_section_header(ofile, header)
+        self.logger.info("Write solver segment section ...")
         
         sp = self.space
+        num_path = self.num_paths
         num_seg = self.num_seg
         seg_list = self.seg_list
         seg_rear = self.seg_rear 
@@ -922,23 +1012,30 @@ class Mesh(object):
         group_terminal = self.group_terminal 
         group_Ain = self.group_Ain 
         group_Aout = self.group_Aout 
+        user_outlet_face_names = self.user_outlet_face_names
+        bc_list = self.bc_list
+
         uniform_bc = params.uniform_bc
-        outflow_bc = params.outflow_bc_type.upper()
+        outflow_bc = params.outflow_bc_type
+        outflow_bc_uc = params.outflow_bc_type.upper()   # 1D solve needs upper case.
         uniform_material = params.uniform_material
         dx = params.dx 
         minnumfe = params.minnumfe
-        inflow_file = params.inflow_input_file 
+        inflow_data = self.inflow_data
+
+        self.logger.info("Uniform BC: %s" % uniform_bc)
+        self.logger.info("Outflow BC: %s" % outflow_bc)
 
         for i in range(0,num_seg):
            if uniform_material:
-             matname = "MAT1"
+               matname = "MAT1"
            else:
-             matname = "MAT_group"+str(seg_list[i])
+               matname = "MAT_group"+str(seg_list[i])
            
            numfe = int(round(group_length[seg_list[i]]/dx))
 
            if numfe < minnumfe:
-             numfe = minnumfe
+               numfe = minnumfe
 
            ofile.write("SEGMENT" + sp + "Group"+ str(seg_list[i])+"_Seg"+str(i) + sp + str(i) + sp + 
              str(group_length[seg_list[i]]) + sp + str(numfe) + sp + str(seg_head[i]) + sp + 
@@ -946,49 +1043,58 @@ class Mesh(object):
              "0.0 " + matname + " NONE 0.0 0 0 ")
 
            if group_terminal[seg_list[i]] == 1:
-              if uniform_bc:
-                ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
-                #print("###### bug: group_terminal[seg_list[i]] == 1")
-              else:
-                tempgroupid = seg_list[i]
-                tempelemid = group_elems[tempgroupid][0]
-                temppathid = centerline_list[tempelemid]
-                ofile.writeln(outflow_bc+ " "+ outflow_bc +"_"+str(path2useroutlet[temppathid]))
+               if uniform_bc:
+                   outflow_bc = OutflowBoundaryConditionType.RCR.upper()
+                   ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
+                   print("###### bug: group_terminal[seg_list[i]] == 1")
+               else:
+                   tempgroupid = seg_list[i]
+                   tempelemid = group_elems[tempgroupid][0]
+                   temppathid = centerline_list[tempelemid]
+                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(user_outlet_face_names[temppathid]))
            else:
-              ofile.writeln("NOBOUND NONE")   
+               ofile.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)
 
         ofile.writeln("")
         ofile.writeln("")
-        if uniform_bc == 1:
-           ofile.writeln("DATATABLE " + outflow_bc +"_1 LIST")
+
+        if uniform_bc:
+           ofile.writeln("DATATABLE " + outflow_bc_uc +"_1 LIST")
            ofile.writeln(sp)
            ofile.writeln("ENDDATATABLE")
            ofile.writeln("")
         else:
-           if outflow_bc =="RCR":
-            for i in range(0,num_path):
-             ofile.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
-             for j in range(0, len(BClist[i])):
-              ofile.writeln("0.0 "+ str(BClist[i][j]))
-             ofile.writeln("ENDDATATABLE")
-             ofile.writeln("")
-           if outflow_bc =="RESISTANCE":
-            for i in range(0,num_path):
-             ofile.writeln("DATATABLE " + outflow_bc +"_"+str(i)+" LIST")
-             ofile.writeln("0.0 "+ str(BClist[i]))
-             ofile.writeln("ENDDATATABLE")   
-             ofile.writeln("")
+            if outflow_bc == OutflowBoundaryConditionType.RCR:
+                for i in range(0,num_path):
+                    ofile.writeln("DATATABLE " + outflow_bc_uc +"_"+str(i)+" LIST")
+                    for j in range(0, len(bc_list[i])):
+                        ofile.writeln("0.0 "+ str(bc_list[i][j]))
+                    ofile.writeln("ENDDATATABLE")
+                    ofile.writeln("")
+                #__for i in range(0,num_path)
+
+            elif outflow_bc == OutflowBoundaryConditionType.RESISTANCE:
+                for i in range(0,num_path):
+                    ofile.writeln("DATATABLE " + outflow_bc_uc +"_"+str(i)+" LIST")
+                    ofile.writeln("0.0 "+ str(bc_list[i]))
+                    ofile.writeln("ENDDATATABLE")   
+                    ofile.writeln("")
+                #__for i in range(0,num_path)
+            #__elif outflow_bc == OutflowBoundaryConditionType.RESISTANCE
+        #__if uniform_bc
         
         ofile.writeln("")
         ofile.writeln("")
         ofile.writeln("DATATABLE INFLOW LIST")
-        if not inflow_file:
-         ofile.writeln("Copy and paste inflow data here.")
+
+        if not inflow_data:
+            ofile.writeln("Copy and paste inflow data here.")
         else:
-           with open(inflow_file) as inflow:
-             for line in inflow:
-               ofile.write(line)
+            for value in inflow_data:
+                ofile.writeln(" %f %f" % (value.time, value.flow))
+        #_if not inflow_file
+
         ofile.writeln("ENDDATATABLE")  
         ofile.writeln("")
         ofile.writeln("")

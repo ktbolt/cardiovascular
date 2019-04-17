@@ -215,6 +215,7 @@ for facefile in meshsurfacedir.iterdir():
 print ("Number of outletfacenames=",len(outletfacename))
 #1.2 read BC files if uniformBC!=1
 if uniformBC==0:
+  print("####### outletfacename: ", outletfacename)
   BClist=[]
   with open(BCfile) as file:
    if outflowBC=="RESISTANCE":
@@ -368,6 +369,10 @@ if uniformBC==0:
        path2useroutlet.append(j)
        break
 
+ print("####### outletfacename: ", outletfacename)
+ print("####### useroutletname: ", useroutletname)
+ print("####### path2useroutlet: ", path2useroutlet)
+
 # print "path to user outlet=",path2useroutlet
 
 if uniformmat==0:
@@ -446,6 +451,8 @@ num_node=num_bif+num_outlet+1
 seg_list=[]
 group_seg=[]
 
+print ("group_terminal=",group_terminal)
+
 
 for i in range(0,num_group):
  if group_terminal[i]!=2:
@@ -456,6 +463,9 @@ for i in range(0,num_group):
 
 print ("seg_list=",seg_list)
 print ("group_seg=",group_seg)
+print ("group_elems=",group_elems)
+print ("group_list=",group_list)
+
 if len(seg_list)!=num_seg:
  print ("Error! length of seg_list is not equal to num_seg")
  exit()
@@ -463,7 +473,10 @@ if len(seg_list)!=num_seg:
 ### create connectivity for segments
 connectivity=[]
 
+print ("centerline_list=",centerline_list)
+
 for i in range(0,num_seg):
+     print ("----- i ",i)
   ##if  groupid is not a terminal seg, then it is a parent seg
      if group_terminal[seg_list[i]]==0:
        pargroupid=seg_list[i]
@@ -789,11 +802,20 @@ for i in range(0,num_seg):
    numfe=int(round(group_length[seg_list[i]]/dx))
    if numfe<minnumfe:
      numfe=minnumfe
-   file.write("SEGMENT" + " " + "Group"+ str(seg_list[i])+"_Seg"+str(i) + " " + str(i) + " "+ str(group_length[seg_list[i]]) + " " + str(numfe) + " "+ str(seg_head[i]) + " " + str(seg_rear[i]) + " " + str(group_Ain[seg_list[i]])+ " " + str(group_Aout[seg_list[i]])+ " " +"0.0 "+ matname + " NONE 0.0 0 0 ")
+
+   file.write("SEGMENT" + " " + 
+     "Group"+ str(seg_list[i])+"_Seg"+str(i) + " " + str(i) + " "+ 
+     str(group_length[seg_list[i]]) + " " + str(numfe) + " "+ 
+     str(seg_head[i]) + " " + str(seg_rear[i]) + " " + 
+     str(group_Ain[seg_list[i]])+ " " + 
+     str(group_Aout[seg_list[i]])+ " " +"0.0 "+ 
+     matname + " NONE 0.0 0 0 ")
+
    if group_terminal[seg_list[i]]==1:
       if uniformBC==1:
         file.write(outflowBC+ " " + outflowBC +"_1 \n")
       else:
+        print("######## outflowBC ", outflowBC)
         tempgroupid=seg_list[i]
         tempelemid=group_elems[tempgroupid][0]
         temppathid=centerline_list[tempelemid]
