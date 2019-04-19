@@ -39,7 +39,7 @@ class Parameters():
         self.OUTFLOW_BC_TYPES = {OutflowBoundaryConditionType.RCR : "rcrt.dat", 
                                  OutflowBoundaryConditionType.RESISTANCE : "resistance.dat"}
 
-        self.user_outlet_face_names_file = None
+        self.outlet_face_names_file = None
         self.CENTERLINES_OUTLET_FILE_NAME = "centerlines_outlets.dat"
 
         # Mesh size in a vessel segment.

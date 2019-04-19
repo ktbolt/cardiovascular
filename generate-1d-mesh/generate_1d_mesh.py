@@ -31,13 +31,14 @@ class Args(object):
     INLET_FACE_INPUT_FILE = "inlet_face_input_file"
     INFLOW_INPUT_FILE = "inflow_input_file"
     MESH_OUTPUT_FILE = "mesh_output_file"
+    OUTFLOW_BC_INPUT_FILE = "outflow_bc_input_file"
     OUTFLOW_BC_TYPE = "outflow_bc_type"
+    OUTLET_FACE_NAMES_INPUT_FILE = "outlet_face_names_input_file"
     OUTPUT_DIRECTORY = "output_directory"
     SOLVER_OUTPUT_FILE = "solver_output_file"
     SURFACE_MODEL = "surface_model"
     UNIFORM_BC = "uniform_bc"
     UNITS = "units"
-    USER_OUTLET_FACE_NAMES_FILE = "user_outlet_face_names_file"
     WALL_PROPERTIES_INPUT_FILE = "wall_properties_input_file"
     WALL_PROPERTIES_OUTPUT_FILE = "wall_properties_output_file"
     WRITE_MESH_FILE = "write_mesh_file"
@@ -76,6 +77,9 @@ def parse_args():
     parser.add_argument(cmd(Args.MESH_OUTPUT_FILE), 
       help="The name of the file to write the mesh to.")
 
+    parser.add_argument(cmd(Args.OUTFLOW_BC_INPUT_FILE), 
+      help="The output boundary condition input file (RESISTANCE, RCR).")
+
     parser.add_argument(cmd(Args.OUTFLOW_BC_TYPE), 
       help="The output boundary condition type (RESISTANCE, RCR).")
 
@@ -94,8 +98,8 @@ def parse_args():
     parser.add_argument(cmd(Args.UNITS),
       help = "The units used to scale geometry. (cm or mm)")
 
-    parser.add_argument(cmd(Args.USER_OUTLET_FACE_NAMES_FILE),
-      help = "The file containing user-define outlet face names.")
+    parser.add_argument(cmd(Args.OUTLET_FACE_NAMES_INPUT_FILE),
+      help = "The file containing outlet face names.")
 
     parser.add_argument(cmd(Args.WALL_PROPERTIES_INPUT_FILE), 
       help = "The name of the file read surface wall material properties from.")
@@ -181,15 +185,27 @@ def set_parameters(**kwargs):
         params.mesh_output_file = kwargs.get(Args.MESH_OUTPUT_FILE)
         logger.info("Mesh output file: %s" % params.mesh_output_file)
 
+    if kwargs.get(Args.OUTFLOW_BC_INPUT_FILE):
+        params.outflow_bc_file = kwargs.get(Args.OUTFLOW_BC_INPUT_FILE)
+        if not os.path.exists(params.outflow_bc_file):
+            logger.error("The outflow input bc file '%s' was not found." % params.outflow_bc_file)
+            return None
+        logger.info("Outflow bc file: %s" % params.outflow_bc_file)
+
     if kwargs.get(Args.OUTFLOW_BC_TYPE):
         bc_type = kwargs.get(Args.OUTFLOW_BC_TYPE).lower()
         if not bc_type in params.OUTFLOW_BC_TYPES:
             logger.error("Unknown BC type '%s'." % bc_type) 
             return None
         params.outflow_bc_type = bc_type
-        params.outflow_bc_file = params.OUTFLOW_BC_TYPES[bc_type]
         logger.info("Outflow bc type: %s" % params.outflow_bc_type)
-        logger.info("Outflow bc file: %s" % params.outflow_bc_file)
+
+    if kwargs.get(Args.OUTLET_FACE_NAMES_INPUT_FILE):
+        params.outlet_face_names_file = kwargs.get(Args.OUTLET_FACE_NAMES_INPUT_FILE)
+        if not os.path.exists(params.outlet_face_names_file):
+            logger.error("The input outlet face names file '%s' was not found." % params.outlet_face_names_file)
+            return None
+        logger.info("Outlet face names file: '%s'." % params.outlet_face_names_file)
 
     if kwargs.get(Args.SOLVER_OUTPUT_FILE):
         params.solver_output_file = kwargs.get(Args.SOLVER_OUTPUT_FILE)
@@ -215,12 +231,6 @@ def set_parameters(**kwargs):
             return None
     logger.info("Units: %s" % params.units)
 
-    if kwargs.get(Args.USER_OUTLET_FACE_NAMES_FILE):
-        params.user_outlet_face_names_file = kwargs.get(Args.USER_OUTLET_FACE_NAMES_FILE)
-        if not os.path.exists(params.user_outlet_face_names_file):
-            logger.error("The user outlet face names file '%s' was not found." % params.user_outlet_face_names_file)
-            return None
-        logger.info("User outlet face names file: '%s'." % params.user_outlet_face_names_file)
 
     if kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE):
         params.wall_properties_input_file = kwargs.get(Args.WALL_PROPERTIES_INPUT_FILE)
@@ -265,9 +275,13 @@ def set_parameters(**kwargs):
         logger.error("If a wall properties input file is given then a wall properties output file must also be given.")
         return None
 
+    if params.outflow_bc_type and not params.outflow_bc_file:
+        logger.error("If an outflow boundary condition type is given then an input data file for that type must also be given.")
+        return None
+
     if params.write_solver_file: 
-        if not params.user_outlet_face_names_file: 
-            logger.error("No user outlet face names file was given.")
+        if not params.outlet_face_names_file: 
+            logger.error("No outlet face names file was given.")
             return None
 
     # Uniform / Non-uniform BCs.

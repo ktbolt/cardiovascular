@@ -12,7 +12,10 @@ import logging
 from manage import get_logger_name
 
 import vtk
-from vmtk import vtkvmtk,vmtkscripts
+try:
+    from vmtk import vtkvmtk,vmtkscripts
+except ImportError:
+    print("vmtk not found.")
 
 from utils import SurfaceFileFormats, read_surface, get_polydata_centroid, read_polydata
 

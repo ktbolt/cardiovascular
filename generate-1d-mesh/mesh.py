@@ -16,8 +16,12 @@ from manage import get_logger_name
 from parameters import OutflowBoundaryConditionType 
 
 import numpy as np
-#[DaveP] this does not work in sv.
-#from vmtk import vtkvmtk,vmtkscripts
+
+try:
+    from vmtk import vtkvmtk,vmtkscripts
+except ImportError:
+    print("vmtk not found.")
+
 import vtk.util.numpy_support as nps
 from vtk import vtkIdList
 from vtk import vtkPoints, vtkLine, vtkCellArray, vtkPolyData, vtkXMLPolyDataWriter
@@ -96,9 +100,9 @@ class Mesh(object):
         self.nodes = None 
         self.user_outlet_paths = None 
         self.bc_list = None
+        self.bc_map = None
         self.inflow_data = None
 
-        self.user_outlet_face_names = None
         self.outlet_face_names = None
 
         self.centerlines = None
@@ -138,7 +142,9 @@ class Mesh(object):
 
         self.set_path_elements(centerline_list)
         self.set_group_elements(group_list)
-        self.set_user_outlet_names(params)
+
+        if not self.outlet_face_names:
+            self.read_outlet_face_names(params)
 
         if not params.uniform_bc:
             self.set_variable_outflow_bcs(params)
@@ -315,15 +321,17 @@ class Mesh(object):
 
         ## Output outlet face names with the corresponding group id
         #
+        print("#### centerline_list: ", centerline_list)
+
         if self.outlet_face_names:
             outlet_face_names = self.outlet_face_names
             file_name = path.join(output_dir, self.OutputFileNames.OUTLET_FACE_GROUP_ID)
             with open(file_name, "w") as file:
                 for i in range(self.num_groups):
                     if self.group_terminal[i] == 1:
-                        tempelemid = self.group_elems[i][0]
-                        temppathid = centerline_list[tempelemid]
-                        file.write(outlet_face_names[temppathid]+" "+"GroupId "+str(i)+"\n")
+                        temp_elem_id = self.group_elems[i][0]
+                        temp_path_id = centerline_list[temp_elem_id]
+                        file.write(outlet_face_names[temp_path_id]+" "+"GroupId "+str(i)+"\n")
             #__with open(file_name, "w") as file
         #__if len(self.outlet_face_names) ! = 0
 
@@ -435,34 +443,16 @@ class Mesh(object):
 
         return materials
 
-    def set_user_outlet_names(self, params):
-        """ Read in user outlet face names file.
-
-        This file contains the names of outlet faces. This is file automatically created 
-        when extracting centerlines.
-
-	The program currently requires both 'outlet_face_names' and 'user_outlet_names' but
-        'outlet_face_names' are only defined when calculating centerlines.
+    def read_outlet_face_names(self, params):
+        """ Read in outlet face names file.
         """
-        outlet_face_names = self.outlet_face_names
-        user_outlet_face_names = []
-        self.logger.info("Read user provided model outlet names from: %s" % params.user_outlet_face_names_file) 
-        with open(params.user_outlet_face_names_file) as file:
+        outlet_face_names = []
+        self.logger.info("Read model outlet face names from: %s" % params.outlet_face_names_file) 
+        with open(params.outlet_face_names_file) as file:
             for line in file:
-               user_outlet_face_names.extend(line.splitlines())
-        self.logger.info("Number of user provided model outlet names: %d" % len(user_outlet_face_names))
-
-        if outlet_face_names == None:
-            self.outlet_face_names = user_outlet_face_names 
-        else:
-            self.logger.info("Number of outlets in the mesh-surfaces: %d" % len(outlet_face_names))
-
-            if len(user_outlet_names) != len(outlet_face_names):
-                print( "The number of user provided outlets is not consistant with the number of outlets in mesh-surfaces. Exit.")
-                exit()
-
-        self.user_outlet_face_names = user_outlet_face_names 
-
+               outlet_face_names.extend(line.splitlines())
+        self.logger.info("Number of model outlet faces names: %d" % len(outlet_face_names))
+        self.outlet_face_names = outlet_face_names 
 
     def set_variable_outflow_bcs(self, params):
         """ Read in data for variable flow boundary conditions.
@@ -477,6 +467,7 @@ class Mesh(object):
         bc_file = params.outflow_bc_file
         outflow_bc = params.outflow_bc_type
         bc_list = []
+        bc_map = dict()
 
         if outflow_bc == OutflowBoundaryConditionType.RESISTANCE:
             with open(bc_file) as rfile:
@@ -492,42 +483,25 @@ class Mesh(object):
         elif outflow_bc == OutflowBoundaryConditionType.RCR:
             with open(bc_file, "r") as rfile:
                 keyword = rfile.readline()
-                print(">>>>> keyword: ", keyword)
+                #print(">>>>> keyword: ", keyword)
                 while True:
                     tmp = rfile.readline()
                     if tmp == keyword:
                         RCRval = []
+                        face_name = rfile.readline().strip()
                         RCRval.append(float(rfile.readline()))
                         RCRval.append(float(rfile.readline()))
                         RCRval.append(float(rfile.readline()))
                         bc_list.append(RCRval)
-                        print(">>>>> RCRval: ", RCRval)
+                        bc_map[face_name] = RCRval
                     if len(tmp) == 0:
                         break
                 #__while True
         #__elif outflow_bc == OutflowBoundaryConditionType.RCR
 
+        print("###### bc_map: ", bc_map)
         self.bc_list = bc_list
-
-        ## Create a mapping from the pathlist (outlet_face_names) to user-provided 
-        #  face names from user_outlet_face_names' read from a file.
-        #
-        num_paths = self.num_paths 
-        user_outlet_paths = []
-
-        for i in range(0,num_paths):
-            for j in range(0,len(outlet_face_names)):
-                if self.outlet_face_names[i] == self.user_outlet_face_names[j]:
-                    user_outlet_paths.append(j)
-                    break
-            #__for j in range(0,len(useroutletname))
-        #__for i in range(0,num_paths)
-
-        print("###### self.user_outlet_paths: ", user_outlet_paths)
-        print("###### self.outlet_face_names: ", self.outlet_face_names)
-        print("###### self.user_outlet_face_names: ", self.user_outlet_face_names)
-        self.user_outlet_paths = user_outlet_paths
-
+        self.bc_map = bc_map
 
     def set_group_elements(self, group_list):
         """
@@ -1012,8 +986,8 @@ class Mesh(object):
         group_terminal = self.group_terminal 
         group_Ain = self.group_Ain 
         group_Aout = self.group_Aout 
-        user_outlet_face_names = self.user_outlet_face_names
         bc_list = self.bc_list
+        outlet_face_names = self.outlet_face_names
 
         uniform_bc = params.uniform_bc
         outflow_bc = params.outflow_bc_type
@@ -1051,7 +1025,7 @@ class Mesh(object):
                    tempgroupid = seg_list[i]
                    tempelemid = group_elems[tempgroupid][0]
                    temppathid = centerline_list[tempelemid]
-                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(user_outlet_face_names[temppathid]))
+                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(outlet_face_names[temppathid]))
            else:
                ofile.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)

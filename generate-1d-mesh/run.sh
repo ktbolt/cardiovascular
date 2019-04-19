@@ -1,21 +1,4 @@
 
-cl_file=/home/davep/software/ktbolt/cardiovascular/generate-1d-mesh/output/centerlines.vtp
-# Can't use Merged_Centerlines.vtp.
-#cl_file=/home/davep/Simvascular/sim-1d-demo/Models/Merged_Centerlines.vtp
-cl_file=/home/davep/Simvascular/sim-1d-demo/Models/Full_Centerlines.vtp
-cl_file=example/SU201_2005_RPA1_cl.vtp
-
-surfaces_dir=/home/davep/Simvascular/DemoProject/Simulations/demojob/mesh-complete/mesh-surfaces
-surfaces_dir=example/mesh-surfaces
-
-inlet_file=cap_aorta.vtp
-inlet_file=inflow.vtp
-
-inflow_file=inflow.flow
-
-surface_model=/home/davep/Simvascular/DemoProject/Simulations/demojob/mesh-complete/mesh-complete.exterior.vtp
-surface_model=example/SU201_2005_RPA1_exterior.vtp
-
 test_name="wall_props"
 test_name="read_centerlines"
 test_name="compute_mesh"
@@ -23,6 +6,14 @@ test_name="compute_centerlines"
 test_name="write_solver_file"
 
 if [ $test_name  == "compute_centerlines" ]; then
+
+    surfaces_dir=/home/davep/Simvascular/DemoProject/Simulations/demojob/mesh-complete/mesh-surfaces
+    surface_model=/home/davep/Simvascular/DemoProject/Simulations/demojob/mesh-complete/mesh-complete.exterior.vtp
+    inlet_file=cap_aorta.vtp
+
+    surfaces_dir=example/mesh-surfaces
+    surface_model=example/SU201_2005_RPA1_exterior.vtp
+    inlet_file=inflow.vtp
 
     python generate_1d_mesh.py \
         --boundary-surfaces-directory ${surfaces_dir} \
@@ -36,6 +27,8 @@ if [ $test_name  == "compute_centerlines" ]; then
 
 elif [ $test_name  == "read_centerlines" ]; then
 
+    cl_file=example/SU201_2005_RPA1_cl.vtp
+
     python generate_1d_mesh.py \
         --output-directory $PWD/output \
         --centerlines-input-file ${cl_file} \
@@ -43,6 +36,7 @@ elif [ $test_name  == "read_centerlines" ]; then
         --solver-output-file solver.in
 
 elif [ $test_name  == "wall_props" ]; then
+    cl_file=example/SU201_2005_RPA1_cl.vtp
     python generate_1d_mesh.py \
         --output-directory $PWD/output \
         --centerlines-input-file ${cl_file} \
@@ -52,17 +46,23 @@ elif [ $test_name  == "wall_props" ]; then
         --solver-output-file solver.in
 
 elif [ $test_name  == "write_solver_file" ]; then
+
+    cl_file=example/SU201_2005_RPA1_cl.vtp
+    inflow_file=$PWD/input/inflow.flow
+    outlet_face_names_file=$PWD/input/outlet_face_names.dat
+    outflow_bc_input_file=$PWD/input/rcrt.dat
+
     python generate_1d_mesh.py \
         --output-directory $PWD/output \
         --units mm \
         --centerlines-input-file ${cl_file} \
-        --user-outlet-face-names-file $PWD/example/outlets.dat \
+        --outlet-face-names-input-file ${outlet_face_names_file} \
         --uniform-bc false \
-        --outflow-bc-type rcr \
         --inflow-input-file ${inflow_file} \
+        --outflow-bc-type rcr \
+        --outflow-bc-input-file ${outflow_bc_input_file} \
         --write-solver-file   \
         --solver-output-file solver.in
-
 
 # Compute mesh only.
 #
