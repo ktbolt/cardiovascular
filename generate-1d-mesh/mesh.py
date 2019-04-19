@@ -481,6 +481,7 @@ class Mesh(object):
                 raise RuntimeError(msg)
 
         elif outflow_bc == OutflowBoundaryConditionType.RCR:
+            n = 0
             with open(bc_file, "r") as rfile:
                 keyword = rfile.readline()
                 #print(">>>>> keyword: ", keyword)
@@ -493,7 +494,8 @@ class Mesh(object):
                         RCRval.append(float(rfile.readline()))
                         RCRval.append(float(rfile.readline()))
                         bc_list.append(RCRval)
-                        bc_map[face_name] = RCRval
+                        bc_map[face_name] = (n,RCRval)
+                        n += 1
                     if len(tmp) == 0:
                         break
                 #__while True
@@ -1022,10 +1024,17 @@ class Mesh(object):
                    ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
                    print("###### bug: group_terminal[seg_list[i]] == 1")
                else:
-                   tempgroupid = seg_list[i]
-                   tempelemid = group_elems[tempgroupid][0]
-                   temppathid = centerline_list[tempelemid]
-                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(outlet_face_names[temppathid]))
+                   temp_group_id = seg_list[i]
+                   temp_elem_id = group_elems[temp_group_id][0]
+                   temp_path_id = centerline_list[temp_elem_id]
+                   outlet_face = outlet_face_names[temp_path_id]
+                   map_val = self.bc_map[outlet_face]
+                   print("###### add segment: ", i)
+                   print("    temp_path_id: ", temp_path_id)
+                   print("    face name: ", outlet_face)
+                   print("    map valname: ", map_val) 
+                   #ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(temp_path_id))
+                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(map_val[0]))
            else:
                ofile.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)
@@ -1042,8 +1051,12 @@ class Mesh(object):
             if outflow_bc == OutflowBoundaryConditionType.RCR:
                 for i in range(0,num_path):
                     ofile.writeln("DATATABLE " + outflow_bc_uc +"_"+str(i)+" LIST")
+                    outlet_face = outlet_face_names[i]
+                    map_val = self.bc_map[outlet_face]
+                    bc_data = map_val[1]
                     for j in range(0, len(bc_list[i])):
-                        ofile.writeln("0.0 "+ str(bc_list[i][j]))
+                        #ofile.writeln("0.0 "+ str(bc_list[i][j]))
+                        ofile.writeln("0.0 "+ str(bc_data[j]))
                     ofile.writeln("ENDDATATABLE")
                     ofile.writeln("")
                 #__for i in range(0,num_path)

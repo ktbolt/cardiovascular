@@ -815,10 +815,12 @@ for i in range(0,num_seg):
       if uniformBC==1:
         file.write(outflowBC+ " " + outflowBC +"_1 \n")
       else:
-        print("######## outflowBC ", outflowBC)
         tempgroupid=seg_list[i]
         tempelemid=group_elems[tempgroupid][0]
         temppathid=centerline_list[tempelemid]
+        print("######## add segment: ", i)
+        print("    temppathid: ", temppathid)
+        print("    path2useroutlet[temppathid]: ", path2useroutlet[temppathid])
         file.write(outflowBC+ " "+ outflowBC +"_"+str(path2useroutlet[temppathid])+ " \n")
    else:
       file.write("NOBOUND NONE \n")   
