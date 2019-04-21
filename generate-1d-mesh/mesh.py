@@ -14,6 +14,7 @@ from os import path
 import logging
 from manage import get_logger_name
 from parameters import OutflowBoundaryConditionType 
+from collections import OrderedDict 
 
 import numpy as np
 
@@ -104,6 +105,7 @@ class Mesh(object):
         self.inflow_data = None
 
         self.outlet_face_names = None
+        self.outlet_face_names_index = None
 
         self.centerlines = None
         self.centerlines_geometry = None 
@@ -121,7 +123,8 @@ class Mesh(object):
         self.centerlines_geometry = centerlines.branch_geometry
 
         # Set outlet face names.
-        self.outlet_face_names = self.centerlines.outlet_face_names
+        self.set_outlet_face_names(params)
+        self.logger.info("Outlet face names: %s" % str(self.outlet_face_names))
 
         # Check that centerline geometry has the required data fields.
         if not self.check_centerlines_data():
@@ -142,9 +145,6 @@ class Mesh(object):
 
         self.set_path_elements(centerline_list)
         self.set_group_elements(group_list)
-
-        if not self.outlet_face_names:
-            self.read_outlet_face_names(params)
 
         if not params.uniform_bc:
             self.set_variable_outflow_bcs(params)
@@ -170,6 +170,21 @@ class Mesh(object):
         if params.write_solver_file:
             self.write_solver_file(params, centerline_list)
             self.write_results(params, centerline_list, group_list)
+
+    def set_outlet_face_names(self, params): 
+        """ Set outlet face names.
+        """
+        if self.centerlines.outlet_face_names != None:
+            outlet_face_names = self.centerlines.outlet_face_names
+        else:
+            outlet_face_names = self.read_outlet_face_names(params)
+
+        ## Create a map between outlet face name and path ID.
+        self.outlet_face_names_index = OrderedDict()
+        self.outlet_face_names = []
+        for i,face_name in enumerate(outlet_face_names):
+            self.outlet_face_names.append(face_name)
+            self.outlet_face_names_index[face_name] = i
 
     def calculate_connectivity(self, params, blank_list, centerline_list, group_list, tract_list):
         """ calculate connectivity.
@@ -452,7 +467,7 @@ class Mesh(object):
             for line in file:
                outlet_face_names.extend(line.splitlines())
         self.logger.info("Number of model outlet faces names: %d" % len(outlet_face_names))
-        self.outlet_face_names = outlet_face_names 
+        return outlet_face_names 
 
     def set_variable_outflow_bcs(self, params):
         """ Read in data for variable flow boundary conditions.
@@ -481,7 +496,6 @@ class Mesh(object):
                 raise RuntimeError(msg)
 
         elif outflow_bc == OutflowBoundaryConditionType.RCR:
-            n = 0
             with open(bc_file, "r") as rfile:
                 keyword = rfile.readline()
                 #print(">>>>> keyword: ", keyword)
@@ -494,8 +508,8 @@ class Mesh(object):
                         RCRval.append(float(rfile.readline()))
                         RCRval.append(float(rfile.readline()))
                         bc_list.append(RCRval)
-                        bc_map[face_name] = (n,RCRval)
-                        n += 1
+                        pathID = self.outlet_face_names_index[face_name]
+                        bc_map[face_name] = (pathID,RCRval)
                     if len(tmp) == 0:
                         break
                 #__while True
@@ -990,6 +1004,7 @@ class Mesh(object):
         group_Aout = self.group_Aout 
         bc_list = self.bc_list
         outlet_face_names = self.outlet_face_names
+        outlet_face_names_index = self.outlet_face_names_index
 
         uniform_bc = params.uniform_bc
         outflow_bc = params.outflow_bc_type
@@ -1033,8 +1048,8 @@ class Mesh(object):
                    print("    temp_path_id: ", temp_path_id)
                    print("    face name: ", outlet_face)
                    print("    map valname: ", map_val) 
-                   #ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(temp_path_id))
-                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(map_val[0]))
+                   ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(temp_path_id))
+                   #ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(map_val[0]))
            else:
                ofile.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)
@@ -1054,6 +1069,10 @@ class Mesh(object):
                     outlet_face = outlet_face_names[i]
                     map_val = self.bc_map[outlet_face]
                     bc_data = map_val[1]
+                    print("#### path: ", i) 
+                    print("     face: ", outlet_face) 
+                    print("     bc_data: ", bc_data) 
+                    print("     map_val: ", map_val) 
                     for j in range(0, len(bc_list[i])):
                         #ofile.writeln("0.0 "+ str(bc_list[i][j]))
                         ofile.writeln("0.0 "+ str(bc_data[j]))
