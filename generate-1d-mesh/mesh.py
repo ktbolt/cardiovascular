@@ -336,7 +336,7 @@ class Mesh(object):
 
         ## Output outlet face names with the corresponding group id
         #
-        print("#### centerline_list: ", centerline_list)
+        #print("#### centerline_list: ", centerline_list)
 
         if self.outlet_face_names:
             outlet_face_names = self.outlet_face_names
@@ -386,9 +386,11 @@ class Mesh(object):
         #__for i in range(num_groups)
 
         if (tmp != len(self.group_elems[0])) or (tmp != num_outlet) or (self.num_paths != num_outlet):
-            print( "Warning: inlet group id is not 0 or number of centerlines is not equal to the number of outlets")
-            print( "num_path=",self.num_paths,"num_outlet=",num_outlet,"len(group_elems[0])=",len(self.group_elems[0]),"tmp=",tmp)
-            exit()
+            msg = "Inlet group id is not 0 or number of centerlines is not equal to the number of outlets"
+            self.logger.critical(msg)
+            self.logger.critical("num_paths=%d num_outlet=%d  len(self.group_elems[0])=%d  tmp=%s" % \
+              (self.num_paths, num_outlet, len(self.group_elems[0]), tmp))
+            raise RuntimeError(msg)
 
         num_seg = self.num_groups - num_bif
         num_node = num_bif + num_outlet + 1
@@ -407,8 +409,9 @@ class Mesh(object):
         #print( "group_seg=",group_seg)
 
         if len(seg_list) != num_seg:
-            print( "Error! length of seg_list is not equal to num_seg")
-            exit()
+            msg = "Length of seg_list %d is not equal to num_seg %d" % (len(seg_list), num_seg)
+            self.logger.critical(msg)
+            raise RuntimeError(msg)
 
         return seg_list, group_seg, group_terminal
 
@@ -515,7 +518,7 @@ class Mesh(object):
                 #__while True
         #__elif outflow_bc == OutflowBoundaryConditionType.RCR
 
-        print("###### bc_map: ", bc_map)
+        #print("###### bc_map: ", bc_map)
         self.bc_list = bc_list
         self.bc_map = bc_map
 
@@ -623,8 +626,8 @@ class Mesh(object):
             tmpAout = params.Acoef * tmpAout/len(group_elems[i])
  
             if (tmpAin < tmpAout) and (group_terminal[i] != 2):
-                print("warning! Ain<Aout in group id = ",i)
-                print("set Ain = Aout")
+                self.logger.warning("warning! Ain < Aout in group id = ",i)
+                self.logger.warning("set Ain = Aout")
                 tmpAin = tmpAout
 
             # For bifurcation group, approximate as a straight uniform cylinder.
@@ -1037,19 +1040,16 @@ class Mesh(object):
                if uniform_bc:
                    outflow_bc = OutflowBoundaryConditionType.RCR.upper()
                    ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
-                   print("###### bug: group_terminal[seg_list[i]] == 1")
+                   msg = "While writing solver segments encountered: group_terminal[seg_list[i]] == 1"
+                   self.logger.critical(msg)
+                   raise RuntimeError(msg)
                else:
                    temp_group_id = seg_list[i]
                    temp_elem_id = group_elems[temp_group_id][0]
                    temp_path_id = centerline_list[temp_elem_id]
                    outlet_face = outlet_face_names[temp_path_id]
                    map_val = self.bc_map[outlet_face]
-                   print("###### add segment: ", i)
-                   print("    temp_path_id: ", temp_path_id)
-                   print("    face name: ", outlet_face)
-                   print("    map valname: ", map_val) 
                    ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(temp_path_id))
-                   #ofile.writeln(outflow_bc_uc + " "+ outflow_bc_uc +"_"+str(map_val[0]))
            else:
                ofile.writeln("NOBOUND NONE")   
         #__for i in range(0,num_seg)
@@ -1069,12 +1069,7 @@ class Mesh(object):
                     outlet_face = outlet_face_names[i]
                     map_val = self.bc_map[outlet_face]
                     bc_data = map_val[1]
-                    print("#### path: ", i) 
-                    print("     face: ", outlet_face) 
-                    print("     bc_data: ", bc_data) 
-                    print("     map_val: ", map_val) 
                     for j in range(0, len(bc_list[i])):
-                        #ofile.writeln("0.0 "+ str(bc_list[i][j]))
                         ofile.writeln("0.0 "+ str(bc_data[j]))
                     ofile.writeln("ENDDATATABLE")
                     ofile.writeln("")
