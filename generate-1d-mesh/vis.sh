@@ -1,22 +1,35 @@
 
-test_name="pressure"
-test_name="compare_pressure"
+group=$1
+segment=$2
+data_name=$3
 
-if [ $test_name == "pressure" ]; then
+comp_model_name=SU201_2005
 
-    file_name=$PWD/output/modelGroup0_Seg0_pressure.dat
+if [ "$#" -eq 4 ]; then
+    test_name="compare"
+else
+    test_name="single"
+fi
 
-    python3 vis_results.py --file-name output/modelGroup0_Seg0_pressure.dat \
-                           --data-name pressure
+if [ $test_name == "single" ]; then
 
-elif [ $test_name == "compare_pressure" ]; then
+    python3 vis_results.py \
+        --output-directory $PWD/output \
+        --model-name model \
+        --group ${group} \
+        --segment ${segment} \
+        --data-name ${data_name}
 
-    file_name=$PWD/output/modelGroup0_Seg0_pressure.dat
-    compare_file_name=$PWD/example/SU201_2005Group0_Seg0_pressure.dat 
+elif [ $test_name == "compare" ]; then
 
-    python3 vis_results.py --file-name ${file_name} \
-                           --compare-file-name ${compare_file_name}  \
-                           --data-name pressure
+    python3 vis_results.py \
+        --output-directory $PWD/output \
+        --model-name model \
+        --group ${group} \
+        --segment ${segment} \
+        --data-name ${data_name} \
+        --compare-output-directory $PWD/example \
+        --compare-model-name ${comp_model_name} 
 
 fi
 
