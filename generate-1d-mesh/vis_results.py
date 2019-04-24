@@ -4,8 +4,8 @@
 This script is used to compare and visualize 1D solver results. 
 """
 import argparse
-import sys
 import os 
+import sys
 
 from manage import get_logger_name, init_logging
 from parameters import Parameters
@@ -207,9 +207,16 @@ class Results():
         fig, ax = plt.subplots()
         ax.plot(t, v, 'r')
         #ax.plot(t, v, 'r', label='first')
+        max_val = max(self.data[block_id])
+        min_val = min(self.data[block_id])
 
         if self.compare_data:
             ax.plot(t, self.compare_data[block_id], 'b.', label='compare')
+            max_diff = 0.0
+            for (v1, v2) in zip(self.data[block_id],self.compare_data[block_id]):
+                diff = abs(v1 - v2)
+                max_diff = diff if diff > max_diff else max_diff
+            logger.info("Maximum difference: %f  (%f precent)" % (max_diff, 100.0*(max_diff / (max_val-min_val))))
 
         ax.set(xlabel='time (s)', ylabel=ylabel, title=title)
         ax.grid()
