@@ -1,0 +1,14 @@
+{
+  "description": {
+     "type": "1D mesh generation parameter file",
+     "format" : {
+         "num_time_steps" : "number of simulation time steps"
+     }
+  },
+
+  "num_time_steps": 2000,
+  "time_step": 0.000588,
+  "data_save_frequency": 20
+}
+
+

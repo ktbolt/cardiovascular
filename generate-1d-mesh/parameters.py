@@ -44,11 +44,13 @@ class Parameters():
 
         # Mesh size in a vessel segment.
         self.dx = 0.1
+
         # Min number of elements for a segment.
-        self.minnumfe = 10
-        self.timestep = 0.000588
-        self.numtimesteps = 2000
-        self.tincr = 20
+        self.min_num_elems = 10
+
+        self.time_step = 0.000588
+        self.num_time_steps = 2000
+        self.data_save_freq = 20
 
         # Units conversion from mm to cgs.
         self.units = self.Units.CM

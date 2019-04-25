@@ -1014,7 +1014,7 @@ class Mesh(object):
         outflow_bc_uc = params.outflow_bc_type.upper()   # 1D solve needs upper case.
         uniform_material = params.uniform_material
         dx = params.dx 
-        minnumfe = params.minnumfe
+        min_num_elems = params.min_num_elems
         inflow_data = self.inflow_data
 
         self.logger.info("Uniform BC: %s" % uniform_bc)
@@ -1028,8 +1028,8 @@ class Mesh(object):
            
            numfe = int(round(group_length[seg_list[i]]/dx))
 
-           if numfe < minnumfe:
-               numfe = minnumfe
+           if numfe < min_num_elems:
+               numfe = min_num_elems
 
            ofile.write("SEGMENT" + sp + "Group"+ str(seg_list[i])+"_Seg"+str(i) + sp + str(i) + sp + 
              str(group_length[seg_list[i]]) + sp + str(numfe) + sp + str(seg_head[i]) + sp + 
@@ -1121,11 +1121,11 @@ class Mesh(object):
         self.write_solver_section_header(ofile, header)
 
         sp = self.space
-        timestep = params.timestep
-        numtimesteps = params.numtimesteps
-        tincr = params.tincr
+        time_step = params.time_step
+        num_time_steps = params.num_time_steps
+        data_save_freq = params.data_save_freq
 
-        ofile.writeln("SOLVEROPTIONS "+ str(timestep)+ " "+ str(tincr) +" "+ str(numtimesteps) + " 2 INFLOW FLOW 1.0e-5 1 1")
+        ofile.writeln("SOLVEROPTIONS "+ str(time_step)+ " "+ str(data_save_freq) +" "+ str(num_time_steps) + " 2 INFLOW FLOW 1.0e-5 1 1")
         ofile.writeln("")
 
     def write_solver_material(self, ofile, params):

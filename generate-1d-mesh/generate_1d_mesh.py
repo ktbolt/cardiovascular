@@ -31,6 +31,7 @@ class Args(object):
     INLET_FACE_INPUT_FILE = "inlet_face_input_file"
     INFLOW_INPUT_FILE = "inflow_input_file"
     MESH_OUTPUT_FILE = "mesh_output_file"
+    MINIMUM_NUMBER_ELEMENTS = "min_num_elements"
     OUTFLOW_BC_INPUT_FILE = "outflow_bc_input_file"
     OUTFLOW_BC_TYPE = "outflow_bc_type"
     OUTLET_FACE_NAMES_INPUT_FILE = "outlet_face_names_input_file"
@@ -77,6 +78,9 @@ def parse_args():
     parser.add_argument(cmd(Args.MESH_OUTPUT_FILE), 
       help="The name of the file to write the mesh to.")
 
+    parser.add_argument(cmd(Args.MINIMUM_NUMBER_ELEMENTS), type=int,
+      help="The minimum number of finite elements per segment.")
+
     parser.add_argument(cmd(Args.OUTFLOW_BC_INPUT_FILE), 
       help="The output boundary condition input file (RESISTANCE, RCR).")
 
@@ -119,7 +123,6 @@ def set_parameters(**kwargs):
     """ Set the values of parameters input from the command line.
     """
     logger.info("Parse arguments ...")
-    print(kwargs)
 
     ## Create a Parameters object to store parameters.
     params = Parameters()
@@ -184,6 +187,10 @@ def set_parameters(**kwargs):
     if kwargs.get(Args.MESH_OUTPUT_FILE):
         params.mesh_output_file = kwargs.get(Args.MESH_OUTPUT_FILE)
         logger.info("Mesh output file: %s" % params.mesh_output_file)
+
+    if kwargs.get(Args.MINIMUM_NUMBER_ELEMENTS):
+        params.min_num_elems = kwargs.get(Args.MINIMUM_NUMBER_ELEMENTS)
+    logger.info("Minimum number of finite elements per segment: %d" % params.min_num_elems)
 
     if kwargs.get(Args.OUTFLOW_BC_INPUT_FILE):
         params.outflow_bc_file = kwargs.get(Args.OUTFLOW_BC_INPUT_FILE)
