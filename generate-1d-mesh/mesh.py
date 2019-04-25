@@ -1123,9 +1123,9 @@ class Mesh(object):
         sp = self.space
         time_step = params.time_step
         num_time_steps = params.num_time_steps
-        data_save_freq = params.data_save_freq
+        save_data_freq = params.save_data_freq
 
-        ofile.writeln("SOLVEROPTIONS "+ str(time_step)+ " "+ str(data_save_freq) +" "+ str(num_time_steps) + " 2 INFLOW FLOW 1.0e-5 1 1")
+        ofile.writeln("SOLVEROPTIONS "+ str(time_step)+ " "+ str(save_data_freq) +" "+ str(num_time_steps) + " 2 INFLOW FLOW 1.0e-5 1 1")
         ofile.writeln("")
 
     def write_solver_material(self, ofile, params):

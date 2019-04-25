@@ -50,7 +50,7 @@ class Parameters():
 
         self.time_step = 0.000588
         self.num_time_steps = 2000
-        self.data_save_freq = 20
+        self.save_data_freq = 20
 
         # Units conversion from mm to cgs.
         self.units = self.Units.CM
