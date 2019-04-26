@@ -850,8 +850,7 @@ class Mesh(object):
         self.logger.info("Write solver file.")
         output_dir = params.output_directory
         file_name = path.join(output_dir, params.solver_output_file) 
-        #model_name, sep, tail = file_name.partition('.')
-        model_name = "model"
+        model_name = params.model_name
         sp = self.space
         #print("Solver file %s" % file_name)
 
