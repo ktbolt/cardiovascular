@@ -419,7 +419,8 @@ def run_from_c(*args, **kwargs):
 
     The '*args' argument contains the directory to write the log file.
     """
-    init_logging(args[0])
+    output_dir = args[0]
+    init_logging(output_dir)
     msg = "status:ok\n"
 
     try:
@@ -428,7 +429,12 @@ def run_from_c(*args, **kwargs):
         msg = "status:error\n"
         msg += "exception:" + str(e) + "\n"
 
-    with open(get_log_file_name(), 'r') as file:
+    ## Attach log file to returned result.
+    #
+    msg = "log file:\n"
+    log_file_name = path.join(output_dir, get_log_file_name())
+
+    with open(log_file_name, 'r') as file:
         msg += file.read()
 
     return msg
@@ -440,6 +446,5 @@ if __name__ == '__main__':
     init_logging()
     args, print_help = parse_args()
     if not run(**vars(args)):
-        #print_help()
         sys.exit(1)
 
