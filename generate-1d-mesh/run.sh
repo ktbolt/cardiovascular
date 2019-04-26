@@ -5,6 +5,8 @@ test_name="compute_mesh"
 test_name="compute_centerlines"
 test_name="write_solver_file"
 
+python=python3
+
 ## Write a 1D solver input file.
 #
 # Centerlines are read from a file.
@@ -16,7 +18,7 @@ if [ $test_name  == "write_solver_file" ]; then
     outlet_face_names_file=$PWD/input/outlet_face_names.dat
     outflow_bc_input_file=$PWD/input/rcrt.dat
 
-    python generate_1d_mesh.py \
+    ${python} generate_1d_mesh.py \
         --model-name SU201_2005 \
         --output-directory $PWD/output \
         --units mm \
@@ -32,7 +34,6 @@ if [ $test_name  == "write_solver_file" ]; then
 
 ## Just compute centerlines.
 #
-
 elif [ $test_name  == "compute_centerlines" ]; then
 
     surfaces_dir=/home/davep/Simvascular/DemoProject/Simulations/demojob/mesh-complete/mesh-surfaces
@@ -43,7 +44,7 @@ elif [ $test_name  == "compute_centerlines" ]; then
     surface_model=example/SU201_2005_RPA1_exterior.vtp
     inlet_file=inflow.vtp
 
-    python generate_1d_mesh.py \
+    ${python} generate_1d_mesh.py \
         --model-name SU201_2005 \
         --boundary-surfaces-directory ${surfaces_dir} \
         --inlet-face-input-file ${inlet_file} \
@@ -60,7 +61,7 @@ elif [ $test_name  == "read_centerlines" ]; then
 
     cl_file=example/SU201_2005_RPA1_cl.vtp
 
-    python generate_1d_mesh.py \
+    ${python} generate_1d_mesh.py \
         --model-name SU201_2005 \
         --output-directory $PWD/output \
         --centerlines-input-file ${cl_file} \
@@ -69,7 +70,7 @@ elif [ $test_name  == "read_centerlines" ]; then
 
 elif [ $test_name  == "wall_props" ]; then
     cl_file=example/SU201_2005_RPA1_cl.vtp
-    python generate_1d_mesh.py \
+    ${python} generate_1d_mesh.py \
         --model-name SU201_2005 \
         --output-directory $PWD/output \
         --centerlines-input-file ${cl_file} \
@@ -81,7 +82,7 @@ elif [ $test_name  == "wall_props" ]; then
 # Compute mesh only.
 #
 elif [ $test_name  == "compute_mesh" ]; then
-    python generate_1d_mesh.py \
+    ${python} generate_1d_mesh.py \
         --model-name SU201_2005 \
         --output-directory $PWD/output \
         --centerlines-input-file ${cl_file} \
