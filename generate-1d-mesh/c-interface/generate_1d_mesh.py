@@ -11,11 +11,12 @@ import argparse
 import sys
 import os 
 
-from manage import get_logger_name, init_logging, get_log_file_name
+import logging
+from manage import get_logger_name, init_logging
 from parameters import Parameters
-from centerlines import *
-from mesh import *
-from utils import write_polydata, read_polydata
+#from centerlines import *
+#from mesh import *
+#from utils import write_polydata, read_polydata
 
 logger = logging.getLogger(get_logger_name())
 
@@ -137,10 +138,6 @@ def parse_args():
 
 def set_parameters(**kwargs):
     """ Set the values of parameters input from the command line.
-
-    The **kwargs argument can originate from the command line or from a direct
-    call to the 'run()' function, in which case parser.parse_args() is not called
-    and so we need to check here if required arguments have been passed.
     """
     logger.info("Parse arguments ...")
 
@@ -203,10 +200,11 @@ def set_parameters(**kwargs):
         params.output_directory = kwargs.get(Args.OUTPUT_DIRECTORY)
         if not os.path.exists(params.output_directory):
             logger.error("The output directory '%s' was not found." % params.output_directory)
-            return None
+            raise RuntimeError("The output directory '%s' was not found." % params.output_directory)
+            #return None
     else:
-        logger.error("An output directory argument must be given.")
-        return None
+        logger.error("No output directory given.")
+        raise RuntimeError("No output directory given.")
 
     if kwargs.get(Args.MESH_OUTPUT_FILE):
         params.mesh_output_file = kwargs.get(Args.MESH_OUTPUT_FILE)
@@ -342,59 +340,16 @@ def set_parameters(**kwargs):
 
     return params 
 
-def read_centerlines(params):
-    """ Read centerlines for a surface model from a file.
-    
-    The centerlines must have had 
-    """
-    centerlines = Centerlines()
-    centerlines.read(params, params.centerlines_input_file)
-
-    logger.info("Read centerlines from the file: %s", params.centerlines_input_file) 
-    logger.info("   Number of points: %d ", centerlines.branch_geometry.GetNumberOfPoints())
-    logger.info("   Number of cells: %d ", centerlines.branch_geometry.GetNumberOfCells())
-    logger.info("   Number of arrays: %d", centerlines.branch_geometry.GetCellData().GetNumberOfArrays())
-
-    return centerlines
-
-def compute_centerlines(params):
-    """ Compute the centerlines for a surface model.
-    """
-
-    ## Check input parameters.
-    #
-    if not params.surface_model:
-        logger.error("No surface model has been specified.")
-        return
-
-    if not params.centerlines_output_file:
-        logger.error("No centerlines output file has been specified.")
-        return
-
-    # Create Centerlines object that encapsulats centerline calculations. 
-    centerlines = Centerlines()
-
-    # Extract centerlines.
-    centerlines.extract_center_lines(params)
-
-    # Split and group centerlines along branches. 
-    centerlines.extract_branches(params)
-
-    # Write the centerlines branches to a file.
-    if centerlines.branch_geometry:
-        write_polydata(params.centerlines_output_file, centerlines.branch_geometry)
-
-    return centerlines
-
 def run(**kwargs):
     """ Execute the 1D mesh generation using passed parameters.
     """
+
     ## Set input parameters.
     params = set_parameters(**kwargs)
     if not params:
         return False
 
-    centerlines = None 
+    centerlines = None
 
     ## Extract surface centerlines.
     if params.compute_centerlines:
@@ -414,32 +369,21 @@ def run(**kwargs):
 
     return True
 
-def run_from_c(*args, **kwargs):
-    """ Execute the 1D mesh generation using passed parameters from c++
-
-    The '*args' argument contains the directory to write the log file.
-    """
-    init_logging(args[0])
-    msg = "status:ok\n"
-
+def crun(*args, **kwargs):
+    init_logging()
+    print("-------- crun -------")
+    print(">>> output dir: ", args[0])
+    msg = "staus:ok\n"
     try:
         run(**kwargs)
     except Exception as e:
         msg = "status:error\n"
         msg += "exception:" + str(e) + "\n"
 
-    with open(get_log_file_name(), 'r') as file:
+    open("generate_1d_mesh.log", "r");
+    with open('generate_1d_mesh.log', 'r') as file:
         msg += file.read()
 
     return msg
 
-    if not run(**kwargs):
-        sys.exit(1)
-
-if __name__ == '__main__':
-    init_logging()
-    args, print_help = parse_args()
-    if not run(**vars(args)):
-        #print_help()
-        sys.exit(1)
-
+    

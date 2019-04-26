@@ -1,0 +1,3 @@
+[generate-1d-mesh] INFO - Parse arguments ...
+[generate-1d-mesh] INFO - Compute centerlines: False
+[generate-1d-mesh] ERROR - No output directory given.
