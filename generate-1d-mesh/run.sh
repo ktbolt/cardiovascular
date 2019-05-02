@@ -3,9 +3,12 @@ test_name="wall_props"
 test_name="read_centerlines"
 test_name="compute_mesh"
 test_name="compute_centerlines"
+
 test_name="write_solver_file"
+test_name="resistance_bc"
 
 python=python3
+python=python
 
 ## Write a 1D solver input file.
 #
@@ -13,10 +16,16 @@ python=python3
 # 
 if [ $test_name  == "write_solver_file" ]; then
 
-    cl_file=example/SU201_2005_RPA1_cl.vtp
+    cl_file=~/centerlines.vtp
     inflow_file=$PWD/input/inflow.flow
     outlet_face_names_file=$PWD/input/outlet_face_names.dat
     outflow_bc_input_file=$PWD/input/rcrt.dat
+
+    # This should match the example results.
+    cl_file=example/SU201_2005_RPA1_cl.vtp
+    inflow_file=$PWD/input/inflow.flow
+    outlet_face_names_file=$PWD/input/outlet_face_names_ex.dat
+    outflow_bc_input_file=$PWD/input/rcrt_ex.dat
 
     ${python} generate_1d_mesh.py \
         --model-name SU201_2005 \
@@ -31,6 +40,32 @@ if [ $test_name  == "write_solver_file" ]; then
         --write-solver-file   \
         --solver-output-file solver.in
 
+## Resistance bc. 
+#
+elif [ $test_name  == "resistance_bc" ]; then
+
+    cl_file=example/SU201_2005_RPA1_cl.vtp
+    inflow_file=$PWD/input/inflow.flow
+    outlet_face_names_file=$PWD/input/outlet_face_names.dat
+    outflow_bc_input_file=$PWD/input/resistance.dat
+
+    cl_file=~/centerlines.vtp
+    inflow_file=$PWD/input/inflow.flow
+    outlet_face_names_file=$PWD/input/outlet_face_names.dat
+    outflow_bc_input_file=$PWD/input/resistance.dat
+
+    ${python} generate_1d_mesh.py \
+        --model-name SU201_2005 \
+        --output-directory $PWD/output \
+        --units mm \
+        --centerlines-input-file ${cl_file} \
+        --outlet-face-names-input-file ${outlet_face_names_file} \
+        --uniform-bc false \
+        --inflow-input-file ${inflow_file} \
+        --outflow-bc-type resistance \
+        --outflow-bc-input-file ${outflow_bc_input_file} \
+        --write-solver-file   \
+        --solver-output-file solver.in
 
 ## Just compute centerlines.
 #

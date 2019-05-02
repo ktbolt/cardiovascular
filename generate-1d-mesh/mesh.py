@@ -488,9 +488,19 @@ class Mesh(object):
         bc_map = dict()
 
         if outflow_bc == OutflowBoundaryConditionType.RESISTANCE:
+            self.logger.info("Read resistance BCs ...")
             with open(bc_file) as rfile:
                 for line in rfile:
-                    bc_list.append(float(line))
+                    face_name, value = line.strip().split(' ')
+                    self.logger.info("Face %s  value %s" % (face_name, value))
+                    if not face_name[0].isalpha():
+                        msg = "The resistance file is in the wrong format, expecting face name / value pairs."
+                        self.logger.error(msg)
+                        raise RuntimeError(msg)
+                    #value = float(rfile.readline())
+                    bc_list.append(value)
+                    pathID = self.outlet_face_names_index[face_name]
+                    bc_map[face_name] = (pathID,value)
             #__with open(bc_file) as rfile
 
             if len(bc_list) != len(outlet_face_names):
@@ -1012,7 +1022,7 @@ class Mesh(object):
         outflow_bc = params.outflow_bc_type
         outflow_bc_uc = params.outflow_bc_type.upper()   # 1D solve needs upper case.
         uniform_material = params.uniform_material
-        dx = params.dx 
+        dx = params.element_size
         min_num_elems = params.min_num_elems
         inflow_data = self.inflow_data
 
