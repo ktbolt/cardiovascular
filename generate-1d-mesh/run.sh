@@ -64,6 +64,7 @@ elif [ $test_name  == "resistance_bc" ]; then
         --inflow-input-file ${inflow_file} \
         --outflow-bc-type resistance \
         --outflow-bc-input-file ${outflow_bc_input_file} \
+        --num-time-steps '2000' \
         --write-solver-file   \
         --solver-output-file solver.in
 
