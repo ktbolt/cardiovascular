@@ -521,7 +521,8 @@ class Mesh(object):
             except Exception as e:
                 msg = "The resistance file is in the wrong format, expecting face name / value pairs.\n"
                 self.logger.error(msg)
-                raise RuntimeError(str(e))
+                msg = "Exception: " + str(e) + "\n"
+                raise RuntimeError(msg)
 
             if len(bc_list) != len(outlet_face_names):
                 msg = "The number of BC values %d do not match the number of outlets %d." % (len(bc_list), len(outlet_face_names))
