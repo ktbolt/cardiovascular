@@ -2,8 +2,8 @@
 test_name="wall_props"
 test_name="read_centerlines"
 test_name="compute_mesh"
-test_name="compute_centerlines"
 test_name="write_solver_file"
+test_name="compute_centerlines"
 
 python=python3
 
@@ -13,7 +13,7 @@ python=python3
 # 
 if [ $test_name  == "write_solver_file" ]; then
 
-    cl_file=example/SU201_2005_RPA1_cl.vtp
+    cl_file=example/SU201_2005_RPA1_cl1.vtp
     inflow_file=$PWD/input/inflow.flow
     outlet_face_names_file=$PWD/input/outlet_face_names.dat
     outflow_bc_input_file=$PWD/input/rcrt.dat

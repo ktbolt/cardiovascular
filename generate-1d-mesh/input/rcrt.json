@@ -1,0 +1,71 @@
+{
+  "description": {
+     "type": "RCR boundary condition file",
+     "format" : {
+         "MaxNumTimePoints" : "maximum number of time points for the curves defined at each outlet",
+         "OutletData" : {
+             "NumData" : "number of time point for the outlet",
+             "FaceName": "outlet face name",
+             "Rp" : "proximal resistance",
+             "C" : "compliance", 
+             "Rd" : "distal vessel resistance", 
+             "time" : "time series time values", 
+             "pressure" : "time series reference pressure, evolution in time of the reference pressure at the distal end of the RCR block"  
+         } 
+     }
+  },
+
+  "MaxNumTimePoints": 2,
+
+  "OutletData" : [
+
+     { "NumData" : 2,
+       "FaceName": "cap_RPA1",
+       "Rp" : 2710.0836265,
+       "C" : 0.000007529278617,
+       "Rd" : 15147.2313752,
+       "time" : [0.0, 0.588],
+       "pressure" : [0.0, 0.0]
+      },
+
+     { "NumData" : 2,
+       "FaceName": "cap_RPA1_1",
+       "Rp" : 1708.8495911, 
+       "C" : 0.000011940766938,
+       "Rd" : 14773.2161714,
+       "time" : [0.0, 0.588],
+       "pressure" : [0.0, 0.0]
+      },
+
+     { "NumData" : 2,
+       "FaceName": "cap_RPA1_1_1",
+       "Rp" : 2467.9999478,
+       "C" : 0.000008267818125,
+       "Rd" : 10221.0938540,
+       "time" : [0.0, 0.588],
+       "pressure" : [0.0, 0.0]
+      },
+
+     { "NumData" : 2,
+       "FaceName": "cap_RPA1_2",
+       "Rp" : 1850.9034683,
+       "C" : 0.000011024332198,
+       "Rd" : 17663.8568719,
+       "time" : [0.0, 0.588],
+       "pressure" : [0.0, 0.0]
+      },
+
+     { "NumData" : 2,
+       "FaceName": "cap_RPA1_3",
+       "Rp" : 2229.7639374,
+       "C" : 0.000009151181593,
+       "Rd" : 15373.2521632,
+       "time" : [0.0, 0.588],
+       "pressure" : [0.0, 0.0]
+      }
+
+  ]
+
+}
+
+
