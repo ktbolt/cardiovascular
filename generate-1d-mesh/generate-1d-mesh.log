@@ -1,0 +1,4 @@
+[generate-1d-mesh] INFO - Parse arguments ...
+[generate-1d-mesh] INFO - Centerlines input file: example/SU201_2005_RPA1_cl1.vtp
+[generate-1d-mesh] ERROR - The centerlines input file 'example/SU201_2005_RPA1_cl1.vtp' was not found.
+[generate-1d-mesh] ERROR - Error in parameters.

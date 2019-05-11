@@ -12,6 +12,7 @@ followed by 1st point to the last point.
 """
 from os import path 
 import logging
+import re
 from manage import get_logger_name
 from parameters import OutflowBoundaryConditionType 
 from collections import OrderedDict 
@@ -238,8 +239,9 @@ class Mesh(object):
                     temp_conn.append(tempgroupid)
             #__for j in range(len(group_elems[pargroupid])-1,0,-1)
 
-            if len(temp_conn)>3:
-                self.logger.error( "there are more than 2 child segments for groupid %s" % str(pargroupid))
+            if len(temp_conn) > 3:
+                msg = "There are more than 2 child segments for groupid %s" % str(pargroupid)
+                self.logger.warning(msg)
 
             connectivity.append(temp_conn)
         #__for i in range(num_seg)
@@ -267,19 +269,32 @@ class Mesh(object):
     def read_inflow_file(self, params):
         """ Read the inflow file.
 
-        Format:   
+        The file can be formatted as space- or comma-separated value pairs.
+
+        Example:   
             <time1>  <flow1>
             <time2>  <flow2>
             ...
             <timeN>  <flowN>
         """
+        self.logger.info("Read inflow BC ...")
         inflow_data = []
         inflow_file = params.inflow_input_file 
-        with open(inflow_file, "r") as ofile:
-            for line in ofile:
-                values = line.strip().split()
-                inflow_data.append(FlowData(time=float(values[0]), flow=float(values[1])))
-        #__with open(inflow_file, "r") as ofile
+
+        try:
+            with open(inflow_file, "r") as ofile:
+                for line in ofile:
+                    if line.strip() == '':
+                        continue
+                    values = re.split("[, ]+", line.strip())
+                    inflow_data.append(FlowData(time=float(values[0]), flow=float(values[1])))
+            #__with open(inflow_file, "r") as ofile
+
+        except Exception as e:
+            msg = "The inflow file is in the wrong format, expecting space- or comma-separated value pairs.\n"
+            self.logger.error(msg)
+            raise RuntimeError(str(e))
+
         self.inflow_data = inflow_data
 
     def write_mesh(self, params, centerline_list, group_list):
@@ -388,8 +403,8 @@ class Mesh(object):
 
         if (tmp != len(self.group_elems[0])) or (tmp != num_outlet) or (self.num_paths != num_outlet):
             msg = "Inlet group id is not 0 or number of centerlines is not equal to the number of outlets"
-            self.logger.critical(msg)
-            self.logger.critical("num_paths=%d num_outlet=%d  len(self.group_elems[0])=%d  tmp=%s" % \
+            self.logger.error(msg)
+            self.logger.error("num_paths=%d num_outlet=%d  len(self.group_elems[0])=%d  tmp=%s" % \
               (self.num_paths, num_outlet, len(self.group_elems[0]), tmp))
             raise RuntimeError(msg)
 
@@ -411,7 +426,7 @@ class Mesh(object):
 
         if len(seg_list) != num_seg:
             msg = "Length of seg_list %d is not equal to num_seg %d" % (len(seg_list), num_seg)
-            self.logger.critical(msg)
+            self.logger.error(msg)
             raise RuntimeError(msg)
 
         return seg_list, group_seg, group_terminal
@@ -497,7 +512,6 @@ class Mesh(object):
                         self.logger.info("Face %s  value %s" % (face_name, value))
                         if not face_name[0].isalpha():
                             msg = "The resistance file is in the wrong format, expecting face name / value pairs."
-                            self.logger.error(msg)
                             raise RuntimeError(msg)
                         #value = float(rfile.readline())
                         bc_list.append(value)
@@ -512,7 +526,6 @@ class Mesh(object):
 
             if len(bc_list) != len(outlet_face_names):
                 msg = "The number of BC values %d do not match the number of outlets %d." % (len(bc_list), len(outlet_face_names))
-                self.logger.error(msg)
                 raise RuntimeError(msg)
 
         elif outflow_bc == OutflowBoundaryConditionType.RCR:
@@ -643,8 +656,11 @@ class Mesh(object):
             tmpAout = params.Acoef * tmpAout/len(group_elems[i])
  
             if (tmpAin < tmpAout) and (group_terminal[i] != 2):
-                self.logger.warning("warning! Ain < Aout in group id = ",i)
-                self.logger.warning("set Ain = Aout")
+                temp_elem_id = self.group_elems[i][0]
+                temp_path_id = centerline_list[temp_elem_id]
+                face_name = self.outlet_face_names[temp_path_id]
+                self.logger.warning("Ain < Aout for group id %d, face name '%s'" % (i, face_name))
+                self.logger.warning("This will cause problems for the 1D solver so setting Ain = Aout")
                 tmpAin = tmpAout
 
             # For bifurcation group, approximate as a straight uniform cylinder.
@@ -1060,7 +1076,7 @@ class Mesh(object):
                    outflow_bc = OutflowBoundaryConditionType.RCR.upper()
                    ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
                    msg = "While writing solver segments encountered: group_terminal[seg_list[i]] == 1"
-                   self.logger.critical(msg)
+                   self.logger.error(msg)
                    raise RuntimeError(msg)
                else:
                    temp_group_id = seg_list[i]

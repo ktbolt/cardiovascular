@@ -570,8 +570,8 @@ for i in range(0,num_group):
      ids=vtk.vtkIdList()
      model.GetCellPoints(group_elems[i][j],ids)
      num_ids=ids.GetNumberOfIds()
-     tmpAin=tmpAin+points_maxR[ids.GetId(0)]**2*3.14
-     tmpAout=tmpAout+points_maxR[ids.GetId(num_ids-1)]**2*3.14
+     tmpAin=tmpAin+points_maxR[ids.GetId(0)]**2*np.pi
+     tmpAout=tmpAout+points_maxR[ids.GetId(num_ids-1)]**2*np.pi
      for k in range(0,num_ids-2):
       id1=ids.GetId(k)
       id2=ids.GetId(k+1)
