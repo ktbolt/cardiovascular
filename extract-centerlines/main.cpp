@@ -2,6 +2,7 @@
 // This program is use to extract centerlines from a polygonal surface
 //
 #include <string>
+#include <array>
 
 #include <vtkvmtkCapPolyData.h>
 #include <vtkvmtkSimpleCapPolyData.h>
@@ -215,13 +216,15 @@ sys_geom_centerlines( vtkSmartPointer<vtkPolyData> surface, int *sources, int ns
       centerLiner->SetSimplifyVoronoi(0);
       centerLiner->SetCenterlineResampling(0);
       centerLiner->SetResamplingStepLength(1);
+
+      std::cout << msg << "Compute centerlines ... " << std::endl;
       centerLiner->Update();
       centerlines = centerLiner->GetOutput();
       *voronoi = centerLiner->GetVoronoiDiagram();
+      std::cout << msg << "Done." << std::endl;
 
   } catch (...) {
-    fprintf(stderr,"ERROR in centerline operation.\n");
-    fflush(stderr);
+    std::cout << msg << "**** ERROR: Compute centerlines." << std::endl;
     return nullptr;
   }
 
@@ -275,6 +278,7 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
     mesh->BuildLinks();
     //mesh = sys_geom_Clean(mesh);
 
+/*
     std::cout << msg << "Mesh number of points: " << mesh->GetNumberOfPoints() << std::endl;
     std::vector<std::array<double,3>> cellCenters;
     std::vector<int> capCenterIDs;
@@ -305,7 +309,7 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
                     cpt[0] += pt[0]; 
                     cpt[1] += pt[1]; 
                     cpt[2] += pt[2]; 
-                    cellPts.push_back(std::array<double,3>{pt[0], pt[1], pt[2]});
+                    //davep cellPts.push_back(std::array<double,3>{pt[0], pt[1], pt[2]});
                     numCellPts += 1;
                 }
                 //std::cout << msg << std::endl;
@@ -315,7 +319,7 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
         cpt[0] /= numCellPts;
         cpt[1] /= numCellPts;
         cpt[2] /= numCellPts;
-        cellCenters.push_back(std::array<double,3>{cpt[0], cpt[1], cpt[2]});
+        //cellCenters.push_back(std::array<double,3>{cpt[0], cpt[1], cpt[2]});
         int centerID;
         double min_dist = 1e9;
 
@@ -375,6 +379,7 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
 
     //return mesh;
     //return nullptr;
+*/
 }
 
 //-------------------
@@ -451,7 +456,8 @@ CreateCenterlines(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceCapIds,
           int capFaceId = fullpd->GetCellData()->GetArray("ModelFaceID")->GetTuple1(closestCell);
           std::cout << msg << "Cap pt: " << capPt[0] << "  " << capPt[1] << "  " << capPt[2] << std::endl;
           std::cout << msg << "closestPt: " << closestPt[0] << "  " << closestPt[1] << "  " << closestPt[2] << std::endl;
-          capPts.push_back(std::array<double,3>{capPt[0], capPt[1], capPt[2]});
+          std::array<double,3> pt{ {capPt[0], capPt[1], capPt[2]} };
+          capPts.push_back(pt);
 
           if (sourceCapIds->IsId(capFaceId) != -1) {
             sourcePtIds->InsertNextId(ptId);
@@ -945,8 +951,8 @@ int main(int argc, char* argv[])
   sourceCapIds->InsertId(0, 16);
   std::vector<int> capFaceIDs{ 9, 10, 11, 12, 13, 14, 15, 16, 17 };
   std::vector<std::array<double,3>> capPts;
-  auto new_surf = CreateCenterlines_nocap(surface, sourceCapIds, capFaceIDs, capPts);
-  //auto new_surf = CreateCenterlines(surface, sourceCapIds, capFaceIDs, capPts);
+  //auto new_surf = CreateCenterlines_nocap(surface, sourceCapIds, capFaceIDs, capPts);
+  auto new_surf = CreateCenterlines(surface, sourceCapIds, capFaceIDs, capPts);
   if (new_surf != nullptr) { 
       std::cout << "New Surface: " << std::endl;
       std::cout << "   Number of vertices " << new_surf->GetNumberOfPoints() << std::endl;
@@ -958,7 +964,7 @@ int main(int argc, char* argv[])
   }
 
   std::cout << "Cap pts: " << std::endl;
-  double radius = 0.03;
+  double radius = 0.06;
   for (auto const& pt : capPts) {
       std::cout << pt[0] << "  ";
       std::cout << pt[1] << "  ";

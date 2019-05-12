@@ -3,10 +3,13 @@ cmake_minimum_required(VERSION 2.8)
  
 PROJECT(extract-centerlines)
 
-find_package(VMTK HINTS /home/davep/software/vmtk/vmtk/build/VMTK-Build REQUIRED )
+set(VMTK_DIR $ENV{HOME}/software/vmtk/vmtk-build)
+message(STATUS "VMTK_DIR ${VMTK_DIR}") 
+
+find_package(VMTK HINTS ${VMTK_DIR}/VMTK-Build REQUIRED )
 include_directories(${VMTK_INCLUDE_DIRS})
 
-find_package(ITK HINTS /home/davep/software/vmtk/vmtk/build/ITK-Build REQUIRED )
+find_package(ITK HINTS ${VMTK_DIR}/ITK-Build REQUIRED )
 include_directories(${ITK_INCLUDE_DIRS})
  
 find_package(VTK REQUIRED)

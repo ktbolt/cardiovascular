@@ -1,0 +1,40 @@
+[extract-centerlines] INFO - Parse arguments ...
+[extract-centerlines] INFO - Surface file: Kawasaki_Disease_Patient_2.vtp
+[extract-centerlines] INFO - Source face ids: [16]
+[extract-centerlines] INFO - Target face ids: [9, 10, 11, 12, 13, 14, 15, 17]
+[extract-centerlines] INFO - Number of points: 68988
+[extract-centerlines] INFO - Number of triangles: 137972
+[extract-centerlines] INFO - ---------- extract caps ---------- 
+[extract-centerlines] INFO - Face IDs: [16, 9, 10, 11, 12, 13, 14, 15, 17]
+[extract-centerlines] INFO - Extract caps ...
+[extract-centerlines] INFO - Face ID: 16   number of cells: 1388   source: True
+[extract-centerlines] INFO - Face ID: 9   number of cells: 286   source: False
+[extract-centerlines] INFO - Face ID: 10   number of cells: 200   source: False
+[extract-centerlines] INFO - Face ID: 11   number of cells: 80   source: False
+[extract-centerlines] INFO - Face ID: 12   number of cells: 34   source: False
+[extract-centerlines] INFO - Face ID: 13   number of cells: 25   source: False
+[extract-centerlines] INFO - Face ID: 14   number of cells: 92   source: False
+[extract-centerlines] INFO - Face ID: 15   number of cells: 190   source: False
+[extract-centerlines] INFO - Face ID: 17   number of cells: 703   source: False
+[extract-centerlines] INFO - ---------- calculate centerlines ----------
+[extract-centerlines] INFO - ---------- Extract Centerlines ---------- 
+[extract-centerlines] INFO - -----  Face ID 16 ----- 
+[extract-centerlines] INFO - Center: [-0.7622463883756947, 0.6612136309402709, -16.054814069575695]
+[extract-centerlines] INFO - -----  Face ID 17 ----- 
+[extract-centerlines] INFO - Center: [-1.0204858269282797, -4.0498145104811165, -25.121435636590025]
+[extract-centerlines] INFO - -----  Face ID 9 ----- 
+[extract-centerlines] INFO - Center: [1.4008831645781066, -0.1773631062937913, -7.045956972317818]
+[extract-centerlines] INFO - -----  Face ID 10 ----- 
+[extract-centerlines] INFO - Center: [-0.9588529022534689, -0.6883950205395619, -7.047772050698598]
+[extract-centerlines] INFO - -----  Face ID 11 ----- 
+[extract-centerlines] INFO - Center: [-5.322215171655019, 6.265341087182363, -20.655529840787253]
+[extract-centerlines] INFO - -----  Face ID 12 ----- 
+[extract-centerlines] INFO - Center: [-3.827045522484125, -2.4042668038723516, -16.935607592264812]
+[extract-centerlines] INFO - -----  Face ID 13 ----- 
+[extract-centerlines] INFO - Center: [-5.397750441233317, -1.070969009399414, -17.224476470947266]
+[extract-centerlines] INFO - -----  Face ID 14 ----- 
+[extract-centerlines] INFO - Center: [-6.625510167384493, 4.951256537782973, -19.63243883934574]
+[extract-centerlines] INFO - -----  Face ID 15 ----- 
+[extract-centerlines] INFO - Center: [-1.5540512158159625, -1.9902902028016878, -7.0337395065709165]
+[extract-centerlines] INFO - Calculating surface centerlines ...
+[extract-centerlines] INFO - The surface centerlines have been calculated.
