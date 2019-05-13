@@ -196,11 +196,29 @@ sys_geom_centerlines( vtkSmartPointer<vtkPolyData> surface, int *sources, int ns
   int pointId;
 
   for (pointId = 0; pointId < nsources; pointId++) {
-    capInletIds->InsertNextId(*sources+pointId);
+    auto id = *(sources+pointId);
+    std::cout << msg << "Source id: " << id << std::endl;
+    capInletIds->InsertNextId(id);
   }
   for (pointId = 0; pointId < ntargets; pointId++) {
+    auto id = *(targets+pointId);
+    std::cout << msg << "Target id: " << id << std::endl;
+    capOutletIds->InsertNextId(id);
+  }
+
+/*
+  for (int i = 0; i < nsources; i++) {
+    auto id = sources[i];
+    std::cout << msg << "Source ID: " << id << std::endl;
+    capInletIds->InsertNextId(*sources+pointId);
+  }
+  for (int i = 0; i < ntargets; i++) {
+    auto id = targets[i];
+    std::cout << msg << "Target ID: " << id << std::endl;
     capOutletIds->InsertNextId(*targets+pointId);
   }
+*/
+
 
   vtkNew(vtkvmtkPolyDataCenterlines, centerLiner);
   vtkSmartPointer<vtkPolyData> centerlines;
@@ -245,6 +263,7 @@ CalculateCenterlines(vtkSmartPointer<vtkPolyData> surface, vtkIdList* sourcePtId
     int *sources = new int[numSourcePts];
     for (int i = 0; i < numSourcePts; i++) {
         sources[i] = sourcePtIds->GetId(i);
+        std::cout << msg << "Source ID: " << sources[i] << std::endl;
     }
 
     int numTargetPts = targetPtIds->GetNumberOfIds();
@@ -252,6 +271,7 @@ CalculateCenterlines(vtkSmartPointer<vtkPolyData> surface, vtkIdList* sourcePtId
     int *targets = new int[numTargetPts];
     for (int i = 0; i < numTargetPts; i++) {
         targets[i] = targetPtIds->GetId(i);
+        std::cout << msg << "Target ID: " << targets[i] << std::endl;
     }
 
     vtkPolyData *voronoi;
@@ -278,14 +298,14 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
     mesh->BuildLinks();
     //mesh = sys_geom_Clean(mesh);
 
-/*
     std::cout << msg << "Mesh number of points: " << mesh->GetNumberOfPoints() << std::endl;
     std::vector<std::array<double,3>> cellCenters;
     std::vector<int> capCenterIDs;
 
     for (int i = 0; i < capFaceIDs.size(); i++) {
         auto faceID = capFaceIDs[i];
-        std::cout << msg << "Face id: " << faceID << std::endl;
+        std::cout << msg << std::endl;
+        std::cout << msg << "----- Face id: " << faceID << " ----- " << std::endl;
         vtkSmartPointer<vtkIntArray> boundaryRegions = vtkSmartPointer<vtkIntArray>::New();
         boundaryRegions = vtkIntArray::SafeDownCast(mesh->GetCellData()->GetScalars("ModelFaceID"));
         //mesh->BuildLinks();
@@ -295,6 +315,8 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
         std::vector<int> cellPtIDs; 
         std::vector<std::array<double,3>> cellPts;
 
+        // Compute face center.
+        //
         for (vtkIdType cellId = 0; cellId < mesh->GetNumberOfCells(); cellId++) {
             if (boundaryRegions->GetValue(cellId) == faceID) {
                 //std::cout << msg << "cellId: " << cellId << std::endl;
@@ -309,7 +331,8 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
                     cpt[0] += pt[0]; 
                     cpt[1] += pt[1]; 
                     cpt[2] += pt[2]; 
-                    //davep cellPts.push_back(std::array<double,3>{pt[0], pt[1], pt[2]});
+                    std::array<double,3> apt{pt[0], pt[1], pt[2]};
+                    cellPts.push_back(apt);
                     numCellPts += 1;
                 }
                 //std::cout << msg << std::endl;
@@ -319,7 +342,12 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
         cpt[0] /= numCellPts;
         cpt[1] /= numCellPts;
         cpt[2] /= numCellPts;
-        //cellCenters.push_back(std::array<double,3>{cpt[0], cpt[1], cpt[2]});
+        std::cout << msg << "Center: " << cpt[0] << "  " << cpt[1] << "  " << cpt[2] << std::endl;
+        std::array<double,3> apt{cpt[0], cpt[1], cpt[2]};
+        cellCenters.push_back(apt);
+
+        // Find point ID closest to center.
+        //
         int centerID;
         double min_dist = 1e9;
 
@@ -331,46 +359,64 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
                 min_dist = dist; 
             } 
         }
+        std::cout << msg << "Center ID: " << centerID << std::endl;
         capCenterIDs.push_back(centerID);
     }
 
     vtkSmartPointer<vtkIdList> sourcePtIds = vtkSmartPointer<vtkIdList>::New();
     vtkSmartPointer<vtkIdList> targetPtIds = vtkSmartPointer<vtkIdList>::New();
 
-    vtkSmartPointer<vtkCellLocator> locator = vtkSmartPointer<vtkCellLocator>::New();
-    locator->SetDataSet(mesh);
-    locator->BuildLocator();
+    auto useLocator = false;
 
-    int subId;
-    double distance;
-    double capPt[3];
-    double closestPt[3];
-    vtkIdType closestCell;
-    vtkSmartPointer<vtkGenericCell> genericCell = vtkSmartPointer<vtkGenericCell>::New();
+    if (useLocator) {
+        vtkSmartPointer<vtkCellLocator> locator = vtkSmartPointer<vtkCellLocator>::New();
+        locator->SetDataSet(mesh);
+        locator->BuildLocator();
 
-    for (int i = 0; i < cellCenters.size(); i++) {
-        int ptId = capCenterIDs[i];
-        //int ptId = capCenterIds[i];
-        std::cout << msg << "----- ptID " << ptId << " -----" << std::endl;
-        mesh->GetPoint(ptId, capPt);
-        //capPt[0] = cellCenters[i][0];
-        //capPt[1] = cellCenters[i][1];
-        //capPt[2] = cellCenters[i][2];
-        locator->FindClosestPoint(capPt, closestPt, genericCell, closestCell, subId, distance);
-        int capFaceId = mesh->GetCellData()->GetArray("ModelFaceID")->GetTuple1(closestCell);
-        //std::cout << msg << "Cap pt: " << capPt[0] << "  " << capPt[1] << "  " << capPt[2] << std::endl;
-        //std::cout << msg << "closestPt: " << closestPt[0] << "  " << closestPt[1] << "  " << closestPt[2] << std::endl;
-        //std::cout << msg << "closestCell: " << closestCell << std::endl;
-        //std::cout << msg << "subId: " << subId << std::endl;
-        capPts.push_back(std::array<double,3>{closestPt[0], closestPt[1], closestPt[2]});
-        //ptId = closestCell;
+        int subId;
+        double distance;
+        double capPt[3];
+        double closestPt[3];
+        vtkIdType closestCell;
+        vtkSmartPointer<vtkGenericCell> genericCell = vtkSmartPointer<vtkGenericCell>::New();
 
-        if (sourceCapIds->IsId(capFaceId) != -1) {
-            sourcePtIds->InsertNextId(ptId);
-            std::cout << msg << "Add source pt ID: " << ptId << std::endl;
-        } else {
-            targetPtIds->InsertNextId(ptId);
-            std::cout << msg << "Add target pt ID: " << ptId << std::endl;
+        for (int i = 0; i < cellCenters.size(); i++) {
+            int ptId = capCenterIDs[i];
+            //int ptId = capCenterIds[i];
+            std::cout << msg << "----- ptID " << ptId << " -----" << std::endl;
+            mesh->GetPoint(ptId, capPt);
+            //capPt[0] = cellCenters[i][0];
+            //capPt[1] = cellCenters[i][1];
+            //capPt[2] = cellCenters[i][2];
+            locator->FindClosestPoint(capPt, closestPt, genericCell, closestCell, subId, distance);
+            int capFaceId = mesh->GetCellData()->GetArray("ModelFaceID")->GetTuple1(closestCell);
+            //std::cout << msg << "Cap pt: " << capPt[0] << "  " << capPt[1] << "  " << capPt[2] << std::endl;
+            //std::cout << msg << "closestPt: " << closestPt[0] << "  " << closestPt[1] << "  " << closestPt[2] << std::endl;
+            //std::cout << msg << "closestCell: " << closestCell << std::endl;
+            //std::cout << msg << "subId: " << subId << std::endl;
+            capPts.push_back(std::array<double,3>{closestPt[0], closestPt[1], closestPt[2]});
+            //ptId = closestCell;
+
+            if (sourceCapIds->IsId(capFaceId) != -1) {
+                sourcePtIds->InsertNextId(ptId);
+                std::cout << msg << "Add source pt ID: " << ptId << std::endl;
+            } else {
+                targetPtIds->InsertNextId(ptId);
+                std::cout << msg << "Add target pt ID: " << ptId << std::endl;
+            }
+        }
+
+    } else {
+        for (int i = 0; i < capFaceIDs.size(); i++) {
+            auto faceID = capFaceIDs[i];
+            auto ptId = capCenterIDs[i];
+            if (sourceCapIds->IsId(faceID) != -1) {
+                sourcePtIds->InsertNextId(ptId );
+                std::cout << msg << "Add source pt ID: " << ptId << std::endl;
+            } else {
+                targetPtIds->InsertNextId(ptId);
+                std::cout << msg << "Add target pt ID: " << ptId << std::endl;
+            }
         }
     }
 
@@ -379,7 +425,6 @@ CreateCenterlines_nocap(vtkSmartPointer<vtkPolyData> surface, vtkIdList *sourceC
 
     //return mesh;
     //return nullptr;
-*/
 }
 
 //-------------------
@@ -951,8 +996,8 @@ int main(int argc, char* argv[])
   sourceCapIds->InsertId(0, 16);
   std::vector<int> capFaceIDs{ 9, 10, 11, 12, 13, 14, 15, 16, 17 };
   std::vector<std::array<double,3>> capPts;
-  //auto new_surf = CreateCenterlines_nocap(surface, sourceCapIds, capFaceIDs, capPts);
-  auto new_surf = CreateCenterlines(surface, sourceCapIds, capFaceIDs, capPts);
+  auto new_surf = CreateCenterlines_nocap(surface, sourceCapIds, capFaceIDs, capPts);
+  //auto new_surf = CreateCenterlines(surface, sourceCapIds, capFaceIDs, capPts);
   if (new_surf != nullptr) { 
       std::cout << "New Surface: " << std::endl;
       std::cout << "   Number of vertices " << new_surf->GetNumberOfPoints() << std::endl;

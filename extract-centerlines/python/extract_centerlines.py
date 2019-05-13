@@ -15,6 +15,7 @@ import logging
 from manage import get_logger_name, init_logging, get_log_file_name
 from parameters import Parameters
 from mesh import Mesh
+from graphics import Graphics
 
 logger = logging.getLogger(get_logger_name())
 
@@ -80,9 +81,16 @@ if __name__ == '__main__':
         logger.error("Error in parameters.")
         sys.exit(1)
 
+    ## Create graphics interface.   
+    graphics = Graphics()
+
+    ## Read in the surface mesh.
     mesh = Mesh(params)
+    mesh.graphics = graphics
     mesh.read_mesh()
-    #mesh.calculate_centerlines()
-    mesh.show()
+    graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8])
+
+    graphics.mesh = mesh
+    graphics.show()
 
 

@@ -241,7 +241,7 @@ class Mesh(object):
 
             if len(temp_conn) > 3:
                 msg = "There are more than 2 child segments for groupid %s" % str(pargroupid)
-                self.logger.warning(msg)
+                raise RuntimeError(msg)
 
             connectivity.append(temp_conn)
         #__for i in range(num_seg)
@@ -284,8 +284,6 @@ class Mesh(object):
         try:
             with open(inflow_file, "r") as ofile:
                 for line in ofile:
-                    if line.strip() == '':
-                        continue
                     values = re.split("[, ]+", line.strip())
                     inflow_data.append(FlowData(time=float(values[0]), flow=float(values[1])))
             #__with open(inflow_file, "r") as ofile
@@ -403,8 +401,8 @@ class Mesh(object):
 
         if (tmp != len(self.group_elems[0])) or (tmp != num_outlet) or (self.num_paths != num_outlet):
             msg = "Inlet group id is not 0 or number of centerlines is not equal to the number of outlets"
-            self.logger.error(msg)
-            self.logger.error("num_paths=%d num_outlet=%d  len(self.group_elems[0])=%d  tmp=%s" % \
+            self.logger.critical(msg)
+            self.logger.critical("num_paths=%d num_outlet=%d  len(self.group_elems[0])=%d  tmp=%s" % \
               (self.num_paths, num_outlet, len(self.group_elems[0]), tmp))
             raise RuntimeError(msg)
 
@@ -426,7 +424,7 @@ class Mesh(object):
 
         if len(seg_list) != num_seg:
             msg = "Length of seg_list %d is not equal to num_seg %d" % (len(seg_list), num_seg)
-            self.logger.error(msg)
+            self.logger.critical(msg)
             raise RuntimeError(msg)
 
         return seg_list, group_seg, group_terminal
@@ -521,8 +519,7 @@ class Mesh(object):
             except Exception as e:
                 msg = "The resistance file is in the wrong format, expecting face name / value pairs.\n"
                 self.logger.error(msg)
-                msg = "Exception: " + str(e) + "\n"
-                raise RuntimeError(msg)
+                raise RuntimeError(str(e))
 
             if len(bc_list) != len(outlet_face_names):
                 msg = "The number of BC values %d do not match the number of outlets %d." % (len(bc_list), len(outlet_face_names))
@@ -656,11 +653,8 @@ class Mesh(object):
             tmpAout = params.Acoef * tmpAout/len(group_elems[i])
  
             if (tmpAin < tmpAout) and (group_terminal[i] != 2):
-                temp_elem_id = self.group_elems[i][0]
-                temp_path_id = centerline_list[temp_elem_id]
-                face_name = self.outlet_face_names[temp_path_id]
-                self.logger.warning("Ain < Aout for group id %d, face name '%s'" % (i, face_name))
-                self.logger.warning("This will cause problems for the 1D solver so setting Ain = Aout")
+                self.logger.warning("warning! Ain < Aout in group id = %d" % i)
+                self.logger.warning("set Ain = Aout")
                 tmpAin = tmpAout
 
             # For bifurcation group, approximate as a straight uniform cylinder.
@@ -1076,7 +1070,7 @@ class Mesh(object):
                    outflow_bc = OutflowBoundaryConditionType.RCR.upper()
                    ofile.writeln(outflow_bc+ " " + outflow_bc +"_1")
                    msg = "While writing solver segments encountered: group_terminal[seg_list[i]] == 1"
-                   self.logger.error(msg)
+                   self.logger.critical(msg)
                    raise RuntimeError(msg)
                else:
                    temp_group_id = seg_list[i]
