@@ -1,0 +1,407 @@
+
+// This is an example of reading in an unstructured mesh. 
+//
+// Usage:
+//
+//     read-results <FileName>.vtu
+//
+#include <string>
+//#include <bits/stdc++.h> 
+
+#include <vtkActor.h>
+#include <vtkCellData.h>
+#include <vtkCell.h>
+#include <vtkCellArray.h>
+#include <vtkCellData.h>
+#include <vtkCellPicker.h>
+#include <vtkCellType.h>
+#include <vtkGenericCell.h>
+#include <vtkGeometryFilter.h>
+#include <vtkDataSetMapper.h>
+#include <vtkDoubleArray.h>
+#include <vtkExtractSelection.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkMeshQuality.h>
+#include <vtkNamedColors.h>
+#include <vtkPointData.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkSelection.h>
+#include <vtkSelectionNode.h>
+#include <vtkShrinkFilter.h>
+#include <vtkSmartPointer.h>
+#include <vtkThreshold.h>
+#include <vtkTriangleFilter.h>
+#include "vtkUnsignedCharArray.h"
+#include <vtkUnstructuredGrid.h>
+#include <vtkXMLUnstructuredGridReader.h>
+
+//---------------------- 
+// MouseInteractorStyle
+//---------------------- 
+// This class is used to select cells.
+//
+class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
+{
+public:
+  static MouseInteractorStyle* New();
+  vtkSmartPointer<vtkUnstructuredGrid> m_Mesh;
+  vtkSmartPointer<vtkDoubleArray> m_DataArray; 
+  std::string m_DataName; 
+
+  MouseInteractorStyle()
+  {
+    selectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    selectedActor = vtkSmartPointer<vtkActor>::New();
+  }
+
+  void SetMesh(vtkSmartPointer<vtkUnstructuredGrid> mesh) { 
+      m_Mesh = mesh; 
+  }
+
+  void SetData(std::string name) {
+      m_DataArray = vtkDoubleArray::SafeDownCast(m_Mesh->GetPointData()->GetArray(name.c_str()));
+      m_DataName = name; 
+  }
+
+  virtual void OnKeyPress() override
+  {
+    vtkRenderWindowInteractor* rwi = this->Interactor;
+    std::string key = rwi->GetKeySym();
+    std::cout << "Pressed " << key << std::endl;
+      
+    if (key != "s") {
+        return;
+    }
+
+    std::cout << "---------- Select ----------" << std::endl;
+    vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
+
+    // Get the location of the click (in window coordinates)
+    int* pos = this->GetInteractor()->GetEventPosition();
+
+    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+    picker->SetTolerance(0.0005);
+
+    // Pick from this location.
+    picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
+
+    double* worldPosition = picker->GetPickPosition();
+    auto cellID = picker->GetCellId();
+
+    if (picker->GetCellId() != -1) {
+      std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1] << " " << worldPosition[2] << endl;
+
+      vtkSmartPointer<vtkIdTypeArray> ids = vtkSmartPointer<vtkIdTypeArray>::New();
+      ids->SetNumberOfComponents(1);
+      ids->InsertNextValue(picker->GetCellId());
+
+      vtkSmartPointer<vtkSelectionNode> selectionNode = vtkSmartPointer<vtkSelectionNode>::New();
+      selectionNode->SetFieldType(vtkSelectionNode::CELL);
+      selectionNode->SetContentType(vtkSelectionNode::INDICES);
+      selectionNode->SetSelectionList(ids);
+
+      vtkSmartPointer<vtkSelection> selection = vtkSmartPointer<vtkSelection>::New();
+      selection->AddNode(selectionNode);
+
+      vtkSmartPointer<vtkExtractSelection> extractSelection = vtkSmartPointer<vtkExtractSelection>::New();
+      extractSelection->SetInputData(0, this->m_Data);
+      extractSelection->SetInputData(1, selection);
+      extractSelection->Update();
+
+      // In selection
+      vtkSmartPointer<vtkUnstructuredGrid> selected = vtkSmartPointer<vtkUnstructuredGrid>::New();
+      selected->ShallowCopy(extractSelection->GetOutput());
+
+      vtkGenericCell* cell = vtkGenericCell::New();
+      m_Mesh->GetCell(cellID, cell);
+      auto numPts = cell->GetNumberOfPoints();
+      std::cout << "Cell ID is: " << cellID << std::endl;
+      std::cout << "  Number of cell points: " << numPts << std::endl;
+      std::cout << "  Connectivity: ";
+      for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+        auto id = cell->PointIds->GetId(pointInd);
+        std::cout << id << " ";
+      }
+      std::cout << std::endl;
+
+      std::cout << std::endl;
+      std::cout << "Cell Data: " << std::endl;
+      std::cout << "  Name: " << m_DataName << std::endl;
+      for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+        auto id = cell->PointIds->GetId(pointInd);
+        double value = m_DataArray->GetValue(id);
+        std::cout << "  ID: " << id << "   value: " << value << std::endl;
+      }
+
+      //std::cout << "Number of points selected: " << selected->GetNumberOfPoints() << std::endl;
+      //std::cout << "Number of cells selected: " << selected->GetNumberOfCells() << std::endl;
+      selectedMapper->SetInputData(selected);
+      selectedMapper->ScalarVisibilityOff();
+      selectedActor->SetMapper(selectedMapper);
+      //selectedActor->GetProperty()->EdgeVisibilityOn();
+      selectedActor->GetProperty()->SetRepresentationToWireframe();
+      selectedActor->GetProperty()->SetColor(colors->GetColor3d("Green").GetData());
+      selectedActor->GetProperty()->SetLineWidth(4);
+
+      this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
+    }
+    // Forward events
+    //vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+  }
+
+  vtkSmartPointer<vtkUnstructuredGrid> m_Data;
+  //vtkSmartPointer<vtkPolyData> Data;
+  vtkSmartPointer<vtkDataSetMapper> selectedMapper;
+  vtkSmartPointer<vtkActor> selectedActor;
+};
+
+vtkStandardNewMacro(MouseInteractorStyle);
+
+//-------------
+// FindAllData
+//-------------
+//
+void FindAllData(vtkPolyData* polydata)
+{
+  std::cout << "Normals: " << polydata->GetPointData()->GetNormals() << std::endl;
+
+  vtkIdType numberOfPointArrays = polydata->GetPointData()->GetNumberOfArrays();
+  std::cout << "Number of PointData arrays: " << numberOfPointArrays << std::endl;
+
+  vtkIdType numberOfCellArrays = polydata->GetCellData()->GetNumberOfArrays();
+  std::cout << "Number of CellData arrays: " << numberOfCellArrays << std::endl;
+
+  std::cout << "Type table/key: " << std::endl;;
+  //more values can be found in <VTK_DIR>/Common/vtkSetGet.h
+  std::cout << VTK_UNSIGNED_CHAR << " unsigned char" << std::endl;
+  std::cout << VTK_UNSIGNED_INT << " unsigned int" << std::endl;
+  std::cout << VTK_FLOAT << " float" << std::endl;
+  std::cout << VTK_DOUBLE << " double" << std::endl;
+
+  for(vtkIdType i = 0; i < numberOfPointArrays; i++) {
+    // The following two lines are equivalent
+    //arrayNames.push_back(polydata->GetPointData()->GetArray(i)->GetName());
+    //arrayNames.push_back(polydata->GetPointData()->GetArrayName(i));
+    int dataTypeID = polydata->GetPointData()->GetArray(i)->GetDataType();
+    std::cout << "Array " << i << ": " << polydata->GetPointData()->GetArrayName(i)
+              << " (type: " << dataTypeID << ")" << std::endl;
+  }
+
+  for(vtkIdType i = 0; i < numberOfCellArrays; i++) {
+    // The following two lines are equivalent
+    //polydata->GetPointData()->GetArray(i)->GetName();
+    //polydata->GetPointData()->GetArrayName(i);
+    int dataTypeID = polydata->GetCellData()->GetArray(i)->GetDataType();
+    std::cout << "Array " << i << ": " << polydata->GetCellData()->GetArrayName(i)
+              << " (type: " << dataTypeID << ")" << std::endl;
+  }
+}
+
+//----------
+// MeshInfo
+//----------
+//
+void MeshInfo(vtkSmartPointer<vtkUnstructuredGrid> mesh)
+{
+  // Print mesh information.
+  //
+  vtkIdType numCells = mesh->GetNumberOfCells();
+  vtkCellArray* cells = mesh->GetCells();
+  //std::cout << "Cells size " << cells->GetSize() << std::endl;
+  vtkUnsignedCharArray* cellTypes = mesh->GetCellTypesArray();
+
+  int numTri = 0;
+  int numTet = 0;
+  int numHex = 0;
+  int numWedge = 0;
+  int numQuad = 0;
+  int numLine = 0;
+
+  vtkGenericCell* cell = vtkGenericCell::New();
+  // Comment out the following line to enable printing to cout.
+  std::cout.setstate(std::ios_base::badbit);     
+
+  for (vtkIdType cellId = 0; cellId < numCells; cellId++) {
+    mesh->GetCell(cellId, cell);
+    auto dim = cell->GetCellDimension();
+    auto numPts = cell->GetNumberOfPoints();
+    std::cout << "cell " << cellId << "  dim " << dim;
+    std::cout << "  numPts " << numPts;
+    std::cout << "  topo";
+    switch (cellTypes->GetValue(cellId)) {
+      case VTK_TETRA:
+        std::cout << " tet ";
+        numTet += 1;
+      break;
+      case VTK_HEXAHEDRON:
+        std::cout << " hex ";
+        numHex += 1;
+      break;
+      case VTK_WEDGE:
+        std::cout << " wedge ";
+        numWedge += 1;
+      break;
+      case VTK_TRIANGLE:
+        std::cout << " tri ";
+        numTri++;
+      break;
+      case VTK_QUAD:
+        std::cout << " quad ";
+        numQuad += 1;
+      break;
+      case VTK_VERTEX:
+        std::cout << " vert ";
+      break;
+      case VTK_LINE:
+        std::cout << " line ";
+        numLine += 1;
+      break;
+      default:
+          std::cout << " *** unknown *** '" << cellTypes->GetValue(cellId) << "'";
+      break;
+    }
+
+    std::cout << "  conn: ";
+    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+      auto id = cell->PointIds->GetId(pointInd);
+      std::cout << id << " ";
+    }
+    std::cout << std::endl;
+  }
+
+  std::cout.clear();
+  std::cout << std::endl;
+  std::cout << "---------- Mesh Information ----------" << std::endl;
+  std::cout << "Number of cells " << numCells << std::endl;
+  std::cout << "Number of hex cells " << numHex << std::endl;
+  std::cout << "Number of tet cells " << numTet << std::endl;
+  std::cout << "Number of wedge cells " << numWedge << std::endl;
+  std::cout << "Number of tri cells " << numTri << std::endl;
+  std::cout << "Number of quad cells " << numQuad << std::endl;
+  std::cout << "Number of line cells " << numLine << std::endl;
+
+  std::cout << std::endl;
+  std::cout << "---------- Cell Data ----------" << std::endl;
+  vtkCellData *cellData = mesh->GetCellData();
+  for (int i = 0; i < cellData->GetNumberOfArrays(); i++) {
+      vtkDataArray* data = cellData->GetArray(i);
+      cout << "Array name: " << data->GetName() << endl;
+      //for (int j = 0; j < data->GetNumberOfTuples(); j++) {
+          //double value = data->GetTuple1(j);
+          //cout << "  value " << j << "th is " << value << endl;
+      //}
+  }
+
+  std::cout << std::endl;
+  std::cout << "---------- Point Data ----------" << std::endl;
+  vtkPointData* pointData = mesh->GetPointData();
+  for (int i = 0; i < pointData->GetNumberOfArrays(); i++) {
+      vtkDataArray* data = pointData->GetArray(i);
+      cout << "Array name: " << data->GetName() << endl;
+  }
+
+}
+
+//------
+// main
+//------
+
+int main(int argc, char* argv[])
+{
+  if(argc != 2) {
+    std::cout << "Usage: " << argv[0] << " <FileName>.vtu" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  // Read VTK unstructured mesh (.vtu) file.
+  //
+  std::string file_name = argv[1];
+  vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+  reader->SetFileName(file_name.c_str());
+  reader->Update();
+
+  // Get the mesh. 
+  auto mesh = reader->GetOutput();
+
+  // Print mesh information.
+  MeshInfo(mesh);
+
+  // Convert mesh to polydata.
+  vtkSmartPointer<vtkGeometryFilter> geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+  geometryFilter->SetInputData(mesh);
+  geometryFilter->Update(); 
+  vtkPolyData* meshPolyData = geometryFilter->GetOutput();
+
+  //FindAllData(meshPolyData);
+
+  /*
+  vtkSmartPointer<vtkTriangleFilter> triangleFilter = vtkSmartPointer<vtkTriangleFilter>::New();
+  triangleFilter->SetInputData(meshPolyData);
+  triangleFilter->Update();
+  */
+
+
+  // Visualize entire mesh.
+  //
+  // Shrink the mesh.
+  auto shrinkFactor = 0.9;
+  vtkSmartPointer<vtkShrinkFilter> shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
+  shrinkFilter->SetInputData(mesh);
+  shrinkFilter->SetShrinkFactor(shrinkFactor);
+  shrinkFilter->Update();
+
+  // Create graphics geometry.
+  vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+  mapper->SetInputData(shrinkFilter->GetOutput());
+  //mapper->SetInputData(mesh);
+  //mapper->SetInputConnection(triangleFilter->GetOutputPort());
+  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+  mapper->ScalarVisibilityOff();
+  actor->SetMapper(mapper);
+  actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
+  //actor->GetProperty()->SetRepresentationToWireframe();
+  //actor->GetProperty()->EdgeVisibilityOn();
+  //actor->GetProperty()->BackfaceCullingOn();
+
+  vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+  //renderer->AddActor(selectActor);
+  renderer->AddActor(actor);
+  renderer->SetBackground(1.0, 1.0, 1.0); 
+
+  vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer(renderer);
+  renderWindow->SetSize(1000, 1000);
+
+  // Add window interactor.
+  //
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+  // Trackball interactor.
+  /*
+  vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+  renderWindowInteractor->SetInteractorStyle(style);
+  */
+
+  // Cell picking interactor.
+  vtkSmartPointer<MouseInteractorStyle> style = vtkSmartPointer<MouseInteractorStyle>::New();
+  style->SetDefaultRenderer(renderer);
+  style->SetMesh(mesh);
+  style->SetData("vWSS");
+  //style->Data = reader->GetOutput();
+  //style->Data = triangleFilter->GetOutput();
+  //style->Data = mesh;
+  style->m_Data = shrinkFilter->GetOutput();
+
+  renderWindowInteractor->SetInteractorStyle(style);
+
+
+  renderWindowInteractor->Start();
+
+  return EXIT_SUCCESS;
+}
