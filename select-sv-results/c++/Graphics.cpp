@@ -12,6 +12,8 @@
 //
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
+//
+#include <vtkUnstructuredGrid.h>
 
 //----------
 // Graphics
@@ -195,14 +197,16 @@ void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSele
 
   // Extract a list of cells from polydata.
   //
-  vtkSmartPointer<vtkExtractSelectedPolyDataIds> extractSelection = vtkSmartPointer<vtkExtractSelectedPolyDataIds>::New();
+  vtkSmartPointer<vtkExtractSelection> extractSelection = vtkSmartPointer<vtkExtractSelection>::New();
+  //vtkSmartPointer<vtkExtractSelectedPolyDataIds> extractSelection = vtkSmartPointer<vtkExtractSelectedPolyDataIds>::New();
   extractSelection->SetInputData(0, polydata); 
   extractSelection->SetInputData(1, selection);
   extractSelection->Update();
 
   // Get selected cells as a vtkPolyData.
   //
-  vtkSmartPointer<vtkPolyData> selected = vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkUnstructuredGrid> selected = vtkSmartPointer<vtkUnstructuredGrid>::New();
+  //vtkSmartPointer<vtkPolyData> selected = vtkSmartPointer<vtkPolyData>::New();
   selected->ShallowCopy(extractSelection->GetOutput());
   std::cout << "There are " << selected->GetNumberOfPoints() << " points in the selection." << std::endl;
   std::cout << "There are " << selected->GetNumberOfCells() << " cells in the selection." << std::endl;
