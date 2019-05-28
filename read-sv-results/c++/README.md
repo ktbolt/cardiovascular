@@ -1,7 +1,7 @@
 
 # Read SV Results
 
-This is a C++ program used to read VTK format (.vtp and .vtu) files created by the SimVascular svSolver and svPost programs.
+This is a C++ program used to read VTK format (.vtp and .vtu) files created by the SimVascular svSolver and svPost programs. A files is read in and the data names, mesh nodes and element connectivity, and nodal data values contained in the file are printed.
 
 ## Software dependencies
 The program uses cmake and vtk. 
