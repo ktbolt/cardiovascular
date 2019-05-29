@@ -31,7 +31,7 @@
 void PrintData(vtkPolyData* polydata)
 { 
   std::cout << "---------- Mesh Data ----------" << std::endl;
-  auto pointIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
+  auto nodeIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
   auto numPoints = polydata->GetNumberOfPoints();
   vtkIdType numPointArrays = polydata->GetPointData()->GetNumberOfArrays();
   std::cout << "Number of node data arrays: " << numPointArrays << std::endl;
@@ -42,6 +42,7 @@ void PrintData(vtkPolyData* polydata)
       auto data = vtkDoubleArray::SafeDownCast(polydata->GetPointData()->GetArray(name));
       auto numComp = data->GetNumberOfComponents();
       std::cout << "Node data array: " << name << std::endl;
+      std::cout << "  Number of components: " << numComp << std::endl;
 
       // Vectors.
       //
@@ -49,7 +50,7 @@ void PrintData(vtkPolyData* polydata)
         std::map<int,std::array<double,3>> idValue;
         auto numVectors = data->GetNumberOfTuples();
         for (int j = 0; j < numPoints; j++) {
-          auto id = pointIDs->GetValue(j); 
+          auto id = nodeIDs->GetValue(j); 
           auto vx = data->GetComponent(j, 0);
           auto vy = data->GetComponent(j, 1);
           auto vz = data->GetComponent(j, 2);
@@ -68,7 +69,7 @@ void PrintData(vtkPolyData* polydata)
       } else if (numComp == 1) {
         std::map<int,double> idValue;
         for (int j = 0; j < numPoints; j++) {
-          auto id = pointIDs->GetValue(j); 
+          auto id = nodeIDs->GetValue(j); 
           auto value = data->GetValue(j); 
           idValue[id] = value;
         }
@@ -202,7 +203,7 @@ void PrintMesh(vtkUnstructuredGrid* mesh)
 void PrintMesh(vtkPolyData* polydata)
 { 
   const int NODES_PER_ELEM = 3;
-  auto pointIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
+  auto nodeIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
   auto numPoints = polydata->GetNumberOfPoints();
   std::cout << "---------- Mesh ----------" << std::endl;
   std::cout << "Number of coordinates: " << numPoints << std::endl;
@@ -213,7 +214,7 @@ void PrintMesh(vtkPolyData* polydata)
   //
   for (int i = 0; i < numPoints; i++) {
     double pt[3]; 
-    auto id = pointIDs->GetValue(i); 
+    auto id = nodeIDs->GetValue(i); 
     polydata->GetPoint(i, pt); 
     idCoords[id] = {pt[0], pt[1], pt[2]};
   }
@@ -245,7 +246,7 @@ void PrintMesh(vtkPolyData* polydata)
     } 
     for (vtkIdType pointInd = 0; pointInd < cell->GetNumberOfPoints(); ++pointInd) {
       auto k = cell->PointIds->GetId(pointInd);
-      auto id = pointIDs->GetValue(k); 
+      auto id = nodeIDs->GetValue(k); 
       if (dupe) {
         dupeElems[elemID][pointInd] = id;
       } else {
