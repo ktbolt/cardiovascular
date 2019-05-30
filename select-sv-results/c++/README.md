@@ -17,9 +17,28 @@ To build the program:
 
 This creates an executable named **read-results**.
 
+
 ## Running the program
 Running the program with only a file name prints out the nodal data arrays contained in the file and displays the finite 
 element mesh. You can then select elements with the mouse and display element and node IDs.
+
+The program uses a trackball camera to interactively manipulate (rotate, pan, etc.) the camera, the viewpoint of the scene.
+For a trackball interaction, the magnitude of the mouse motion is proportional to the camera motion associated with a 
+particular mouse key binding. For example, small left-button motions cause small changes in the rotation of the camera 
+around its focal point. 
+
+For a 3-button mouse
+* left button is for rotation, 
+* right button for zooming, 
+* middle button for panning, and 
+* ctrl + left button for spinning. 
+
+With fewer mouse buttons, ctrl + shift + left button is for zooming, and shift + left button is for panning.)
+
+An element is seleted by moving the mouse over an element and pressing the **s** key. 
+
+Exit the program by pressing the **q** key.
+
 
 ### Example
 $ build/select-results all_results_00100.vtp
