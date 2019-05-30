@@ -11,7 +11,7 @@ include(${VTK_USE_FILE})
 add_executable(select-results  
     main.cpp 
     Graphics.h Graphics.cpp 
-    Mesh.h 
+    Mesh.h Mesh.cpp
     SurfaceMesh.h SurfaceMesh.cpp 
 )
  

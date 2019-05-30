@@ -35,7 +35,7 @@ Mesh& CreateMesh(const std::string& meshType)
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2) {
+  if (argc < 1) {
     std::cout << "Usage: " << argv[0] << " <FileName>.{vtu | vtp}" << std::endl;
     return EXIT_FAILURE;
   }
@@ -52,7 +52,10 @@ int main(int argc, char* argv[])
   // Create graphics interface.
   auto graphics = Graphics();
   graphics.SetMesh(&mesh);
-  graphics.SetDataName("vWSS");
+
+  if (argc == 3) {
+    graphics.SetDataName(argv[2]);
+  }
 
   // Add mesh geometry to graphics.
   mesh.AddGeometry(graphics);

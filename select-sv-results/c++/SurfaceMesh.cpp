@@ -41,7 +41,7 @@ void SurfaceMesh::FindData()
     int type = m_Polydata->GetPointData()->GetArray(i)->GetDataType();
     auto name = m_Polydata->GetPointData()->GetArrayName(i);
     std::cout << "  " << i+1 << ": " << name << " type: " << type << std::endl;
-    m_PointDataNames.push_back(name);
+    m_PointDataNames.insert(name);
   }
 
   vtkIdType numCellArrays = m_Polydata->GetCellData()->GetNumberOfArrays();

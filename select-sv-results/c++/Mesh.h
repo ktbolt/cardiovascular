@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -13,7 +14,6 @@ class Graphics;
 #define MESH_H 
 
 class Mesh {
-
   public:
     virtual void AddGeometry(Graphics& graphics) = 0;
     virtual vtkSmartPointer<vtkDoubleArray> GetDataArray(std::string name) = 0;
@@ -21,10 +21,10 @@ class Mesh {
     virtual void FindData() = 0;
     virtual void ReadMesh(const std::string fileName) = 0;
     virtual bool IsSurface() = 0;
+    bool HasData(const std::string& name);
 
   protected:
-    std::vector<std::string> m_PointDataNames;
-
+    std::set<std::string> m_PointDataNames;
 };
 
 #endif

@@ -1,6 +1,7 @@
 
 #include "Graphics.h" 
 
+#include <vtkCellData.h>
 #include <vtkCellPicker.h>
 //
 #include <vtkExtractSelectedPolyDataIds.h>
@@ -9,6 +10,7 @@
 #include <vtkGenericCell.h>
 //
 #include <vtkNamedColors.h>
+#include <vtkPointData.h>
 //
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
@@ -21,6 +23,8 @@
 //
 Graphics::Graphics()
 {
+  m_Mesh = nullptr;
+
   // Add a renderer.
   m_Renderer = vtkSmartPointer<vtkRenderer>::New();
   m_Renderer->SetBackground(1.0, 1.0, 1.0);
@@ -89,7 +93,15 @@ std::string Graphics::GetDataName()
 
 void Graphics::SetDataName(std::string name) 
 {
-  m_DataName = name;
+  if (m_Mesh != nullptr) {
+    if (m_Mesh->HasData(name)) {
+      m_DataName = name;
+    } else {
+      std::cout << "WARNING: The mesh does not have data named '" << name << "'" << std::endl;
+    }
+  } else {
+      std::cout << "WARNING: The mesh is not set for graphics." << "'" << std::endl;
+  }
 }
 
 
@@ -216,23 +228,40 @@ void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSele
    vtkGenericCell* cell = vtkGenericCell::New();
    polydata->GetCell(cellID, cell);
    auto numPts = cell->GetNumberOfPoints();
+   auto nodeIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
+   auto elemIDs = vtkIntArray::SafeDownCast(polydata->GetCellData()->GetArray("GlobalElementID"));
+   auto elemID = elemIDs->GetValue(cellID);
    std::cout << "Cell ID is: " << cellID << std::endl;
+   std::cout << "  Elem ID: " << elemID << std::endl;
    std::cout << "  Number of cell points: " << numPts << std::endl;
    std::cout << "  Connectivity: ";
    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
      auto id = cell->PointIds->GetId(pointInd);
-     std::cout << id << " ";
+     auto nodeID = nodeIDs->GetValue(id);
+     std::cout << nodeID << " ";
    }
    std::cout << std::endl;
 
    // Print cell data.
-   std::cout << std::endl;
-   std::cout << "Cell Data: " << std::endl;
-   std::cout << "  Name: " << dataName << std::endl;
-   for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
-     auto id = cell->PointIds->GetId(pointInd);
-     double value = data->GetValue(id);
-     std::cout << "  ID: " << id << "   value: " << value << std::endl;
+   if (dataName != "") {
+     std::cout << std::endl;
+     std::cout << "Cell Data: " << std::endl;
+     std::cout << "  Name: " << dataName << std::endl;
+     auto numComp = data->GetNumberOfComponents();
+
+     for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+       auto id = cell->PointIds->GetId(pointInd);
+       auto nodeID = nodeIDs->GetValue(id);
+       if (numComp == 1) { 
+         double value = data->GetValue(id);
+         std::cout << "  ID: " << nodeID << "   Value: " << value << std::endl;
+       } else if (numComp == 3) { 
+         auto v1 = data->GetComponent(id, 0);
+         auto v2 = data->GetComponent(id, 1);
+         auto v3 = data->GetComponent(id, 2);
+         std::cout << "  Node ID: " << nodeID << "   Values: " << v1 << " " << v2 << " " << v3 << std::endl;
+       }
+     }
    }
 
   // Display the selected cell.
