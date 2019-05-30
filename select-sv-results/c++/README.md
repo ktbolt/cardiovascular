@@ -23,8 +23,8 @@ Running the program with only a file name prints out the nodal data arrays conta
 element mesh. You can then select elements with the mouse and display element and node IDs.
 
 The program uses a trackball camera to interactively manipulate (rotate, pan, etc.) the camera, the viewpoint of the scene.
-For a trackball interaction, the magnitude of the mouse motion is proportional to the camera motion associated with a 
-particular mouse key binding. For example, small left-button motions cause small changes in the rotation of the camera 
+For a trackball interaction the magnitude of the mouse motion is proportional to the camera motion associated with a 
+particular mouse key. For example, small left-button motions cause small changes in the rotation of the camera 
 around its focal point. 
 
 For a 3-button mouse
