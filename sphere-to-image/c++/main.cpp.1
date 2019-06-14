@@ -1,0 +1,92 @@
+
+// Convert a sphere into an image.
+
+#include <vtkImageData.h>
+#include <vtkMarchingCubes.h>
+#include <vtkSphereSource.h>
+#include <vtkVoxelModeller.h>
+
+#include <vtkActor.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+
+#include <vtkXMLImageDataWriter.h>
+
+int main ( int argc, char *argv[] )
+{
+  // Create sphere.
+  //
+  vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+  sphereSource->SetPhiResolution(20);
+  sphereSource->SetThetaResolution(20);
+  sphereSource->Update();
+
+  double bounds[6];
+  sphereSource->GetOutput()->GetBounds(bounds);
+  for (unsigned int i = 0; i < 6; i += 2) {
+    double range = bounds[i+1] - bounds[i];
+    bounds[i] = bounds[i] - 0.1 * range;
+    bounds[i+1] = bounds[i+1] + 0.1 * range;
+  }
+
+  // Create volume from sphere.
+  //
+  vtkSmartPointer<vtkVoxelModeller> voxelModeller = vtkSmartPointer<vtkVoxelModeller>::New();
+  voxelModeller->SetSampleDimensions(100,100,100);
+  voxelModeller->SetModelBounds(bounds);
+  voxelModeller->SetScalarTypeToFloat();
+  voxelModeller->SetMaximumDistance(0.1);
+
+  voxelModeller->SetInputConnection(sphereSource->GetOutputPort());
+  voxelModeller->Update();
+  vtkSmartPointer<vtkImageData> volume = vtkSmartPointer<vtkImageData>::New();
+  volume->DeepCopy(voxelModeller->GetOutput());
+
+  // Extract isosurface from volume.
+  //
+  auto isoValue = 0.5;
+  vtkSmartPointer<vtkMarchingCubes> surface = vtkSmartPointer<vtkMarchingCubes>::New();
+  surface->SetInputData(volume);
+  surface->ComputeNormalsOn();
+  surface->SetValue(0, isoValue);
+
+  // Write image.
+  //
+  std::string image_file_name = "sphere.vti";
+  vtkSmartPointer<vtkXMLImageDataWriter> image_writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+  image_writer->SetFileName(image_file_name.c_str());
+  image_writer->SetInputData(volume);
+  image_writer->Write();
+
+  // Create renderer. 
+  //
+  vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer(renderer);
+  renderWindow->SetSize(1000,1000);
+
+  // Add trackball interactor.
+  //
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+  vtkSmartPointer<vtkInteractorStyleTrackballCamera> style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+  renderWindowInteractor->SetInteractorStyle(style);
+
+  // Add isosurface geometry.
+  //
+  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(surface->GetOutputPort());
+  mapper->ScalarVisibilityOff();
+  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+  actor->SetMapper(mapper);
+  renderer->AddActor(actor);
+
+  renderWindow->Render();
+  renderWindowInteractor->Start();
+  return EXIT_SUCCESS;
+
+}
+
