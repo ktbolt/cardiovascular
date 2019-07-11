@@ -3,4 +3,8 @@ cd build
 
 ./cl-material-props ../aorta.vtp ../aorta_cl_normals.vtp
 
+  or 
+
+./build/cl-material-props aorta.vtp aorta_cl_normals.vtp
+
 
