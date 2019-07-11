@@ -194,9 +194,9 @@ void MouseMeshInteractorStyle::SelectCell()
   SelectMesh(cellID);
 }
 
-//--------------
-// AddSelection
-//--------------
+//-------------
+// SelectMesh 
+//-------------
 //
 void MouseMeshInteractorStyle::SelectMesh(int cellID)
 { 
@@ -335,7 +335,7 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
   // Output the key that was pressed.
   //std::cout << "Pressed " << key << std::endl;
   if (key == "s") {
-    SelectCenterline();
+    //SelectCenterline();
   } else if (key == "e") {
     startSelected = false;
   } else if (key == "w") {
@@ -344,14 +344,15 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
     exit(0);
   }
 
-  //vtkInteractorStyleTrackballCamera::OnKeyPress();
+  vtkInteractorStyleTrackballCamera::OnKeyPress();
 }
 
 //------------------
 // SelectCenterline
 //------------------
 //
-void MouseCenterlineInteractorStyle::SelectCenterline() 
+void MouseCenterlineInteractorStyle::OnLeftButtonDown() 
+//void MouseCenterlineInteractorStyle::SelectCenterline() 
 {
   // Pick current screen location.
   //
@@ -398,7 +399,8 @@ void MouseCenterlineInteractorStyle::SelectCenterline()
     startSphere->SetRadius(radius);
     //startSphere->SetRadius(radius);
     //
-    planeWidth = 2.0*inscribedRadius;
+    planeWidth = 4.0*inscribedRadius;
+    //planeWidth = 2.0*inscribedRadius;
     vtkMath::Cross(normal, tangent, binormal);
     vtkMath::Normalize(binormal);
     vtkMath::Normalize(tangent);
@@ -414,6 +416,11 @@ void MouseCenterlineInteractorStyle::SelectCenterline()
     }
     startPlane->SetCenter(pos[0], pos[1], pos[2]);
     startPlane->SetNormal(tangent[0], tangent[1], tangent[2]);
+
+    auto mesh = m_Graphics->GetMesh();
+    auto dataName = m_Graphics->GetDataName();
+    mesh->SlicePlane(dataName, pos, tangent);
+    //mesh->SliceLine(dataName, pos, tangent);
   }
 
   this->Interactor->GetRenderWindow()->Render();

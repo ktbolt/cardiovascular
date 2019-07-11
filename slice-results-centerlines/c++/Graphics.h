@@ -159,7 +159,7 @@ class MouseCenterlineInteractorStyle : public vtkInteractorStyleTrackballCamera
     virtual void OnChar() override { }
 
     virtual void OnKeyPress() override;
-    //virtual void OnLeftButtonDown() override;
+    virtual void OnLeftButtonDown() override;
 
   private:
     double startPoint[3], endPoint[3];

@@ -50,6 +50,7 @@ void Centerlines::AddGeometry(Graphics& graphics)
   //geom->GetProperty()->SetRepresentationToWireframe();
   //geom->GetProperty()->EdgeVisibilityOn();
   geom->GetProperty()->SetLineWidth(4.0);
+  //geom->SetPickable(0);
   graphics.AddGeometry(geom);
 }
 

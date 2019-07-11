@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
 
   // Add mesh and centerlines geometry to graphics.
   mesh.AddGeometry(graphics);
+  mesh.SetGraphics(&graphics);
   centerlines.AddGeometry(graphics);
 
   graphics.Start();
