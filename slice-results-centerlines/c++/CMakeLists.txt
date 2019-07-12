@@ -13,6 +13,7 @@ add_executable(slice-results
     Centerlines.h Centerlines.cpp 
     Graphics.h Graphics.cpp 
     Mesh.h Mesh.cpp
+    Slice.h Slice.cpp 
     SurfaceMesh.h SurfaceMesh.cpp 
 )
  

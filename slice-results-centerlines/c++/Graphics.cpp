@@ -127,6 +127,11 @@ vtkSmartPointer<vtkActor> Graphics::CreateCircle()
   return actor;
 }   
 
+void Graphics::Refresh()
+{
+  m_RenderWindow->Render();
+}
+
 /////////////////////////////////////////////////////////////////////////
 //            M o u s e M e s h I n t e r a c t o r S t y l e          //
 /////////////////////////////////////////////////////////////////////////
@@ -334,12 +339,9 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
 
   // Output the key that was pressed.
   //std::cout << "Pressed " << key << std::endl;
-  if (key == "s") {
-    //SelectCenterline();
-  } else if (key == "e") {
-    startSelected = false;
-  } else if (key == "w") {
-    m_Centerlines.write_centerline();
+  if (key == "u") {
+    auto mesh = m_Graphics->GetMesh();
+    mesh->UndoSlice();
   } else if ((key == "Escape") || (key == "q")) {
     exit(0);
   }
@@ -373,7 +375,7 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
       vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
       actor->SetMapper(mapper);
       actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-      this->GetDefaultRenderer()->AddActor(actor);
+      //this->GetDefaultRenderer()->AddActor(actor);
     }
 
     if (startPlane == nullptr) {
@@ -383,7 +385,7 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
       vtkSmartPointer<vtkActor> startPlaneActor = vtkSmartPointer<vtkActor>::New();
       startPlaneActor->SetMapper(pmapper);
       startPlaneActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-      this->GetDefaultRenderer()->AddActor(startPlaneActor);
+      //this->GetDefaultRenderer()->AddActor(startPlaneActor);
     }
 
     double radius = 0.1;
@@ -419,8 +421,9 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
 
     auto mesh = m_Graphics->GetMesh();
     auto dataName = m_Graphics->GetDataName();
-    mesh->SlicePlane(dataName, pos, tangent);
-    //mesh->SliceLine(dataName, pos, tangent);
+
+    // Extract a slice from the mesh.
+    mesh->SlicePlane(index, dataName, pos, tangent);
   }
 
   this->Interactor->GetRenderWindow()->Render();

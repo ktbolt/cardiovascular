@@ -21,8 +21,8 @@ class Mesh {
     virtual void FindData() = 0;
     virtual void ReadMesh(const std::string fileName) = 0;
     virtual bool IsSurface() = 0;
-    virtual void SlicePlane(std::string dataName, double pos[3], double normal[3]) = 0;
-    virtual void SliceLine(std::string dataName, double pos[3], double normal[3]) = 0;
+    virtual void SlicePlane(int index, std::string dataName, double pos[3], double normal[3]) = 0;
+    virtual void UndoSlice() = 0;
     bool HasData(const std::string& name);
     void SetGraphics(Graphics* graphics) { m_Graphics = graphics; };
 

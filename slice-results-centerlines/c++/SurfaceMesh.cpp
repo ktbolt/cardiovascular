@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <string>
+#include "Slice.h"
 #include "SurfaceMesh.h"
 
 #include <vtkActor.h>
@@ -59,18 +60,19 @@ void SurfaceMesh::FindData()
 {
   m_PointDataNames.clear();
   vtkIdType numPointArrays = m_Polydata->GetPointData()->GetNumberOfArrays();
-  std::cout << "Number of point data arrays: " << numPointArrays << std::endl;
-  std::cout << "Point data array namess: " << std::endl;
+  std::cout << "Surface point data arrays: " << numPointArrays << std::endl;
+  std::cout << "  Number of point data arrays: " << numPointArrays << std::endl;
+  std::cout << "  Point data array namess: " << std::endl;
   for (vtkIdType i = 0; i < numPointArrays; i++) {
     auto name = m_Polydata->GetPointData()->GetArrayName(i);
     int type = m_Polydata->GetPointData()->GetArray(i)->GetDataType();
     auto numComp = m_Polydata->GetPointData()->GetArray(i)->GetNumberOfComponents();
-    std::cout << "  " << i+1 << ": " << name << " type: " << type << "  numComp: " << numComp << std::endl;
+    std::cout << "    " << i+1 << ": " << name << " type: " << type << "  numComp: " << numComp << std::endl;
     m_PointDataNames.insert(name);
   }
 
   vtkIdType numCellArrays = m_Polydata->GetCellData()->GetNumberOfArrays();
-  std::cout << "Number of cell data arrays: " << numCellArrays << std::endl;
+  std::cout << "  Number of cell data arrays: " << numCellArrays << std::endl;
 }
 
 //--------------
@@ -81,7 +83,6 @@ vtkSmartPointer<vtkDoubleArray> SurfaceMesh::GetDataArray(std::string name)
 {
   return vtkDoubleArray::SafeDownCast(m_Polydata->GetPointData()->GetArray(name.c_str()));
 }
-
 
 //-----------
 // IsSurface
@@ -130,8 +131,9 @@ void SurfaceMesh::AddGeometry(Graphics& graphics)
 //------------
 // SlicePlane
 //------------
+// Slice the surface mesh with a plane.
 //
-void SurfaceMesh::SlicePlane(std::string dataName, double pos[3], double normal[3]) 
+void SurfaceMesh::SlicePlane(int index, std::string dataName, double pos[3], double normal[3]) 
 {
   std::cout << "---------- Slice Surface ----------" << std::endl;
 
@@ -165,33 +167,15 @@ void SurfaceMesh::SlicePlane(std::string dataName, double pos[3], double normal[
   // Get a single Polydata lines geometry from the slice.
   auto lines = GetSliceLines(cutter, pos);
 
+  // Create a Slice object to store slice data.
+  auto slice = new Slice(index, dataName, pos);
+  m_Slices.push_back(slice);
+
   // Calculate the area of the slice.
-  SliceArea(lines);
+  SliceArea(lines, slice);
 
   // Interpolate the surface data to the slice points.
-  Interpolate(dataName, lines);
-}
-
-//-----------
-// SliceLine
-//-----------
-//
-void SurfaceMesh::SliceLine(std::string dataName, double pos[3], double normal[3])
-{
-  double startRay[3];
-  double endRay[3];
-  double v2[3], v3[3];
-
-  vtkMath::Perpendiculars(normal, v2, NULL, 0);
-  vtkMath::Cross(normal, v2, v3);
-
-  int numPts = 20;
-
-  for (int i = 0; i < 3; i++) {
-    startRay[i] = pos[i];
-    //endRay[i] = pos[i] + r*v2[i];
-  }
-
+  Interpolate(dataName, lines, slice);
 }
 
 //---------------
@@ -255,7 +239,7 @@ vtkSmartPointer<vtkPolyData> SurfaceMesh::GetSliceLines(vtkSmartPointer<vtkCutte
 //-------------
 // Interpolate the surface mesh data.
 //
-void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines) 
+void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* slice) 
 {
   auto numLines = lines->GetNumberOfLines();
   auto numPoints = lines->GetNumberOfPoints();
@@ -324,7 +308,7 @@ void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines)
 //
 // Compute the area of a surface slice.
 //
-void SurfaceMesh::SliceArea(vtkPolyData* lines) 
+void SurfaceMesh::SliceArea(vtkPolyData* lines, Slice* slice) 
 {
   auto points = lines->GetPoints();
   vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
@@ -335,7 +319,8 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines)
   vtkSmartPointer<vtkMassProperties> massProperties = vtkSmartPointer<vtkMassProperties>::New();
   massProperties->SetInputConnection(delaunay->GetOutputPort());
   massProperties->Update();
-  std::cout <<  "Area:   " << massProperties->GetSurfaceArea() << std::endl;
+  slice->area = massProperties->GetSurfaceArea();
+  std::cout <<  "Area:   " << slice->area << std::endl;
 
   // Show the cross section area.
   //
@@ -346,6 +331,7 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines)
   //meshActor->GetProperty()->EdgeVisibilityOn();
   meshActor->GetProperty()->SetColor(0.8, 0.0, 0.0);
   m_Graphics->AddGeometry(meshActor);
+  slice->meshActor = meshActor; 
 
   vtkSmartPointer<vtkVertexGlyphFilter> glyphFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
   glyphFilter->SetInputData(polydata);
@@ -357,5 +343,22 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines)
   pointActor->GetProperty()->SetPointSize(5);
   pointActor->SetMapper(pointMapper);
   m_Graphics->AddGeometry(pointActor);
+  slice->pointActor = pointActor; 
 }
 
+//-----------
+// UndoSlice
+//-----------
+//
+void SurfaceMesh::UndoSlice()
+{
+  if (m_Slices.size() == 0) {
+    return;
+  }
+  std::cout << "Surface remove last slice." << std::endl;
+  auto slice = m_Slices.back();
+  m_Slices.pop_back();
+  slice->pointActor->SetVisibility(false);
+  slice->meshActor->SetVisibility(false);
+  m_Graphics->Refresh();
+}

@@ -5,6 +5,7 @@
 
 #include "Graphics.h"
 #include "Mesh.h"
+#include "Slice.h"
 
 #include <vtkCellLocator.h>
 #include <vtkCutter.h>
@@ -25,17 +26,18 @@ class SurfaceMesh : public Mesh {
     vtkSmartPointer<vtkPolyData> GetPolyData();
     bool IsSurface();
     void ReadMesh(const std::string fileName);
-    void SlicePlane(std::string dataName, double pos[3], double normal[3]);
-    void SliceLine(std::string dataName, double pos[3], double normal[3]);
+    void SlicePlane(int index, std::string dataName, double pos[3], double normal[3]);
+    void UndoSlice();
 
   private:
     vtkSmartPointer<vtkPolyData> m_Polydata;
     vtkIdType m_NumPoints;
     vtkIdType m_NumPolys;
     vtkSmartPointer<vtkCellLocator> m_CellLocator;
-    void Interpolate(std::string dataName, vtkPolyData* lines);
-    void SliceArea(vtkPolyData* lines);
+    void Interpolate(std::string dataName, vtkPolyData* lines, Slice* slice);
+    void SliceArea(vtkPolyData* lines, Slice* slice);
     vtkSmartPointer<vtkPolyData> GetSliceLines(vtkSmartPointer<vtkCutter> cutter, double pos[3]);
+    std::vector<Slice*> m_Slices;
 
 };
 

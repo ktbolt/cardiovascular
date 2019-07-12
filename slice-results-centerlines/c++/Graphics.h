@@ -57,6 +57,7 @@ class Graphics {
     void SetDataName(std::string name); 
     std::string GetDataName(); 
     vtkSmartPointer<vtkActor> CreateCircle();
+    void Refresh();
 
   private:
     vtkSmartPointer<vtkDataSetMapper> p_Mapper;
