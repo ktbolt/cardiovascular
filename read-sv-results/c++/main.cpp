@@ -204,8 +204,21 @@ void PrintMesh(vtkPolyData* polydata)
 { 
   const int NODES_PER_ELEM = 3;
   auto nodeIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
+  auto numIDs = nodeIDs->GetNumberOfValues();
   auto numPoints = polydata->GetNumberOfPoints();
+
   std::cout << "---------- Mesh ----------" << std::endl;
+  /*
+  std::cout << "Global Node IDs: " << std::endl;
+  std::cout << "  Number of IDs: " << numIDs << std::endl;
+  std::cout << "  IDs: " ;
+  for (int i = 0; i < numIDs; i++) {
+    auto id = nodeIDs->GetValue(i);
+    std::cout << id << " ";
+  }
+  std::cout << std::endl;
+  */
+
   std::cout << "Number of coordinates: " << numPoints << std::endl;
   std::cout << "Coordinates: " << std::endl;
   std::map<int,std::array<double,3>> idCoords;
@@ -354,7 +367,6 @@ int main(int argc, char* argv[])
     vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
     reader->SetFileName(fileName.c_str());
     reader->Update();
-
     polydataMesh = vtkSmartPointer<vtkPolyData>::New();
     polydataMesh->DeepCopy(reader->GetOutput());
     vtkIdType numPoints = polydataMesh->GetNumberOfPoints();
