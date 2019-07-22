@@ -17,23 +17,23 @@ To use the script from SimVascular Python Console
 
 Example: Using 'ContourDistance' for the SimVascular DemoProject
 
-     ## Create contours IDs for the SV Data Manager Segmentations 
-     #  'aorta' data node into the Data Manager Repository.
-     #
-     # The number of contours are the number of contours defined in the
-     # 'SV 2D Segmentation' 'Contour List:'. 
-     #
-     seg_name = 'aorta'
-     num_contours = 39
-     contour_ids = list(range(num_contours))
+## Create contours IDs for the SV Data Manager Segmentations 
+#  'aorta' data node into the Data Manager Repository.
+#
+# The number of contours are the number of contours defined in the
+# 'SV 2D Segmentation' 'Contour List:'. 
+#
+seg_name = 'aorta'
+num_contours = 39
+contour_ids = list(range(num_contours))
 
-     # Create a ContourDistance object with contour_ids.
-     contour = ContourDistance(seg_name, contour_ids)
+# Create a ContourDistance object with contour_ids.
+contour = ContourDistance(seg_name, contour_ids)
 
-     # Calculate the distance between contour centers.
-     id1 = 4
-     id2 = 20
-     contour.dist(id1,id2)
+# Calculate the distance between contour centers.
+id1 = 4
+id2 = 20
+contour.dist(id1,id2)
 
 """
 
@@ -74,6 +74,7 @@ class ContourDistance(object):
         """
         centers = []
         for id in self.repo_contour_ids:
+            print(id)
             contour = Repository.ExportToVtk(id)
             com_filter = vtk.vtkCenterOfMass()
             com_filter.SetInputData(contour)
