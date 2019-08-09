@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "Graphics.h"
 #include "Mesh.h"
@@ -17,17 +18,23 @@
 class Slice {
 
   public:
-    Slice(const int index, const std::string dataName, double pos[3]);
+    Slice(const int index, const int cellID, const std::string dataName, double pos[3]);
     double area;
+    std::string m_DataName;
+
     vtkSmartPointer<vtkActor> meshActor;
     vtkSmartPointer<vtkActor> pointActor;
+    void AddScalarData(double value);
+    void AddVectorData(double values[3]);
+    void Write(ofstream& file);
 
   private:
+    int m_CellID; 
     int m_CenterlineIndex; 
-    std::string m_DataName;
     double m_CenterlinePosition[3];
     vtkSmartPointer<vtkPolyData> m_Polydata;
-
+    std::vector<double> m_InterpolatedScalarData;
+    std::vector<std::array<double,3>> m_InterpolatedVectorData;
 };
 
 #endif

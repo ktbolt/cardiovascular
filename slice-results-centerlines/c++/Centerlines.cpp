@@ -130,7 +130,8 @@ void Centerlines::create_cell_locator()
 //-------------
 // Locate the given point in centerlines.
 //
-void Centerlines::locate_cell(double point[3], int& index, double& radius, double normal[3], double tangent[3])
+void Centerlines::locate_cell(double point[3], int& index, int& cellID, double& radius, double normal[3], 
+  double tangent[3])
 {
   std::cout << std::endl;
   std::cout << "---------- Select Centerline Point ----------" << std::endl;
@@ -181,6 +182,7 @@ void Centerlines::locate_cell(double point[3], int& index, double& radius, doubl
   vtkMath::Subtract(p2, p1,tangent);
   vtkMath::Normalize(tangent);
   std::cout << "Tangent " << tangent[0] << " " << tangent[1] << " " << tangent[2] << std::endl;
+  cellID = cellId;
 }
 
 //------------------

@@ -26,10 +26,12 @@ class SurfaceMesh : public Mesh {
     vtkSmartPointer<vtkPolyData> GetPolyData();
     bool IsSurface();
     void ReadMesh(const std::string fileName);
-    void SlicePlane(int index, std::string dataName, double pos[3], double normal[3]);
+    void SlicePlane(int index, int cellID, std::string dataName, double pos[3], double normal[3]);
     void UndoSlice();
+    void WriteSlices();
 
   private:
+    std::string m_MeshFileName;
     vtkSmartPointer<vtkPolyData> m_Polydata;
     vtkIdType m_NumPoints;
     vtkIdType m_NumPolys;

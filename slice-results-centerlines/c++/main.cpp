@@ -49,6 +49,10 @@ int main(int argc, char* argv[])
   std::string fileName = argv[1];
   auto fileExt = fileName.substr(fileName.find_last_of(".") + 1);
   std::cout << "File extension: " << fileExt << std::endl;
+
+  auto filePrefix = fileName.substr(0,fileName.find_last_of(".") - 1);
+  std::cout << "File prefix: " << filePrefix << std::endl;
+
   Mesh& mesh = CreateMesh(fileExt);
   mesh.ReadMesh(fileName);
   mesh.FindData();
