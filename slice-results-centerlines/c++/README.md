@@ -69,6 +69,12 @@ Surface point data arrays: 8
     8: timeDeriv type: 11  numComp: 4
   Number of cell data arrays: 1
 Read centerlines: demo_cl.vtp
+Number of vertices 1466
+Number of lines 2
+Number of PointData arrays: 3
+PointData arrays: 
+Have MaximumInscribedSphereRadius data
+
 ```
 
 
