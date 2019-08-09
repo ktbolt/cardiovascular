@@ -61,11 +61,12 @@ Point data array namess:
 Number of cell data arrays: 1
 ```
 
-Running the program with a file name and node data name displays the finite element mesh and allows you to select elements 
-with the mouse and display element and node IDs, and the simulation results at the element nodes for the specified data name.
+Running the program with a results file (.vtp), a centerline file (.vtp) and node data name displays the 
+finite element mesh and allows you to select elements with the mouse and display element and node IDs, 
+and the simulation results at the element nodes for the specified data name.
 
 ### Example
-build/slice-results all_results_00100.vtp vWSS
+build/slice-results all_results_00100.vtp demo_cl.vtp vWSS
 
 ```
 Pressed key: s

@@ -20,6 +20,7 @@
 #include <vtkPolyDataNormals.h>
 #include <vtkProbeFilter.h>
 #include <vtkStripper.h>
+#include <vtkTriangle.h>
 #include <vtkTriangleFilter.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataReader.h>
@@ -239,8 +240,19 @@ vtkSmartPointer<vtkPolyData> SurfaceMesh::GetSliceLines(vtkSmartPointer<vtkCutte
 //-------------
 // Interpolate the surface mesh data.
 //
+// Arguments:
+//
+//   lines: The geometry of the intersection of the surface with a slice plane.
+//
+//
+// For each point in 'lines' determine the cell the point lies in using
+// m_CellLocator->FindCell(). This function returns the triangle local 
+// coordinates (r,s) of the point and weights the point in the triangle and 
+//
+//
 void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* slice) 
 {
+  std::cout << "---------- Interpolate ----------" << std::endl;
   auto numLines = lines->GetNumberOfLines();
   auto numPoints = lines->GetNumberOfPoints();
   auto points = lines->GetPoints();
@@ -251,53 +263,91 @@ void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* s
   double weights[3]; 
   vtkGenericCell* cell = vtkGenericCell::New();
   auto data = GetDataArray(dataName);
+  auto debugInterpolate = true;
 
   for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) {
     double pt[3];
     points->GetPoint(i,pt);
     auto cellID = m_CellLocator->FindCell(pt, tol2, cell, localCoords, weights);
-    //std::cout << i << ": " << pt[0] << "  " << pt[1] << "  " << pt[2] << std::endl;
-    //std::cout << "    cellID: " << cellId << std::endl;
-    //std::cout << "    localCoords: " << localCoords[0] << "  " << localCoords[1] << "  " << std::endl;
-    //std::cout << "    weights: " << weights[0] << "  " << weights[1] << "  " << weights[2] << std::endl;
-
     auto numPts = cell->GetNumberOfPoints();
     auto nodeIDs = vtkIntArray::SafeDownCast(m_Polydata->GetPointData()->GetArray("GlobalNodeID"));
     auto elemIDs = vtkIntArray::SafeDownCast(m_Polydata->GetCellData()->GetArray("GlobalElementID"));
     auto elemID = elemIDs->GetValue(cellID);
-    //std::cout << "--------------------" << std::endl;
-    //std::cout << "Cell ID is: " << cellID << std::endl;
-    //std::cout << "  Elem ID: " << elemID << std::endl;
-    //std::cout << "  Number of cell points: " << numPts << std::endl;
-    //std::cout << "  Connectivity: ";
-    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
-      auto id = cell->PointIds->GetId(pointInd);
-      auto nodeID = nodeIDs->GetValue(id);
-      //std::cout << nodeID << " ";
+
+    if (debugInterpolate) {
+      std::cout << "--------------- Sample " << i << " ----------" << std::endl;
+      std::cout << "Sample point: " << pt[0] << "  " << pt[1] << "  " << pt[2] << std::endl;
+      std::cout << "CellID: " << cellID << std::endl;
+      std::cout << "  localCoords: " << localCoords[0] << "  " << localCoords[1] << "  " << std::endl;
+      std::cout << "  weights: " << weights[0] << "  " << weights[1] << "  " << weights[2] << std::endl;
+      std::cout << "  Elem ID: " << elemID << std::endl;
+      std::cout << "  Number of cell points: " << numPts << std::endl;
+      std::cout << "  Connectivity: ";
+      for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+        auto id = cell->PointIds->GetId(pointInd);
+        auto nodeID = nodeIDs->GetValue(id);
+        std::cout << nodeID << " ";
+      }
+      std::cout << std::endl;
+
+      // Check that weights interpolate points.
+      if (false) {
+        double p0[3], p1[3], p2[3];
+        vtkCell* tcell = dynamic_cast<vtkCell*>(cell);
+        tcell->GetPoints()->GetPoint(0, p0);
+        tcell->GetPoints()->GetPoint(1, p1);
+        tcell->GetPoints()->GetPoint(2, p2);
+        double w1, w2, w3, ipt[3];
+        w1 = weights[0];
+        w2 = weights[1];
+        w3 = weights[2];
+        ipt[0] = 0.0;
+        ipt[1] = 0.0;
+        ipt[2] = 0.0;
+        for (int k = 0; k < 3; k++) {
+          ipt[k] = w1*p0[k] + w2*p1[k] + w3*p2[k];
+        }
+        std::cout << "  interp point: " << ipt[0] << "  " << ipt[1] << "  " << ipt[2] << std::endl;
+      }
+    }
+
+   if (dataName == "") {
+     return;
    }
-   //std::cout << std::endl;
 
-   if (dataName != "") {
-     //std::cout << "Cell Data: " << std::endl;
-     //std::cout << "  Name: " << dataName << std::endl;
-     auto numComp = data->GetNumberOfComponents();
-     //std::cout << "  Number of components: " << numComp << std::endl;
+   // Interpolate data at the slice sample points.
+   //
+   auto numComp = data->GetNumberOfComponents();
 
-     for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
-       auto id = cell->PointIds->GetId(pointInd);
-       auto nodeID = nodeIDs->GetValue(id);
-       if (numComp == 1) {
-         double value = data->GetValue(id);
-         //std::cout << "  ID: " << nodeID << "   Value: " << value << std::endl;
-       } else if (numComp == 3) {
-         auto v1 = data->GetComponent(id, 0);
-         auto v2 = data->GetComponent(id, 1);
-         auto v3 = data->GetComponent(id, 2);
-         //std::cout << "  Node ID: " << nodeID << "   Values: " << v1 << " " << v2 << " " << v3 << std::endl;
+   if (debugInterpolate) {
+     std::cout << "Cell Data: " << std::endl;
+     std::cout << "  Name: " << dataName << std::endl;
+     std::cout << "  Number of components: " << numComp << std::endl;
+   }
+
+   double idata[3] = {0.0, 0.0, 0.0};
+
+   for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+     auto id = cell->PointIds->GetId(pointInd);
+     auto nodeID = nodeIDs->GetValue(id);
+     if (numComp == 1) {
+       double value = data->GetValue(id);
+       idata[0] += weights[pointInd]*value;
+       if (debugInterpolate) {
+         std::cout << "  ID: " << nodeID << "   Value: " << value << std::endl;
+       }
+     } else if (numComp == 3) {
+       auto v1 = data->GetComponent(id, 0);
+       auto v2 = data->GetComponent(id, 1);
+       auto v3 = data->GetComponent(id, 2);
+       idata[0] += weights[pointInd]*v1;
+       idata[1] += weights[pointInd]*v2;
+       idata[2] += weights[pointInd]*v3;
+       if (debugInterpolate) {
+         std::cout << "  Node ID: " << nodeID << "   Values: " << v1 << " " << v2 << " " << v3 << std::endl;
        }
      }
    }
-  
   }  // for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) 
 
 }
@@ -355,7 +405,7 @@ void SurfaceMesh::UndoSlice()
   if (m_Slices.size() == 0) {
     return;
   }
-  std::cout << "Surface remove last slice." << std::endl;
+  std::cout << std::endl << ">>> Remove last slice." << std::endl;
   auto slice = m_Slices.back();
   m_Slices.pop_back();
   slice->pointActor->SetVisibility(false);

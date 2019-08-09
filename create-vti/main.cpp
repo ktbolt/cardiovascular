@@ -30,9 +30,9 @@ int main ( int argc, char *argv[] )
   std::string filename = argv[1];
 
   // Set image dimentions.
-  int idim = 10;
-  int jdim = 10;
-  int kdim = 10;
+  int idim = 40;
+  int jdim = 40;
+  int kdim = 40;
   double icx = (idim - 1) / 2.0;
   double icy = (jdim - 1) / 2.0;
   double icz = (kdim - 1) / 2.0;
