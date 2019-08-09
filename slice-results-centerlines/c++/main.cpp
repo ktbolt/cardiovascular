@@ -40,7 +40,7 @@ Mesh& CreateMesh(const std::string& meshType)
 int main(int argc, char* argv[])
 {
   if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " <FileName>.{vtu | vtp}" << "  <CenterlineFileName>.vtp " << std::endl;
+    std::cout << "Usage: " << argv[0] << " <FileName>.{vtu | vtp}" << "  <CenterlineFileName>.vtp  <dataName> " << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -56,6 +56,10 @@ int main(int argc, char* argv[])
   Mesh& mesh = CreateMesh(fileExt);
   mesh.ReadMesh(fileName);
   mesh.FindData();
+
+  if (argc == 2) {
+    return 0;
+  }
 
   // Read in VTK centerline file.
   //
