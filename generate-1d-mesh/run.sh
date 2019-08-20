@@ -7,8 +7,8 @@ test_name="compute_centerlines"
 test_name="write_solver_file"
 test_name="resistance_bc"
 
-python=python3
 python=python
+python=python3
 
 ## Write a 1D solver input file.
 #
