@@ -9,8 +9,12 @@
 # Set the Python interpreter if the default it not Python 3.
 python=python3
 
-# Augment the default search path for module files. 
-export PYTHONPATH=$PYTHONPATH:/Users/parkerda/software/ktbolt/cardiovascular/sv-1d-simulation/sv_1d_simulation
+## Augment the default search path for module files. 
+#  
+# Set SVPROJECT_DIR to the location of your SimVascular project GitHub clone.
+#
+SVPROJECT_DIR=
+export PYTHONPATH=$PYTHONPATH:$SVPROJECT_DIR/SimVascular/Python/site-packages/sv_1d_simulation
 
 ## Files containing data input to the Python script.
 #
