@@ -21,7 +21,7 @@ class Centerlines {
     void SetMesh(Mesh* mesh); 
     void ShowData(); 
     void create_cell_locator();
-    void locate_cell(double point[3], int& index, double& radius, double normal[3], double tangent[3]);
+    void locate_cell(double point[3], int& index, int& cellId, double& radius, double normal[3], double tangent[3]);
     void write_centerline();
 
   private:

@@ -136,12 +136,14 @@ void Graphics::Refresh()
 //            M o u s e M e s h I n t e r a c t o r S t y l e          //
 /////////////////////////////////////////////////////////////////////////
 
+// This class defines a mouse interactor used to select a surface
+// element (triangle) and display its nodal data.
+
 MouseMeshInteractorStyle::MouseMeshInteractorStyle()
 {
   m_SelectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
   m_SelectedActor = vtkSmartPointer<vtkActor>::New();
   m_Colors = vtkSmartPointer<vtkNamedColors>::New();
-
 }
 
 void MouseMeshInteractorStyle::SetGraphics(Graphics* graphics)
@@ -305,7 +307,6 @@ void MouseMeshInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtk
   this->Interactor->GetRenderWindow()->Render();
 }
 
-
 //void MouseInteractorStyle::OnLeftButtonDown()
 //{
 //}
@@ -315,6 +316,9 @@ vtkStandardNewMacro(MouseMeshInteractorStyle);
 /////////////////////////////////////////////////////////////////////////////////////
 //            M o u s e C e n t e r l i n e I n t e r a c t o r S t y l e          //
 /////////////////////////////////////////////////////////////////////////////////////
+
+// This class defines a mouse interactor used to create a slice at a selected
+// point on a surface centerline.
 
 MouseCenterlineInteractorStyle::MouseCenterlineInteractorStyle()
 {
@@ -331,6 +335,10 @@ void MouseCenterlineInteractorStyle::SetGraphics(Graphics* graphics)
   m_Graphics = graphics;
 }
 
+//------------
+// OnKeyPress
+//------------
+//
 void MouseCenterlineInteractorStyle::OnKeyPress() 
 {
   // Get the keypress.
@@ -339,9 +347,18 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
 
   // Output the key that was pressed.
   //std::cout << "Pressed " << key << std::endl;
+
+  // Undo. Removes the last slice.
   if (key == "u") {
     auto mesh = m_Graphics->GetMesh();
     mesh->UndoSlice();
+
+  // Write slices to a file.
+  } else if (key == "w") {
+    auto mesh = m_Graphics->GetMesh();
+    mesh->WriteSlices();
+
+  // Quit.
   } else if ((key == "Escape") || (key == "q")) {
     exit(0);
   }
@@ -393,9 +410,10 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
     double normal[3], tangent[3], binormal[3], p1[3];
     double planeWidth, origin[3], point1[3], point2[3], vec1[3], vec2[3];
     int index;
+    int cellID;
 
     // Get centerline data at the picked point.
-    m_Centerlines.locate_cell(pos, index, inscribedRadius, normal, tangent);
+    m_Centerlines.locate_cell(pos, index, cellID, inscribedRadius, normal, tangent);
 
     startSphere->SetCenter(pos[0], pos[1], pos[2]);
     startSphere->SetRadius(radius);
@@ -423,7 +441,7 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
     auto dataName = m_Graphics->GetDataName();
 
     // Extract a slice from the mesh.
-    mesh->SlicePlane(index, dataName, pos, tangent);
+    mesh->SlicePlane(index, cellID, dataName, pos, tangent);
   }
 
   this->Interactor->GetRenderWindow()->Render();

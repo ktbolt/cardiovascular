@@ -36,6 +36,7 @@ SurfaceMesh::SurfaceMesh()
 //
 void SurfaceMesh::ReadMesh(const std::string fileName)
 {
+  m_MeshFileName = fileName;
   std::cout << "Read surface mesh: " << fileName << std::endl;
   m_Polydata = vtkSmartPointer<vtkPolyData>::New();
 
@@ -49,6 +50,8 @@ void SurfaceMesh::ReadMesh(const std::string fileName)
   std::cout << "  Number of points: " << m_NumPoints << std::endl;
   std::cout << "  Number of polygons: " << m_NumPolys << std::endl;
 
+  // Create a cell locator used to interpolate data 
+  // at slice points on the surface.
   m_CellLocator->SetDataSet(m_Polydata);
   m_CellLocator->BuildLocator();
 }
@@ -134,7 +137,7 @@ void SurfaceMesh::AddGeometry(Graphics& graphics)
 //------------
 // Slice the surface mesh with a plane.
 //
-void SurfaceMesh::SlicePlane(int index, std::string dataName, double pos[3], double normal[3]) 
+void SurfaceMesh::SlicePlane(int index, int cellID, std::string dataName, double pos[3], double normal[3]) 
 {
   std::cout << "---------- Slice Surface ----------" << std::endl;
 
@@ -169,7 +172,7 @@ void SurfaceMesh::SlicePlane(int index, std::string dataName, double pos[3], dou
   auto lines = GetSliceLines(cutter, pos);
 
   // Create a Slice object to store slice data.
-  auto slice = new Slice(index, dataName, pos);
+  auto slice = new Slice(index, cellID, dataName, pos);
   m_Slices.push_back(slice);
 
   // Calculate the area of the slice.
@@ -236,6 +239,47 @@ vtkSmartPointer<vtkPolyData> SurfaceMesh::GetSliceLines(vtkSmartPointer<vtkCutte
 }
 
 //-------------
+// WriteSlices
+//-------------
+//
+void SurfaceMesh::WriteSlices()
+{
+  std::cout << std::endl;
+  std::cout << "---------- Write Slices ----------" << std::endl;
+
+  if (m_Slices.size() == 0) {
+    std::cout << "No slices to write. " << std::endl;
+    return;
+  }
+
+  if (m_Slices[0]->m_DataName == "") {
+    std::cout << "No data to write. " << std::endl;
+    return;
+  }
+
+  auto dataName = m_Slices[0]->m_DataName;
+  auto filePrefix = m_MeshFileName.substr(0,m_MeshFileName.find_last_of(".") - 1);
+  auto fileName = filePrefix + "_" + dataName + ".txt";
+  std::cout << "Writing " << m_Slices.size() << " slices to '" << fileName << "'" << std::endl; 
+
+  ofstream file;
+  file.open (fileName);
+  file << "# Slices file" << std::endl;
+  file << "data name: " << dataName << std::endl;
+  file << "number of slices: " << m_Slices.size() << std::endl;
+
+  int sliceNum = 1;
+  for (auto const& slice :  m_Slices) {
+    file << " " << std::endl;
+    file << "slice " << sliceNum << std::endl;
+    slice->Write(file);
+    sliceNum += 1;
+  }
+
+  file.close();
+}
+
+//-------------
 // Interpolate
 //-------------
 // Interpolate the surface mesh data.
@@ -252,6 +296,8 @@ vtkSmartPointer<vtkPolyData> SurfaceMesh::GetSliceLines(vtkSmartPointer<vtkCutte
 //
 void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* slice) 
 {
+  auto debugInterpolate = false;
+
   std::cout << "---------- Interpolate ----------" << std::endl;
   auto numLines = lines->GetNumberOfLines();
   auto numPoints = lines->GetNumberOfPoints();
@@ -263,7 +309,6 @@ void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* s
   double weights[3]; 
   vtkGenericCell* cell = vtkGenericCell::New();
   auto data = GetDataArray(dataName);
-  auto debugInterpolate = true;
 
   for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) {
     double pt[3];
@@ -311,43 +356,51 @@ void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* s
       }
     }
 
-   if (dataName == "") {
-     return;
-   }
+    if (dataName == "") {
+      return;
+    }
 
-   // Interpolate data at the slice sample points.
-   //
-   auto numComp = data->GetNumberOfComponents();
+    
+    // Interpolate data at the slice sample points.
+    //
+    auto numComp = data->GetNumberOfComponents();
 
-   if (debugInterpolate) {
-     std::cout << "Cell Data: " << std::endl;
-     std::cout << "  Name: " << dataName << std::endl;
-     std::cout << "  Number of components: " << numComp << std::endl;
-   }
+    if (debugInterpolate) {
+      std::cout << "Cell Data: " << std::endl;
+      std::cout << "  Name: " << dataName << std::endl;
+      std::cout << "  Number of components: " << numComp << std::endl;
+    }
 
-   double idata[3] = {0.0, 0.0, 0.0};
+    double idata[3] = {0.0, 0.0, 0.0};
 
-   for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
-     auto id = cell->PointIds->GetId(pointInd);
-     auto nodeID = nodeIDs->GetValue(id);
-     if (numComp == 1) {
-       double value = data->GetValue(id);
-       idata[0] += weights[pointInd]*value;
-       if (debugInterpolate) {
-         std::cout << "  ID: " << nodeID << "   Value: " << value << std::endl;
-       }
-     } else if (numComp == 3) {
-       auto v1 = data->GetComponent(id, 0);
-       auto v2 = data->GetComponent(id, 1);
-       auto v3 = data->GetComponent(id, 2);
-       idata[0] += weights[pointInd]*v1;
-       idata[1] += weights[pointInd]*v2;
-       idata[2] += weights[pointInd]*v3;
-       if (debugInterpolate) {
-         std::cout << "  Node ID: " << nodeID << "   Values: " << v1 << " " << v2 << " " << v3 << std::endl;
-       }
-     }
-   }
+    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+      auto id = cell->PointIds->GetId(pointInd);
+      auto nodeID = nodeIDs->GetValue(id);
+      if (numComp == 1) {
+        double value = data->GetValue(id);
+        idata[0] += weights[pointInd]*value;
+        if (debugInterpolate) {
+          std::cout << "  ID: " << nodeID << "   Value: " << value << std::endl;
+        }
+      } else if (numComp == 3) {
+        auto v1 = data->GetComponent(id, 0);
+        auto v2 = data->GetComponent(id, 1);
+        auto v3 = data->GetComponent(id, 2);
+        idata[0] += weights[pointInd]*v1;
+        idata[1] += weights[pointInd]*v2;
+        idata[2] += weights[pointInd]*v3;
+        if (debugInterpolate) {
+          std::cout << "  Node ID: " << nodeID << "   Values: " << v1 << " " << v2 << " " << v3 << std::endl;
+        }
+      }
+    }
+ 
+    if (numComp == 1) {
+        slice->AddScalarData(idata[0]);
+    } else if (numComp == 3) {
+        slice->AddVectorData(idata);
+    }
+
   }  // for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) 
 
 }
