@@ -19,6 +19,7 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkProbeFilter.h>
+#include <vtkSphereSource.h>
 #include <vtkStripper.h>
 #include <vtkTriangle.h>
 #include <vtkTriangleFilter.h>
@@ -425,6 +426,8 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines, Slice* slice)
   massProperties->Update();
   slice->area = massProperties->GetSurfaceArea();
   std::cout <<  "Area:   " << slice->area << std::endl;
+  auto radius = sqrt(slice->area/M_PI);
+  std::cout <<  "Area equivalent radius:   " << radius << std::endl;
 
   // Show the cross section area.
   //
@@ -448,6 +451,22 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines, Slice* slice)
   pointActor->SetMapper(pointMapper);
   m_Graphics->AddGeometry(pointActor);
   slice->pointActor = pointActor; 
+
+  // Add a sphere to visualize radius.
+  auto sphere = vtkSmartPointer<vtkSphereSource>::New();
+  sphere->SetCenter(slice->m_CenterlinePosition[0], slice->m_CenterlinePosition[1], 
+                    slice->m_CenterlinePosition[2]);
+  sphere->SetRadius(radius);
+  sphere->SetThetaResolution(32);
+  sphere->SetPhiResolution(32);
+  vtkSmartPointer<vtkPolyDataMapper> sphereMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  sphereMapper->SetInputConnection(sphere->GetOutputPort());
+  vtkSmartPointer<vtkActor> sphereActor = vtkSmartPointer<vtkActor>::New();
+  sphereActor->SetMapper(sphereMapper);
+  sphereActor->GetProperty()->SetColor(0.0, 0.0, 1.0);
+  //m_Graphics->AddGeometry(sphereActor);
+  slice->sphereActor = sphereActor; 
+
 }
 
 //-----------
@@ -464,5 +483,6 @@ void SurfaceMesh::UndoSlice()
   m_Slices.pop_back();
   slice->pointActor->SetVisibility(false);
   slice->meshActor->SetVisibility(false);
+  slice->sphereActor->SetVisibility(false);
   m_Graphics->Refresh();
 }
