@@ -7,6 +7,7 @@ A file is read in and the data names for the simulation results data values cont
 
 The intersection of a slice plane with a vessel is displayed as 1) a planar greometry (red) representing the vessel cross sectional area at the slice location and 2) the points where the slice intersects the finite element mesh (yellow markers).
 
+<img style="margin:0px auto;display:block" src="images/slice-geometry.png" />
 
 
 ## Software dependencies
