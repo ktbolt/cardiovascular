@@ -26,6 +26,7 @@ class Slice {
     vtkSmartPointer<vtkActor> pointActor;
     void AddScalarData(double value);
     void AddVectorData(double values[3]);
+    void AddPoint(double point[3]);
     void Write(ofstream& file);
 
   private:
@@ -35,6 +36,7 @@ class Slice {
     vtkSmartPointer<vtkPolyData> m_Polydata;
     std::vector<double> m_InterpolatedScalarData;
     std::vector<std::array<double,3>> m_InterpolatedVectorData;
+    std::vector<std::array<double,3>> m_InterpolationPoints;
 };
 
 #endif

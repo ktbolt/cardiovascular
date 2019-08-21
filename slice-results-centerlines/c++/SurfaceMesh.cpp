@@ -313,6 +313,7 @@ void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* s
   for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) {
     double pt[3];
     points->GetPoint(i,pt);
+    slice->AddPoint(pt);
     auto cellID = m_CellLocator->FindCell(pt, tol2, cell, localCoords, weights);
     auto numPts = cell->GetNumberOfPoints();
     auto nodeIDs = vtkIntArray::SafeDownCast(m_Polydata->GetPointData()->GetArray("GlobalNodeID"));
