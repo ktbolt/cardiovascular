@@ -5,6 +5,10 @@ This is a C++ program used to interactively extract simulation results at slice 
 Simulation results are read from VTK format (.vtp) files created by the SimVascular svSolver and svPost programs. 
 A file is read in and the data names for the simulation results data values contained in the file are printed. The finite element mesh is displayed and slices along a centerline can be selected using the mouse.
 
+The intersection of a slice plane with a vessel is displayed as 1) a planar greometry (red) representing the vessel cross sectional area at the slice location and 2) the points where the slice intersects the finite element mesh (yellow markers).
+
+
+
 ## Software dependencies
 The program uses cmake and vtk. 
 
