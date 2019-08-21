@@ -82,11 +82,12 @@ For a 3-button mouse
 With fewer mouse buttons, ctrl + shift + left button is for zooming, and shift + left button is for panning.)
 
 ## Keyboard interaction
-The program is controled using keys pressed on the keyboard. The following keys are supported
+The program is controlled using keys pressed on the keyboard. The following keys are supported
 
 ``` 
 left mouse button - When positioned over a centerline creates a slice plane.
 q - Exit the program.
+u - Remove last slice.
 w - Write slices to a file.
 ```
 
