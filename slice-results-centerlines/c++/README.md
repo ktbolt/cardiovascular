@@ -53,9 +53,11 @@ The program uses cmake and vtk.
 
 ## Building the program
 To build the program:
-1. $ cd **build** 
-2. $ cmake ..
-3. $ make
+1. $ cd **cardiovascular/slice-results-centerlines/c++**
+2. $ mkdir **build**
+3. $ cd **build** 
+4. $ cmake ..
+5. $ make
 
 This creates an executable named **slice-results**.
 
@@ -92,7 +94,12 @@ w - Write slices to a file.
 ```
 
 ### Example
+Process a results file for the Demo project
+```
 $ build/slice-results all_results_00100.vtp demo_cl.vtp pressure
+```
+
+This reads in the file and prints the names of the data in the results file
 
 ``` 
 File extension: vtp
@@ -120,5 +127,10 @@ PointData arrays:
 Have MaximumInscribedSphereRadius data
 
 ```
+Now select three slices
+
+<img style="margin:0px auto;display:block" src="images/slice-example.png" />
+
+Write the results to **all_results_0010_pressure.txt**.
 
 
