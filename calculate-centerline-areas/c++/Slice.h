@@ -2,6 +2,7 @@
 // The Slice class is used to store information about a 2D slice extracted from a
 // surface or volume mesh.
 
+#include <array>
 #include <iostream>
 #include <string>
 #include <vector>

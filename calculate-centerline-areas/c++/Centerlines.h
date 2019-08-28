@@ -25,6 +25,8 @@ class Centerlines {
     void write_centerline();
 
     vtkSmartPointer<vtkPolyData> m_Polydata;
+    vtkSmartPointer<vtkDoubleArray> m_NormalData;
+    vtkSmartPointer<vtkPointSet> m_PointSet;
 
   private:
     vtkIdType m_NumLineVerts;
@@ -37,9 +39,7 @@ class Centerlines {
     vtkSmartPointer<vtkPolyData> m_Surface;
     vtkSmartPointer<vtkCellLocator> m_CellLocator;
     vtkSmartPointer<vtkDoubleArray> m_RadiusData;
-    vtkSmartPointer<vtkDoubleArray> m_NormalData;
     vtkSmartPointer<vtkDoubleArray> m_AbscissaData;
-    vtkSmartPointer<vtkPointSet> m_PointSet;
 
 };
 

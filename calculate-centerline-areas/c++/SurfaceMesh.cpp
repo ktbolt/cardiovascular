@@ -140,7 +140,7 @@ void SurfaceMesh::AddGeometry(Graphics& graphics)
 //
 void SurfaceMesh::SlicePlane(int index, int cellID, std::string dataName, double pos[3], double normal[3]) 
 {
-  std::cout << "---------- Slice Surface ----------" << std::endl;
+  //std::cout << "---------- Slice Surface ----------" << std::endl;
 
   // Slice surface.
   //
@@ -172,6 +172,8 @@ void SurfaceMesh::SlicePlane(int index, int cellID, std::string dataName, double
   // Get a single Polydata lines geometry from the slice.
   auto lines = GetSliceLines(cutter, pos);
 
+  return;
+
   // Create a Slice object to store slice data.
   auto slice = new Slice(index, cellID, dataName, pos);
   m_Slices.push_back(slice);
@@ -180,7 +182,7 @@ void SurfaceMesh::SlicePlane(int index, int cellID, std::string dataName, double
   SliceArea(lines, slice);
 
   // Interpolate the surface data to the slice points.
-  Interpolate(dataName, lines, slice);
+  //Interpolate(dataName, lines, slice);
 }
 
 //---------------
@@ -192,18 +194,34 @@ vtkSmartPointer<vtkPolyData> SurfaceMesh::GetSliceLines(vtkSmartPointer<vtkCutte
 {
   // Get the Polydata lines geometry for the slice.
   //
+
+  cutter->Update();
+  auto geom = cutter->GetOutput();
+  auto cpoints = geom->GetPoints(); 
+
+  if (cpoints == nullptr) {
+    return nullptr;
+  }
+  //std::cout << "[GetSliceLines] cpoints: " << cpoints << std::endl;
+  int numPoints = cpoints->GetNumberOfPoints();
+  //std::cout << "[GetSliceLines] num points: " << numPoints << std::endl;
+  return nullptr;
+
   vtkSmartPointer<vtkStripper> stripper = vtkSmartPointer<vtkStripper>::New();
   stripper->SetInputConnection(cutter->GetOutputPort());
   stripper->Update();
   auto linesPolyData = stripper->GetOutput();
+
+  return nullptr;
 
   // Find the slice for the centerline point selected.
   //
   double pt[3];
   double center[3] = {0.0, 0.0, 0.0};
   double min_d = 1e9;
-  double min_i = 0;
+  int min_i = 0;
 
+/*
   for (vtkIdType i = 0; i < linesPolyData->GetNumberOfCells(); i++) {
     auto cell = linesPolyData->GetCell(i);
     auto points = cell->GetPoints();
@@ -230,6 +248,7 @@ vtkSmartPointer<vtkPolyData> SurfaceMesh::GetSliceLines(vtkSmartPointer<vtkCutte
       min_i = i;
     }
   }
+*/
 
   auto cell = linesPolyData->GetCell(min_i);
   auto points = cell->GetPoints();
@@ -247,9 +266,33 @@ void SurfaceMesh::CalculateCenterlinesRadii(Centerlines& centerlines)
 {
   std::cout << std::endl;
   std::cout << "---------- Calculate Centerlines Radii ----------" << std::endl;
+  auto points = centerlines.m_Polydata->GetPoints(); 
+  auto normals = centerlines.m_NormalData;
+  int numPoints = points->GetNumberOfPoints();
+  std::cout << ">>> num points: " << numPoints << std::endl;
+  std::cout << ">>> Calculate radii ... " << std::endl;
 
-  for(vtkIdType n = 0; n < centerlines.m_Polydata->GetNumberOfPoints(); n++) {
+  for (vtkIdType i = 0; i < numPoints-2; i++) {
+    //std::cout << ">>> i: " << i << std::endl;
+    double point[3], tangent[3];
+    points->GetPoint(i, point);
+    //auto index = centerlines.m_PointSet->FindPoint(point);
+    //std::cout << "    index " << index << std::endl;
+
+    // Compute tangent.
+    //
+    double p1[3], p2[3], v[3];
+    m_Polydata->GetPoint(i, p1);
+    m_Polydata->GetPoint(i+2, p2);
+    vtkMath::Subtract(p2, p1,tangent);
+    vtkMath::Normalize(tangent);
+
+    int cellID = 0;
+    auto dataName = "";
+    this->SlicePlane(i, cellID, dataName, point, tangent);
   }
+
+  std::cout << " done " << std::endl;
 
 
 }
@@ -440,9 +483,11 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines, Slice* slice)
   massProperties->SetInputConnection(delaunay->GetOutputPort());
   massProperties->Update();
   slice->area = massProperties->GetSurfaceArea();
-  std::cout <<  "Area:   " << slice->area << std::endl;
+  //std::cout <<  "Area:   " << slice->area << std::endl;
   auto radius = sqrt(slice->area/M_PI);
-  std::cout <<  "Area equivalent radius:   " << radius << std::endl;
+  //std::cout <<  "Area equivalent radius:   " << radius << std::endl;
+ 
+  return;
 
   // Show the cross section area.
   //

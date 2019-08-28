@@ -18,7 +18,7 @@ Slice::Slice(const int index, const int cellID, const std::string dataName, doub
 //
 void Slice::AddScalarData(double value)
 {
-  m_InterpolatedScalarData.push_back(value);
+  //m_InterpolatedScalarData.push_back(value);
 }
 
 //---------------
@@ -27,7 +27,7 @@ void Slice::AddScalarData(double value)
 //
 void Slice::AddVectorData(double values[3])
 {
-  m_InterpolatedVectorData.push_back({values[0], values[1], values[2]});
+  //m_InterpolatedVectorData.push_back({values[0], values[1], values[2]});
 }
 
 //----------
@@ -36,7 +36,7 @@ void Slice::AddVectorData(double values[3])
 //
 void Slice::AddPoint(double point[3])
 {
-  m_InterpolationPoints.push_back({point[0], point[1], point[2]});
+  //m_InterpolationPoints.push_back({point[0], point[1], point[2]});
 }
 
 //-------
@@ -45,6 +45,7 @@ void Slice::AddPoint(double point[3])
 //
 void Slice::Write(ofstream& file)
 {
+/*
   file << "area: " << this->area << std::endl;
   file << "centerline index: " << this->m_CenterlineIndex << std::endl;
   file << "centerline cell ID: " << this->m_CellID << std::endl;
@@ -72,6 +73,7 @@ void Slice::Write(ofstream& file)
       file << value[2] << std::endl;
     }
   }
+*/
 }
 
 
