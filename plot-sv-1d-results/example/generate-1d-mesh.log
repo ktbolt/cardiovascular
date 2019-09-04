@@ -1,0 +1,45 @@
+[generate-1d-mesh] INFO - Parse arguments ...
+[generate-1d-mesh] INFO - Centerlines input file: /home/davep/sv-demo-project/SVProject/Simulations1d/demo/centerlines.vtp
+[generate-1d-mesh] INFO - Compute centerlines: False
+[generate-1d-mesh] INFO - Density: 1.060000
+[generate-1d-mesh] INFO - Element size: 0.100000
+[generate-1d-mesh] INFO - Inflow input file: /home/davep/sv-demo-project/SVProject/Simulations1d/demo/inflow.flow
+[generate-1d-mesh] INFO - Material model: OLUFSEN
+[generate-1d-mesh] INFO - Minimum number of finite elements per segment: 10
+[generate-1d-mesh] INFO - Model name: demo
+[generate-1d-mesh] INFO - Number of time steps: 10000
+[generate-1d-mesh] INFO - Olufsen material parameter k1: 0.000000
+[generate-1d-mesh] INFO - Olufsen material parameter k2: -22.526700
+[generate-1d-mesh] INFO - Olufsen material parameter k3: 10000000.000000
+[generate-1d-mesh] INFO - Olufsen material parameter exponent: 1.000000
+[generate-1d-mesh] INFO - Olufsen material parameter pressure: 0.000000
+[generate-1d-mesh] INFO - Outflow bc file: /home/davep/sv-demo-project/SVProject/Simulations1d/demo/rcrt.dat
+[generate-1d-mesh] INFO - Outflow bc type: rcr
+[generate-1d-mesh] INFO - Outlet face names file: '/home/davep/sv-demo-project/SVProject/Simulations1d/demo/outlet_face_names.dat'.
+[generate-1d-mesh] INFO - Save data frequency: 1
+[generate-1d-mesh] INFO - Solver output file: solver.in
+[generate-1d-mesh] INFO - Simulation time step: 0.001000
+[generate-1d-mesh] INFO - Uniform boundary conditions: False
+[generate-1d-mesh] INFO - Units: cm
+[generate-1d-mesh] INFO - Viscosity: 0.040000
+[generate-1d-mesh] INFO - Wall properties are uniform.
+[generate-1d-mesh] INFO - Write mesh file: False
+[generate-1d-mesh] INFO - Write solver file: True
+[generate-1d-mesh] INFO - Read centerlines from the file: /home/davep/sv-demo-project/SVProject/Simulations1d/demo/centerlines.vtp
+[generate-1d-mesh] INFO -    Number of points: 3590 
+[generate-1d-mesh] INFO -    Number of cells: 6 
+[generate-1d-mesh] INFO -    Number of arrays: 4
+[generate-1d-mesh] INFO - Generate the 1D mesh ...
+[generate-1d-mesh] INFO - Read model outlet face names from: /home/davep/sv-demo-project/SVProject/Simulations1d/demo/outlet_face_names.dat
+[generate-1d-mesh] INFO - Number of model outlet faces names: 2
+[generate-1d-mesh] INFO - Outlet face names: ['cap_right_iliac', 'cap_aorta_2']
+[generate-1d-mesh] INFO - Number of cells: 6
+[generate-1d-mesh] INFO - Number of paths: 2
+[generate-1d-mesh] INFO - Number of groups: 4
+[generate-1d-mesh] INFO - Set variable outflow boundary conditions ...
+[generate-1d-mesh] INFO - Read inflow BC ...
+[generate-1d-mesh] INFO - Write solver file.
+[generate-1d-mesh] INFO - Write solver segment section ...
+[generate-1d-mesh] INFO - Uniform BC: False
+[generate-1d-mesh] INFO - Outflow BC: rcr
+[generate-1d-mesh] INFO - Generated 3 segments, 4 nodes and 647 elements.
