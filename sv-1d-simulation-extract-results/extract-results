@@ -1,0 +1,16 @@
+[extract-results] INFO - Parse arguments ...
+[extract-results] INFO - Output directory: './example'.
+[extract-results] INFO - Solver file name: solver.in
+[extract-results] INFO - Data name: flow
+[extract-results] INFO - Segments: Group0_Seg0
+[extract-results] INFO - ---------- Read solver file ----------
+[extract-results] INFO - Model name: SU201_2005_RPA1
+[extract-results] INFO - Number of nodes: 10
+[extract-results] INFO - Number of segments: 9
+[extract-results] INFO - Number of time steps: 2000
+[extract-results] INFO - Time step: 0.000588
+[extract-results] INFO - ---------- Read segment data file ----------
+[extract-results] INFO - Segment name: Group0_Seg0
+[extract-results] INFO - Data name: flow
+[extract-results] INFO - Number of rows read: 260
+[extract-results] INFO - Number of columns read: 101
