@@ -1,0 +1,193 @@
+# ================================
+# SU201_2005_RPA1 MODEL - UNITS IN CGS
+# ================================
+
+# ==========
+# MODEL CARD
+# ==========
+# - Name of the model (string)
+
+MODEL SU201_2005_RPA1
+
+
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ==========
+# NODE CARD
+# ==========
+# - Node Name (double)
+# - Node X Coordinate (double)
+# - Node Y Coordinate (double)
+# - Node Z Coordinate (double)
+
+NODE 0 26.904272079467773 21.049297332763672 22.75612449645996
+NODE 1 8.298014640808105 8.342294692993164 14.660408020019531
+NODE 2 6.504994869232178 7.375695705413818 13.073260307312012
+NODE 3 -1.1114416122436523 1.6861262321472168 6.972363471984863
+NODE 4 -8.684844017028809 -11.900195121765137 1.623303771018982
+NODE 5 -0.3352615535259247 -13.373222351074219 8.98266315460205
+NODE 6 -18.64825439453125 -3.9021353721618652 -15.723647117614746
+NODE 7 -7.84357213973999 9.025006294250488 12.899820327758789
+NODE 8 -17.837095260620117 8.33673095703125 3.2176027297973633
+NODE 9 -18.41181755065918 13.88288688659668 10.01149845123291
+
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ==========
+# JOINT CARD
+# ==========
+# - Joint Name (string)
+# - Joint Node (double)
+# - Joint Inlet Name (string)
+# - Joint Outlet Name (string)
+
+
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ================================
+# JOINTINLET AND JOINTOUTLET CARDS
+# ================================
+# - Inlet/Outlet Name (string)
+# - Total Number of segments (int)
+# - List of segments (list of int)
+
+JOINT J0 1 IN0 OUT0
+JOINTINLET IN0 1 0
+JOINTOUTLET OUT0 2 1 6
+
+JOINT J1 2 IN1 OUT1
+JOINTINLET IN1 1 1
+JOINTOUTLET OUT1 2 2 4
+
+JOINT J2 3 IN2 OUT2
+JOINTINLET IN2 1 2
+JOINTOUTLET OUT2 2 3 5
+
+JOINT J3 7 IN3 OUT3
+JOINTINLET IN3 1 6
+JOINTOUTLET OUT3 2 7 8
+
+# ============
+# SEGMENT CARD
+# ============
+# - Segment Name (string)
+# - Segment ID (int)
+# - Segment Length (double)
+# - Total Finite Elements in Segment (int)
+# - Segment Inlet Node (int)
+# - Segment Outlet Node (int)
+# - Segment Inlet Area (double)
+# - Segment Outlet Area (double)
+# - Segment Inflow Value (double)
+# - Segment Material (string)
+# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',
+#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')
+# - Branch Angle (double)
+# - Upstream Segment ID (int)
+# - Branch Segment ID (int)
+# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',
+#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')
+# - Data Table Name (string)
+
+SEGMENT Group0_Seg0 0 25.861634854053026 259 0 1 15.693287129713616 7.8512026064629215 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group1_Seg1 1 2.04718965969327 20 1 2 8.290693155651086 7.168431726792381 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group3_Seg2 2 10.527820856884322 105 2 3 5.392692790373375 3.484039822206576 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group5_Seg3 3 15.234913381036293 152 3 4 2.385330265475894 1.415818309982902 0.0 MAT1 NONE 0.0 0 0 RESISTANCE RESISTANCE_0
+SEGMENT Group6_Seg4 4 20.702032595809705 207 2 5 2.2386245609086233 1.8810063124098302 0.0 MAT1 NONE 0.0 0 0 RESISTANCE RESISTANCE_1
+SEGMENT Group7_Seg5 5 28.50885659663434 285 3 6 4.120498530615135 1.691004556344735 0.0 MAT1 NONE 0.0 0 0 RESISTANCE RESISTANCE_2
+SEGMENT Group9_Seg6 6 14.949225164124925 149 1 7 4.158809725755038 2.7366984645698382 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group11_Seg7 7 12.79960624474345 128 7 8 2.125222529466725 1.363594092855336 0.0 MAT1 NONE 0.0 0 0 RESISTANCE RESISTANCE_3
+SEGMENT Group12_Seg8 8 11.29580482698652 113 7 9 2.1452596042250414 1.351044827721385 0.0 MAT1 NONE 0.0 0 0 RESISTANCE RESISTANCE_4
+
+
+DATATABLE RESISTANCE_0 LIST
+0.0 0.4
+ENDDATATABLE
+
+DATATABLE RESISTANCE_1 LIST
+0.0 0.2233
+ENDDATATABLE
+
+DATATABLE RESISTANCE_2 LIST
+0.0 0.05
+ENDDATATABLE
+
+DATATABLE RESISTANCE_3 LIST
+0.0 205.0
+ENDDATATABLE
+
+DATATABLE RESISTANCE_4 LIST
+0.0 0.2
+ENDDATATABLE
+
+
+
+DATATABLE INFLOW LIST
+ 0.000000 1.868200
+ 0.031000 4.964600
+ 0.062000 17.746800
+ 0.093000 24.753800
+ 0.124000 25.966400
+ 0.155000 22.933900
+ 0.186000 19.437300
+ 0.216000 16.290900
+ 0.247000 13.330800
+ 0.278000 9.321900
+ 0.309000 4.545400
+ 0.340000 0.091400
+ 0.371000 0.355300
+ 0.402000 1.357600
+ 0.433000 1.485200
+ 0.464000 0.933200
+ 0.495000 0.379500
+ 0.526000 0.414000
+ 0.557000 0.740000
+ 0.588000 1.036700
+ENDDATATABLE
+
+
+# ==================
+# SOLVEROPTIONS CARD
+# ==================
+# - Solver Time Step (double), 
+# - Steps Between Saves (int), 
+# - Max Number of Steps (int)
+# - Number of quadrature points for finite elements (int), 
+# - Name of Datatable for inlet conditions (string)
+# - Type of boundary condition (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',
+#                                        'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')
+# - Convergence tolerance (double), 
+# - Formulation Type (int - 0 Advective, 1 Conservative), 
+# - Stabilization (int - 0 No stabilization, 1 With stabilization)
+
+SOLVEROPTIONS 0.000588 20 2000 2 INFLOW FLOW 1.0e-5 1 1
+
+# =============
+# MATERIAL CARD
+# =============
+# - Material Name (string)
+# - Material Type (string - 'LINEAR','OLUFSEN')
+# - Material Density (double)
+# - Material Viscosity (double)
+# - Material Exponent (double)
+# - Material Parameter 1 (double)
+# - Material Parameter 2 (double)
+# - Material Parameter 3 (double)
+
+MATERIAL MAT1 OLUFSEN 1.07 0.041 0.0 1.0 0.0 -22.5267 10000000.0
+
+# ============
+# OUTPUT CARD
+# ============
+#
+# 1. Output file format. The following output types are supported:
+#		TEXT. The output of every segment is written in separate text files for the flow rate, pressure, area and Reynolds number. The rows contain output values at varying locations along the segment while columns contains results at various time instants.
+#		VTK. The results for all time steps are plotted to a 3D-like model using the XML VTK file format.
+# 2. VTK export option. Two options are available for VTK file outputs:
+#		0 - Multiple files (default). A separate file is written for each saved increment. A pvd file is also provided which contains the time information of the sequence. This is the best option to create animations.
+#		1 - The results for all time steps are plotted to a single XML VTK file.
+
+OUTPUT TEXT
