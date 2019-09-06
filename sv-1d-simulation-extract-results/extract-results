@@ -1,9 +1,22 @@
 [extract-results] INFO - Parse arguments ...
-[extract-results] INFO - Output directory: './example'.
+[extract-results] INFO - Output directory: './output'.
+[extract-results] INFO - Results directory: './example'.
+[extract-results] INFO - Output file name: 1dsolver
+[extract-results] INFO - Output format: csv
 [extract-results] INFO - Solver file name: solver.in
-[extract-results] INFO - Data name: flow
-[extract-results] INFO - Segments: Group0_Seg0
+[extract-results] INFO - Data names: flow,pressure
+[extract-results] INFO - Data location: outlets
+[extract-results] INFO - Segments: Group0_Seg0,Group1_Seg1
 [extract-results] INFO - ---------- Read solver file ----------
+[extract-results] INFO - Add segment name: Group0_Seg0
+[extract-results] INFO - Add segment name: Group1_Seg1
+[extract-results] INFO - Add segment name: Group3_Seg2
+[extract-results] INFO - Add segment name: Group5_Seg3
+[extract-results] INFO - Add segment name: Group6_Seg4
+[extract-results] INFO - Add segment name: Group7_Seg5
+[extract-results] INFO - Add segment name: Group9_Seg6
+[extract-results] INFO - Add segment name: Group11_Seg7
+[extract-results] INFO - Add segment name: Group12_Seg8
 [extract-results] INFO - Model name: SU201_2005_RPA1
 [extract-results] INFO - Number of nodes: 10
 [extract-results] INFO - Number of segments: 9
@@ -12,5 +25,19 @@
 [extract-results] INFO - ---------- Read segment data file ----------
 [extract-results] INFO - Segment name: Group0_Seg0
 [extract-results] INFO - Data name: flow
+[extract-results] INFO - Data name: pressure
 [extract-results] INFO - Number of rows read: 260
 [extract-results] INFO - Number of columns read: 101
+[extract-results] INFO - ---------- Read segment data file ----------
+[extract-results] INFO - Segment name: Group1_Seg1
+[extract-results] INFO - Data name: flow
+[extract-results] INFO - Data name: pressure
+[extract-results] INFO - Number of rows read: 21
+[extract-results] INFO - Number of columns read: 101
+[extract-results] INFO - ---------- Write segment data ----------
+[extract-results] INFO - Data name: flow
+[extract-results] INFO - Segment name: Group0_Seg0
+[extract-results] INFO - Segment name: Group1_Seg1
+[extract-results] INFO - Data name: pressure
+[extract-results] INFO - Segment name: Group0_Seg0
+[extract-results] INFO - Segment name: Group1_Seg1
