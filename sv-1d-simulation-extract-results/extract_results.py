@@ -12,6 +12,12 @@ from manage import get_logger_name, init_logging
 from parameters import Parameters
 from solver import Solver
 
+try:
+    import vtk
+    from graphics import Graphics 
+except ImportError:
+    pass
+
 logger = logging.getLogger(get_logger_name())
 
 class Args(object):
@@ -20,12 +26,16 @@ class Args(object):
     PREFIX = "--"
     DATA_NAMES = "data_names"
     DATA_LOCATION = "data_location"
+    DISPLAY_GEOMETRY = "display_geometry"
+    NODE_SPHERE_RADIUS = "node_sphere_radius"
     OUTPUT_DIRECTORY  = "output_directory"
     OUTPUT_FILE = "output_file_name"
     OUTPUT_FORMAT = "output_format"
+    PLOT = "plot"
     RESULTS_DIRECTORY  = "results_directory"
     SEGMENTS = "segments"
     SOLVER_FILE = "solver_file_name"
+    TIME_RANGE = "time_range"
     
 def cmd(name):
     """ Create an argparse command argument.
@@ -42,6 +52,12 @@ def parse_args():
     parser.add_argument(cmd(Args.DATA_NAMES),
       help="Data name.")
 
+    parser.add_argument(cmd(Args.DISPLAY_GEOMETRY),
+      help="Display geometry.")
+
+    parser.add_argument(cmd(Args.NODE_SPHERE_RADIUS), 
+      help="Radius of node sphere markers.")
+
     parser.add_argument(cmd(Args.OUTPUT_DIRECTORY), 
       help="Output directory.")
 
@@ -51,6 +67,9 @@ def parse_args():
     parser.add_argument(cmd(Args.OUTPUT_FORMAT), 
       help="Output format.")
 
+    parser.add_argument(cmd(Args.PLOT), 
+      help="Plot results.")
+
     parser.add_argument(cmd(Args.RESULTS_DIRECTORY), required=True,
       help="Results directory.")
 
@@ -59,6 +78,9 @@ def parse_args():
 
     parser.add_argument(cmd(Args.SOLVER_FILE), required=True,
       help="Solver .in file.")
+
+    parser.add_argument(cmd(Args.TIME_RANGE), 
+      help="Time range to save and plot.")
 
     return parser.parse_args(), parser.print_help
 
@@ -101,8 +123,24 @@ def set_parameters(**kwargs):
     params.data_location = kwargs.get(Args.DATA_LOCATION)
     logger.info("Data location: %s" % params.data_location)
 
-    params.segments = kwargs.get(Args.SEGMENTS).split(",")
-    logger.info("Segments: %s" % ','.join(params.segments))
+    if kwargs.get(Args.DISPLAY_GEOMETRY):
+        params.display_geometry = (kwargs.get(Args.DISPLAY_GEOMETRY) in ["on", "true"])
+        logger.info("Display geometry: %s" % params.display_geometry)
+
+    if kwargs.get(Args.NODE_SPHERE_RADIUS):
+        params.node_sphere_radius = float(kwargs.get(Args.NODE_SPHERE_RADIUS)) 
+
+    if kwargs.get(Args.PLOT):
+        params.plot_results = (kwargs.get(Args.PLOT) in ["on", "true"])
+        logger.info("Plot results: %s" % params.plot_results)
+
+    if kwargs.get(Args.SEGMENTS):
+        params.segments = kwargs.get(Args.SEGMENTS).split(",")
+        logger.info("Segments: %s" % ','.join(params.segments))
+
+    if kwargs.get(Args.TIME_RANGE):
+        params.time_range = [float(s) for s in kwargs.get(Args.TIME_RANGE).split(",")]
+        logger.info("Time range: %s" % ','.join(str(params.time_range)))
 
     return params 
 
@@ -114,15 +152,41 @@ if __name__ == '__main__':
     if params == None:
         sys.exit()
 
+    ## Create graphics interface.   
+    #
+    # Creating a Graphics() object fails is vtk
+    # is not installed.
+    try:
+        graphics = Graphics(params)
+    except:
+        graphics = None
+        pass
+
     ## Read in the solver file.
     solver = Solver(params)
+    solver.graphics = graphics 
     solver.read_solver_file()
 
     ## Read segment data.
-    for segment in params.segments:
-        solver.read_segment_data_file(segment, params.data_names)
+    if params.segments:
+        for segment in params.segments:
+            solver.read_segment_data_file(segment, params.data_names)
+    else:
+        solver.read_segment_data_files(params.data_names)
 
     ## Write segment data.
     if params.output_file_name:
         solver.write_segment_data()
+
+    ## Plot results.
+    if params.plot_results:
+        solver.plot_results()
+
+    ## If displaying geometry then show the network.
+    if graphics and params.display_geometry:
+        graphics.add_graphics_points(solver.points_polydata, [0.8, 0.8, 0.8])
+        graphics.add_graphics_edges(solver.lines_polydata, [0.8, 0.8, 0.8])
+        graphics.show()
+
+
 

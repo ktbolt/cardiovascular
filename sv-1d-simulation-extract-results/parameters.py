@@ -18,7 +18,12 @@ class Parameters():
         self.segments = None
         self.num_steps = None
         self.time_step = None
+        self.times = None
+        self.time_range = None
 
         self.output_file_name = None
         self.output_format = None 
+
+        self.display_geometry = False
+        self.node_sphere_radius = 0.1
 

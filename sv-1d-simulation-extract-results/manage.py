@@ -7,7 +7,7 @@ def get_logger_name():
     return 'extract-results'
 
 def get_log_file_name():
-    return 'extract-results'
+    return 'extract-results.log'
 
 def init_logging(outputDir="./"):
     import logging
