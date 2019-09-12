@@ -73,6 +73,7 @@ class Solver(object):
 
         self.points_polydata = None
         self.lines_polydata = None
+        self.lines_segment_names = None
 
     def read_solver_file(self):
         """ Read in a solver.in file.
@@ -122,11 +123,13 @@ class Solver(object):
             self.lines_polydata = vtk.vtkPolyData()
             self.lines_polydata.SetPoints(self.points)
             lines = vtk.vtkCellArray()
+            self.lines_segment_names = []
             for key,segment in self.segments.items():
                 line = vtk.vtkLine()
                 line.GetPointIds().SetId(0, segment.node1)
                 line.GetPointIds().SetId(1, segment.node2)
                 lines.InsertNextCell(line)
+                self.lines_segment_names.append(key)
             self.lines_polydata.SetLines(lines)
 
     def add_solver_options(self, tokens):
@@ -166,20 +169,33 @@ class Solver(object):
         self.segments[name] = Segment(id, name, node1, node2, bc_type)
         self.logger.info("Add segment name: %s" % name) 
 
-    def read_segment_data_files(self, data_name):
-        """ Read in all outlet segment data files.
+    def read_segment_data(self):
+        """ Read in segment data files.
         """
-        self.logger.info("---------- Read all outlet segment data files ----------")
-        self.params.segments = []
-        for name,segment in self.segments.items():
-            if segment.bc_type != self.BcTypes.NONE:
-                self.read_segment_data_file(segment.name, data_name)
-                self.params.segments.append(name)
-        #__for name,segment in self.segments.items()
-        self.logger.info("Number of outlet segments: %d" % len(self.params.segments))
-        self.logger.info("Outlet segment names: %s" % ','.join(self.params.segments))
+        if not self.params.data_names:
+            self.logger.info("No data names given for reading data.")
+            return
 
-    def read_segment_data_file(self, segment_name, data_name):
+        if self.params.all_segments:
+            self.params.segment_names = []
+            for name,segment in self.segments.items():
+                self.params.segment_names.append(name)
+
+        elif self.params.outlet_segments:
+            self.params.segment_names = []
+            for name,segment in self.segments.items():
+                if segment.bc_type != self.BcTypes.NONE:
+                    self.params.segment_names.append(name)
+
+        if not self.params.segment_names:
+            self.logger.info("No segment names given for reading data.")
+            return
+
+        data_names = self.params.data_names
+        for segment_name in self.params.segment_names:
+            self.read_segment_data_file(segment_name, data_names)
+
+    def read_segment_data_file(self, segment_name, data_names):
         """ Read in a segment data file.
         """
         self.logger.info("---------- Read segment data file ----------")
@@ -195,7 +211,7 @@ class Solver(object):
         sep = Parameters.FILE_NAME_SEP
         ext = Parameters.DATA_FILE_EXTENSION 
 
-        for data_name in self.params.data_names:
+        for data_name in data_names:
             self.logger.info("Data name: %s" % data_name) 
             file_name = self.params.results_directory + "/" + self.params.model_name + segment_name + sep + data_name + ext
             num_rows = 0
@@ -234,21 +250,21 @@ class Solver(object):
             times = self.params.times
 
             with open(file_name, "w") as fp:
-                for i,name in enumerate(self.params.segments):
+                for i,name in enumerate(self.params.segment_names):
                     self.logger.info("Segment name: %s" % name) 
                     fp.write(name)
-                    if i != len(self.params.segments)-1:
+                    if i != len(self.params.segment_names)-1:
                         fp.write(",")
                 fp.write("\n")
 
                 for i,time in enumerate(times):
                     fp.write(str(time) + ",")
-                    for j,name in enumerate(self.params.segments):
+                    for j,name in enumerate(self.params.segment_names):
                         segment = self.segments[name]
                         data_list = segment.data[data_name]
                         data = data_list[-1]
                         fp.write(str(data[i]))
-                        if j != len(self.params.segments)-1:
+                        if j != len(self.params.segment_names)-1:
                             fp.write(",")
                     #__for j,name in enumerate(self.params.segments)
                     fp.write("\n")
@@ -274,7 +290,7 @@ class Solver(object):
             fig, ax = plt.subplots()
             ylabel = data_name
 
-            for j,name in enumerate(self.params.segments):
+            for j,name in enumerate(self.params.segment_names):
                 values = []
                 plot_times = [] 
                 for i,time in enumerate(times):
@@ -295,8 +311,68 @@ class Solver(object):
             chartBox = ax.get_position()
             ax.set_position([chartBox.x0, chartBox.y0, chartBox.width*0.6, chartBox.height])
             ax.legend(loc='upper center', bbox_to_anchor=(1.45, 0.8), shadow=True, ncol=1)
-            #plt.legend(bbox_to_anchor=(1.5, 1.0), loc='upper right', ncol=1)
-            #ax.legend()
+        #__for data_name in self.params.data_names
+
+        # Set the figure window position.
+        plt.get_current_fig_manager().window.wm_geometry("+200+100")
+
+        # Add key events.
+        cid = plt.gcf().canvas.mpl_connect('key_press_event', self.press_key)
+
+        ## If displaying geometry then don't block.
+        if self.params.display_geometry:
+            plt.ion()
+            plt.show()
+            plt.pause(0.001)
+        else:
+            plt.show()
+
+    def plot_segment(self, segment_name, data_name):
+        """ Plot results for a segment.
+
+        matplotlib can't plot after vtk grabs the event queue so forget this.
+        """
+        return
+        self.logger.info("---------- Plot segment ----------")
+        title = segment_name 
+        min_time = self.params.time_range[0]
+        max_time = self.params.time_range[1]
+
+        segment = self.segments[segment_name]
+        if not segment:
+            self.logger.error("No segment names: %s" % segment_name)
+            return
+
+        self.logger.info("Segment name: %s" % segment_name)
+        self.logger.info("Data name: %s" % data_name)
+        self.logger.info("Min time: %f" % min_time)
+        self.logger.info("Max time: %f" % max_time)
+
+        for data_name in self.params.data_names:
+            self.logger.info("Data name: %s" % data_name)
+            times = self.params.times
+            plot_values = [] 
+            plot_names = [] 
+            fig, ax = plt.subplots()
+            ylabel = data_name
+            data_list = segment.data[data_name]
+            data = data_list[-1]
+
+            values = []
+            plot_times = [] 
+            for i,time in enumerate(times):
+                if (time > min_time) and (time <= max_time):
+                    values.append(data[i])
+                    plot_times.append(time)
+            #__for i,time in enumerate(times)
+            plot_values.append(values)
+            ax.plot(plot_times, values, label=data_name)
+
+            ax.set(xlabel='time (s)', ylabel=ylabel, title=title)
+            ax.grid()
+            #chartBox = ax.get_position()
+            #ax.set_position([chartBox.x0, chartBox.y0, chartBox.width*0.6, chartBox.height])
+            #ax.legend(loc='upper center', bbox_to_anchor=(1.45, 0.8), shadow=True, ncol=1)
         #__for data_name in self.params.data_names
 
         # Set the figure window position.

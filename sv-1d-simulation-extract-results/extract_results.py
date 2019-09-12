@@ -24,13 +24,14 @@ class Args(object):
     """ This class defines the command line arguments to the vis script.
     """
     PREFIX = "--"
+    ALL_SEGMENTS = "all_segments"
     DATA_NAMES = "data_names"
-    DATA_LOCATION = "data_location"
     DISPLAY_GEOMETRY = "display_geometry"
     NODE_SPHERE_RADIUS = "node_sphere_radius"
     OUTPUT_DIRECTORY  = "output_directory"
     OUTPUT_FILE = "output_file_name"
     OUTPUT_FORMAT = "output_format"
+    OUTLET_SEGMENTS = "outlet_segments"
     PLOT = "plot"
     RESULTS_DIRECTORY  = "results_directory"
     SEGMENTS = "segments"
@@ -46,8 +47,8 @@ def parse_args():
     """ Parse command-line arguments."""
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(cmd(Args.DATA_LOCATION),
-      help="Data location.")
+    parser.add_argument(cmd(Args.ALL_SEGMENTS),
+      help="If true then read all segment data.")
 
     parser.add_argument(cmd(Args.DATA_NAMES),
       help="Data name.")
@@ -57,6 +58,9 @@ def parse_args():
 
     parser.add_argument(cmd(Args.NODE_SPHERE_RADIUS), 
       help="Radius of node sphere markers.")
+
+    parser.add_argument(cmd(Args.OUTLET_SEGMENTS),
+      help="If true then read all outlet segment data.")
 
     parser.add_argument(cmd(Args.OUTPUT_DIRECTORY), 
       help="Output directory.")
@@ -120,8 +124,13 @@ def set_parameters(**kwargs):
     params.data_names = kwargs.get(Args.DATA_NAMES).split(",")
     logger.info("Data names: %s" % ','.join(params.data_names))
 
-    params.data_location = kwargs.get(Args.DATA_LOCATION)
-    logger.info("Data location: %s" % params.data_location)
+    if kwargs.get(Args.OUTLET_SEGMENTS):
+        params.outlet_segments = (kwargs.get(Args.OUTLET_SEGMENTS) in ["on", "true"])
+        logger.info("Outlet segments: %s" % params.outlet_segments)
+
+    if kwargs.get(Args.ALL_SEGMENTS):
+        params.all_segments = (kwargs.get(Args.ALL_SEGMENTS) in ["on", "true"])
+        logger.info("All segments: %s" % params.all_segments)
 
     if kwargs.get(Args.DISPLAY_GEOMETRY):
         params.display_geometry = (kwargs.get(Args.DISPLAY_GEOMETRY) in ["on", "true"])
@@ -135,8 +144,8 @@ def set_parameters(**kwargs):
         logger.info("Plot results: %s" % params.plot_results)
 
     if kwargs.get(Args.SEGMENTS):
-        params.segments = kwargs.get(Args.SEGMENTS).split(",")
-        logger.info("Segments: %s" % ','.join(params.segments))
+        params.segment_names = kwargs.get(Args.SEGMENTS).split(",")
+        logger.info("Segments: %s" % ','.join(params.segment_names))
 
     if kwargs.get(Args.TIME_RANGE):
         params.time_range = [float(s) for s in kwargs.get(Args.TIME_RANGE).split(",")]
@@ -166,13 +175,11 @@ if __name__ == '__main__':
     solver = Solver(params)
     solver.graphics = graphics 
     solver.read_solver_file()
+    if graphics:
+        graphics.solver = solver
 
     ## Read segment data.
-    if params.segments:
-        for segment in params.segments:
-            solver.read_segment_data_file(segment, params.data_names)
-    else:
-        solver.read_segment_data_files(params.data_names)
+    solver.read_segment_data()
 
     ## Write segment data.
     if params.output_file_name:
@@ -185,8 +192,7 @@ if __name__ == '__main__':
     ## If displaying geometry then show the network.
     if graphics and params.display_geometry:
         graphics.add_graphics_points(solver.points_polydata, [0.8, 0.8, 0.8])
-        graphics.add_graphics_edges(solver.lines_polydata, [0.8, 0.8, 0.8])
+        graphics.add_graphics_edges(solver.lines_polydata, solver.lines_segment_names, [0.8, 0.8, 0.8])
         graphics.show()
-
 
 

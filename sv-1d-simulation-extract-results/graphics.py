@@ -10,13 +10,66 @@ try:
 except ImportError:
     pass
 
-class Graphics(object):
+class MouseSegmentInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
+ 
+    def __init__(self,parent=None):
+        self.AddObserver("LeftButtonPressEvent", self.leftButtonPressEvent)
+        self.AddObserver("KeyPressEvent", self.onKeyPressEvent)
+        self.LastPickedActor = None
+        self.LastPickedProperty = vtk.vtkProperty()
+        self.graphics = None
+ 
+    def leftButtonPressEvent(self,obj,event):
+        clickPos = self.GetInteractor().GetEventPosition()
+        #picker = vtk.vtkPropPicker()
+        picker = vtk.vtkCellPicker()
+        picker.Pick(clickPos[0], clickPos[1], 0, self.renderer)
+        
+        # get the new
+        self.NewPickedActor = picker.GetActor()
+        #print(">>> self.NewPickedActor")
+        #print(self.NewPickedActor)
+        if self.NewPickedActor == None:
+            self.OnLeftButtonDown()
+            return
 
+        for seg_name,seg_actor in self.graphics.segment_actors.items():
+            if self.NewPickedActor == seg_actor:
+              self.graphics.logger.info(" ")
+              self.graphics.logger.info("Selected segment %s" % seg_name)
+              self.graphics.picked_segment = seg_name
+
+        # If something was selected
+        if self.NewPickedActor:
+            if self.LastPickedActor:
+                self.LastPickedActor.GetProperty().DeepCopy(self.LastPickedProperty)
+            self.LastPickedProperty.DeepCopy(self.NewPickedActor.GetProperty())
+            self.NewPickedActor.GetProperty().SetColor(1.0, 0.0, 0.0)
+            self.NewPickedActor.GetProperty().SetDiffuse(1.0)
+            self.NewPickedActor.GetProperty().SetSpecular(0.0)
+            self.LastPickedActor = self.NewPickedActor
+        
+        self.OnLeftButtonDown()
+        return
+
+    def onKeyPressEvent(self, renderer, event):
+        key = self.GetInteractor().GetKeySym()
+        if key == 'p' and self.graphics.picked_segment:
+            self.graphics.logger.info("Plot segment %s" % self.graphics.picked_segment)
+            self.graphics.solver.plot_segment(self.graphics.picked_segment, "flow")
+
+
+class Graphics(object):
+    """ The Graphics class is used to display the solver mesh in the graphics window.
+    """
     def __init__(self, params):
         self.params = params
         self.renderer = None
         self.window = None
         self.interactor = None
+        self.segment_actors = {}
+        self.solver = None
+        self.picked_segment = None
         self.colors = vtk.vtkNamedColors()
         self.logger = logging.getLogger(get_logger_name())
         self.initialize_graphics()
@@ -37,14 +90,15 @@ class Graphics(object):
         self.window = vtk.vtkRenderWindow()
         self.window.AddRenderer(self.renderer)
         self.renderer.SetBackground(1.0, 1.0, 1.0)
-        self.window.SetSize(500, 500)
+        self.window.SetSize(1000, 1000)
 
         # Create a trackball interacter to transoform the geometry using the mouse.
         self.interactor = vtk.vtkRenderWindowInteractor()
-        self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
         self.interactor.SetRenderWindow(self.window)
 
-        style = ClickInteractorStyle(self)
+        style = MouseSegmentInteractorStyle() 
+        style.renderer = self.renderer 
+        style.graphics = self
         self.interactor.SetInteractorStyle(style)
         style.SetCurrentRenderer(self.renderer)
 
@@ -55,7 +109,7 @@ class Graphics(object):
         poly_data = sphere.GetOutputPort()
         self.add_graphics_geometry(poly_data, color, True)
 
-    def add_cyl(self, pt1, pt2):
+    def add_cyl(self, pt1, pt2, name):
         cyl = vtk.vtkCylinderSource()
         cyl.SetRadius(0.05)
         cyl.SetResolution(15)
@@ -108,6 +162,7 @@ class Graphics(object):
         actor.SetMapper(mapper)
         actor.GetProperty().SetColor(0.0, 1.0, 0.0)
         self.renderer.AddActor(actor)
+        self.segment_actors[name] = actor
 
     def add_graphics_geometry(self, poly_data, color):
         gr_geom = self.create_graphics_geometry(poly_data)
@@ -129,8 +184,7 @@ class Graphics(object):
         mapBalls.SetInputConnection(balls.GetOutputPort())
         ballActor = vtk.vtkActor()
         ballActor.SetMapper(mapBalls)
-        ballActor.GetProperty().SetColor(tomato)
-        #ballActor.GetProperty().SetColor([1.0, 1.0, 1.0])
+        ballActor.GetProperty().SetColor([0.0, 0.0, 1.0])
         ballActor.GetProperty().SetSpecularColor(1, 0, 0)
         ballActor.GetProperty().SetSpecular(0.3)
         ballActor.GetProperty().SetSpecularPower(20)
@@ -140,36 +194,26 @@ class Graphics(object):
 
         self.window.Render()
 
-    def add_graphics_edges(self, poly_data, color):
+    def add_graphics_edges(self, poly_data, names, color):
         pt1 = [0,0,0]
         pt2 = [0,0,0]
         points = poly_data.GetPoints();
         poly_data.GetLines().InitTraversal()
         idList = vtk.vtkIdList()
+        n = 0
 
         while poly_data.GetLines().GetNextCell(idList):
-            #print(">> Line has " + str(idList.GetNumberOfIds()) + " points." )
             node1 = idList.GetId(0)
             node2 = idList.GetId(1)
             points.GetPoint(node1,pt1)
             points.GetPoint(node2,pt2)
-            self.add_cyl(pt1, pt2)
+            self.add_cyl(pt1, pt2, names[n])
+            n += 1
+        #__while poly_data.GetLines().GetNextCell(idList)
 
         self.window.Render()
-  
 
     def show(self):
         self.interactor.Start()
-
-class ClickInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
-    def __init__(self, graphics):
-        self.graphics = graphics
-        self.AddObserver("KeyPressEvent", self.onKeyPressEvent)
-
-    def onKeyPressEvent(self, renderer, event):        
-        key = self.GetInteractor().GetKeySym()
-        if key == 'c':
-            print("c key")
-
 
 
