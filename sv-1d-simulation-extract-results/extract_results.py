@@ -191,6 +191,58 @@ def set_parameters(**kwargs):
 
     return params 
 
+def run(**kwargs):
+    """ Execute the 1D mesh generation using passed parameters.
+    """
+    result = ""
+
+    ## Set input parameters.
+    params = set_parameters(**kwargs)
+    if not params:
+        logger.error("Error in parameters.")
+        return result
+
+    ## Read in the solver file.
+    solver = Solver(params)
+    solver.read_solver_file()
+
+    ## Read segment data.
+    solver.read_segment_data()
+
+    ## Write segment data.
+    solver.write_segment_data()
+
+    logger.info("Converted results finished.")
+    result = "Successfully converted results" 
+    return result 
+
+def run_from_c(*args, **kwargs):
+    """ Execute the convert 1D solver results using passed parameters from c++
+
+    The '*args' argument contains the directory to write the log file.
+    """
+    output_dir = args[0]
+    init_logging(output_dir)
+    msg = "Status: OK\n"
+
+    try:
+        result = run(**kwargs)
+        msg += result
+    except Exception as e:
+        logger.error(str(e))
+        msg = "Status: Error\n"
+        msg += "Error: " + str(e) + "\n"
+
+    ## Attach log file to returned result.
+    #
+    msg += "Log:\n"
+    log_file_name = path.join(output_dir, get_log_file_name())
+
+    with open(log_file_name, 'r') as file:
+        msg += file.read()
+
+    return msg
+
 if __name__ == '__main__':
     init_logging()
     args, print_help = parse_args()
