@@ -1,4 +1,4 @@
-output
 __pycache__
 *.log
 *.pyc
+output

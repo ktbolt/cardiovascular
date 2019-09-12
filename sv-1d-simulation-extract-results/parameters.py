@@ -11,6 +11,7 @@ class Parameters():
 
         self.output_directory = None
         self.results_directory = None
+        self.plot_results = None
 
         ## Solver parameters.
         self.solver_file_name = None
@@ -20,9 +21,11 @@ class Parameters():
         self.times = None
         self.time_range = None
 
+        ## Segment names and booleans for selecting segements.
         self.segment_names = None
         self.all_segments = False
         self.outlet_segments = False
+        self.select_segment_names = False
 
         self.output_file_name = None
         self.output_format = None 
