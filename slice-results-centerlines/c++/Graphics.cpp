@@ -33,6 +33,8 @@ Graphics::Graphics()
   m_RenderWindow = vtkSmartPointer<vtkRenderWindow>::New();
   m_RenderWindow->AddRenderer(m_Renderer);
   m_RenderWindow->SetSize(1000, 1000);
+  m_RenderWindow->Render();
+  m_RenderWindow->SetWindowName("Simulation Results Surface Slicer");
 
   // Add window interactor to use trackball and intercept key presses.
   //

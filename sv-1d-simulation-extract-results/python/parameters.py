@@ -17,7 +17,6 @@ class Parameters():
         self.model_name = None
         self.num_steps = None
         self.time_step = None
-        self.times = None
         self.time_range = None
 
         self.segment_names = None

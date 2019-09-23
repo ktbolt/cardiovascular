@@ -60,6 +60,9 @@ class Solver(object):
         self.params = params
         self.nodes = None
         self.segments = None
+        self.times = None
+        self.min_time_index = None
+        self.max_time_index = None
         self.graphics = None
         self.logger = logging.getLogger(get_logger_name())
 
@@ -140,7 +143,22 @@ class Solver(object):
         save_freq = int(tokens[2])
         num_steps = int(tokens[3])
         self.params.num_steps = num_steps 
-        self.params.times = [i*time_step for i in range(0,num_steps+1,save_freq)]
+
+        min_time = self.params.time_range[0]
+        max_time = self.params.time_range[1]
+        self.min_time_index = None
+        self.max_time_index = None
+
+        self.times = []
+        for i in range(0,num_steps+1,save_freq):
+            time = i*time_step
+            if time >= min_time and time <= max_time:
+                self.times.append(time)
+                if self.min_time_index == None:
+                    self.min_time_index = i
+                self.max_time_index = i
+        #__for i in range(0,num_steps+1,save_freq):
+        print(self.times)
 
     def add_node(self, tokens):
         """ Add a node..
@@ -211,6 +229,15 @@ class Solver(object):
         sep = Parameters.FILE_NAME_SEP
         ext = Parameters.DATA_FILE_EXTENSION 
 
+        min_time = self.params.time_range[0]
+        max_time = self.params.time_range[1]
+        imin = self.min_time_index
+        imax = self.max_time_index 
+        times = self.times
+        self.logger.info("Min time: %f" % min_time)
+        self.logger.info("Max time: %f" % max_time)
+        self.logger.info("Times size: %d" % len(times))
+
         for data_name in data_names:
             self.logger.info("Data name: %s" % data_name) 
             file_name = self.params.results_directory + "/" + self.params.model_name + segment_name + sep + data_name + ext
@@ -229,7 +256,8 @@ class Solver(object):
                         continue
                     values = [float(v) for v in tokens]
                     num_cols = len(values)
-                data.append(values)
+                data.append(values[imin:imax])
+                self.logger.info("Values size: %d" % len(values[imin:imax]))
                 #__while line
             #__with open(file_name) as fp
             segment.data[data_name] = data
@@ -247,7 +275,7 @@ class Solver(object):
         for data_name in self.params.data_names:
             self.logger.info("Data name: %s" % data_name) 
             file_name = self.params.output_directory + "/" + self.params.output_file_name + sep + data_name + ext
-            times = self.params.times
+            times = self.times
 
             with open(file_name, "w") as fp:
                 for i,name in enumerate(self.params.segment_names):

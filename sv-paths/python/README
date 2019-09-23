@@ -1,0 +1,6 @@
+
+Read in and display an SV path file. An SV model (.vtp) file can be optionally read in and displayed. 
+
+python sv-paths.py -p aorta.pth -s demo.vtp 
+
+
