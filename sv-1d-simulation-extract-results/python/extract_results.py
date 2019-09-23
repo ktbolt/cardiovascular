@@ -1,8 +1,37 @@
 #!/usr/bin/env python
 
 """ 
-This script is used to extract data from 1D solver results files. 
+This script is used to extract data from SimVascular 1D solver results files and write them to CSV format files. 
+
+The script can optionally be used to
+
+  1) Plot selected segment data
+
+  2) Visualize 1D network geometry
+
+
+Results can be converted and plotted for
+
+  1) A list of segment names
+
+  2) Outlet segments
+
+  3) All segments
+
+
+Segments can also be interactively selected from 1D network geometry displayed 
+in a graphics window. The results of the selected segments can be converted but 
+not plotted.
+
+----------------------
+Command Line Arguments
+----------------------
+The script accepts named arguments of the form
+
+    --NAME VALUE
+
 """
+
 import argparse
 import os 
 import sys
@@ -21,7 +50,8 @@ except ImportError:
 logger = logging.getLogger(get_logger_name())
 
 class Args(object):
-    """ This class defines the command line arguments to the vis script.
+    """ 
+    This class defines the command line arguments for the extract_results.py script.
     """
     PREFIX = "--"
     ALL_SEGMENTS = "all_segments"
@@ -35,6 +65,7 @@ class Args(object):
     PLOT = "plot"
     RESULTS_DIRECTORY  = "results_directory"
     SEGMENTS = "segments"
+    SELECT_SEGMENTS = "select_segments"
     SOLVER_FILE = "solver_file_name"
     TIME_RANGE = "time_range"
     
@@ -47,8 +78,8 @@ def parse_args():
     """ Parse command-line arguments."""
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(cmd(Args.ALL_SEGMENTS),
-      help="If true then read all segment data.")
+    parser.add_argument(cmd(Args.ALL_SEGMENTS), action='store_true',
+      help="If given then read all segment data.")
 
     parser.add_argument(cmd(Args.DATA_NAMES),
       help="Data name.")
@@ -59,8 +90,8 @@ def parse_args():
     parser.add_argument(cmd(Args.NODE_SPHERE_RADIUS), 
       help="Radius of node sphere markers.")
 
-    parser.add_argument(cmd(Args.OUTLET_SEGMENTS),
-      help="If true then read all outlet segment data.")
+    parser.add_argument(cmd(Args.OUTLET_SEGMENTS), action='store_true',
+      help="If given then read all outlet segment data.")
 
     parser.add_argument(cmd(Args.OUTPUT_DIRECTORY), 
       help="Output directory.")
@@ -78,7 +109,10 @@ def parse_args():
       help="Results directory.")
 
     parser.add_argument(cmd(Args.SEGMENTS), 
-      help="Segment names.")
+      help="Segment names to convert.")
+
+    parser.add_argument(cmd(Args.SELECT_SEGMENTS), action='store_true',
+      help="Select segments to convert.")
 
     parser.add_argument(cmd(Args.SOLVER_FILE), required=True,
       help="Solver .in file.")
@@ -125,12 +159,16 @@ def set_parameters(**kwargs):
     logger.info("Data names: %s" % ','.join(params.data_names))
 
     if kwargs.get(Args.OUTLET_SEGMENTS):
-        params.outlet_segments = (kwargs.get(Args.OUTLET_SEGMENTS) in ["on", "true"])
+        params.outlet_segments = True 
         logger.info("Outlet segments: %s" % params.outlet_segments)
 
     if kwargs.get(Args.ALL_SEGMENTS):
-        params.all_segments = (kwargs.get(Args.ALL_SEGMENTS) in ["on", "true"])
+        params.all_segments = True 
         logger.info("All segments: %s" % params.all_segments)
+
+    if kwargs.get(Args.SELECT_SEGMENTS):
+        params.select_segment_names = True
+        logger.info("Select segments: %s" % params.select_segment_names)
 
     if kwargs.get(Args.DISPLAY_GEOMETRY):
         params.display_geometry = (kwargs.get(Args.DISPLAY_GEOMETRY) in ["on", "true"])
@@ -149,9 +187,61 @@ def set_parameters(**kwargs):
 
     if kwargs.get(Args.TIME_RANGE):
         params.time_range = [float(s) for s in kwargs.get(Args.TIME_RANGE).split(",")]
-        logger.info("Time range: %s" % ','.join(str(params.time_range)))
+        logger.info("Time range: %s" % ','.join(map(str,params.time_range)))
 
     return params 
+
+def run(**kwargs):
+    """ Execute the 1D mesh generation using passed parameters.
+    """
+    result = ""
+
+    ## Set input parameters.
+    params = set_parameters(**kwargs)
+    if not params:
+        logger.error("Error in parameters.")
+        return result
+
+    ## Read in the solver file.
+    solver = Solver(params)
+    solver.read_solver_file()
+
+    ## Read segment data.
+    solver.read_segment_data()
+
+    ## Write segment data.
+    solver.write_segment_data()
+
+    logger.info("Converted results finished.")
+    result = "Successfully converted results" 
+    return result 
+
+def run_from_c(*args, **kwargs):
+    """ Execute the convert 1D solver results using passed parameters from c++
+
+    The '*args' argument contains the directory to write the log file.
+    """
+    output_dir = args[0]
+    init_logging(output_dir)
+    msg = "Status: OK\n"
+
+    try:
+        result = run(**kwargs)
+        msg += result
+    except Exception as e:
+        logger.error(str(e))
+        msg = "Status: Error\n"
+        msg += "Error: " + str(e) + "\n"
+
+    ## Attach log file to returned result.
+    #
+    msg += "Log:\n"
+    log_file_name = path.join(output_dir, get_log_file_name())
+
+    with open(log_file_name, 'r') as file:
+        msg += file.read()
+
+    return msg
 
 if __name__ == '__main__':
     init_logging()
@@ -181,8 +271,9 @@ if __name__ == '__main__':
     ## Read segment data.
     solver.read_segment_data()
 
-    ## Write segment data.
-    if params.output_file_name:
+    ## Write segment data if segments are not going
+    #  to be interactively selected.
+    if params.output_file_name and not params.select_segment_names:
         solver.write_segment_data()
 
     ## Plot results.

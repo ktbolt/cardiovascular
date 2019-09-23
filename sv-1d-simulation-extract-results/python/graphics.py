@@ -10,57 +10,100 @@ try:
 except ImportError:
     pass
 
+class GeometryColors(object):
+    SEGMENT = [0.0, 1.0, 0.0]
+    SEGMENT_HIGHLIGHT = [1.0, 0.0, 0.0]
+    NODE = [0.0, 0.0, 1.0]
+
 class MouseSegmentInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
  
     def __init__(self,parent=None):
         self.AddObserver("LeftButtonPressEvent", self.leftButtonPressEvent)
         self.AddObserver("KeyPressEvent", self.onKeyPressEvent)
-        self.LastPickedActor = None
-        self.LastPickedProperty = vtk.vtkProperty()
+        self.AddObserver("CharEvent", self.onCharEvent)
+        self.picked_actor = None
+        self.last_picked_actor = None
+        self.last_picked_property = vtk.vtkProperty()
         self.graphics = None
  
     def leftButtonPressEvent(self,obj,event):
+        """ 
+        Process left mouse button press.
+        """
         clickPos = self.GetInteractor().GetEventPosition()
-        #picker = vtk.vtkPropPicker()
         picker = vtk.vtkCellPicker()
         picker.Pick(clickPos[0], clickPos[1], 0, self.renderer)
         
-        # get the new
-        self.NewPickedActor = picker.GetActor()
-        #print(">>> self.NewPickedActor")
-        #print(self.NewPickedActor)
-        if self.NewPickedActor == None:
+        # Get selecected geometry. 
+        self.picked_actor = picker.GetActor()
+        if self.picked_actor == None:
             self.OnLeftButtonDown()
             return
 
-        for seg_name,seg_actor in self.graphics.segment_actors.items():
-            if self.NewPickedActor == seg_actor:
-              self.graphics.logger.info(" ")
-              self.graphics.logger.info("Selected segment %s" % seg_name)
-              self.graphics.picked_segment = seg_name
+        graphics = self.graphics
 
-        # If something was selected
-        if self.NewPickedActor:
-            if self.LastPickedActor:
-                self.LastPickedActor.GetProperty().DeepCopy(self.LastPickedProperty)
-            self.LastPickedProperty.DeepCopy(self.NewPickedActor.GetProperty())
-            self.NewPickedActor.GetProperty().SetColor(1.0, 0.0, 0.0)
-            self.NewPickedActor.GetProperty().SetDiffuse(1.0)
-            self.NewPickedActor.GetProperty().SetSpecular(0.0)
-            self.LastPickedActor = self.NewPickedActor
+        # Identify the selected segment.
+        for seg_name,seg_actor in self.graphics.segment_actors.items():
+            if self.picked_actor == seg_actor:
+              graphics.logger.info(" ")
+              graphics.logger.info("Selected segment %s" % seg_name)
+              graphics.picked_segment = seg_name
+        #__for seg_name,seg_actor in self.graphics.segment_actors.items()
+
+        if self.last_picked_actor:
+            self.last_picked_actor.GetProperty().SetColor(*GeometryColors.SEGMENT)
+
+        self.picked_actor.GetProperty().SetColor(*GeometryColors.SEGMENT_HIGHLIGHT)
+        self.last_picked_actor = self.picked_actor
         
         self.OnLeftButtonDown()
         return
 
-    def onKeyPressEvent(self, renderer, event):
+    def onCharEvent(self, renderer, event):
+        """
+        Process an on char event.
+
+        This is used to prevent passing the shortcut key 'w' to vtk which we use
+        to write selected results and vtk uses to switch to wireframe display. 
+        """
         key = self.GetInteractor().GetKeySym()
-        if key == 'p' and self.graphics.picked_segment:
-            self.graphics.logger.info("Plot segment %s" % self.graphics.picked_segment)
-            self.graphics.solver.plot_segment(self.graphics.picked_segment, "flow")
+        if (key != 'w'): 
+            self.OnChar()
+
+    def onKeyPressEvent(self, renderer, event):
+        """
+        Process a key press event.
+        """
+        key = self.GetInteractor().GetKeySym()
+
+        ## Save the selected segment.
+        #
+        if key == 's' and self.graphics.picked_segment and (self.graphics.picked_segment not in self.graphics.picked_segments):
+            self.graphics.logger.info("Save segment %s" % self.graphics.picked_segment)
+            self.graphics.picked_segments.append(self.graphics.picked_segment)
+            self.graphics.picked_actors.append(self.picked_actor)
+            self.last_picked_actor = None
+
+        ## Remove selected segments.
+        #
+        elif (key == 'u') and (len(self.graphics.picked_segments) != 0):
+            segment_name = self.graphics.picked_segments.pop()
+            actor = self.graphics.picked_actors.pop()
+            actor.GetProperty().SetColor(*GeometryColors.SEGMENT)
+            self.graphics.window.Render()
+            self.graphics.logger.info("Remove segment %s" % segment_name) 
+
+        elif (key == 'w') and (len(self.graphics.picked_segments) != 0):
+            self.graphics.solver.write_selected_segments(self.graphics.picked_segments) 
+
+    #__def onKeyPressEvent
+
+#__class MouseSegmentInteractorStyle
 
 
 class Graphics(object):
-    """ The Graphics class is used to display the solver mesh in the graphics window.
+    """ 
+    The Graphics class is used to display the solver mesh in the graphics window.
     """
     def __init__(self, params):
         self.params = params
@@ -69,7 +112,11 @@ class Graphics(object):
         self.interactor = None
         self.segment_actors = {}
         self.solver = None
+
         self.picked_segment = None
+        self.picked_segments = []
+        self.picked_actors = []
+
         self.colors = vtk.vtkNamedColors()
         self.logger = logging.getLogger(get_logger_name())
         self.initialize_graphics()
@@ -160,7 +207,7 @@ class Graphics(object):
         actor.SetUserMatrix(transform.GetMatrix())
 
         actor.SetMapper(mapper)
-        actor.GetProperty().SetColor(0.0, 1.0, 0.0)
+        actor.GetProperty().SetColor(*GeometryColors.SEGMENT)
         self.renderer.AddActor(actor)
         self.segment_actors[name] = actor
 
@@ -185,12 +232,13 @@ class Graphics(object):
         mapBalls.SetInputConnection(balls.GetOutputPort())
         ballActor = vtk.vtkActor()
         ballActor.SetMapper(mapBalls)
-        ballActor.GetProperty().SetColor([0.0, 0.0, 1.0])
+        ballActor.GetProperty().SetColor(*GeometryColors.NODE)
         ballActor.GetProperty().SetSpecularColor(1, 0, 0)
         ballActor.GetProperty().SetSpecular(0.3)
         ballActor.GetProperty().SetSpecularPower(20)
         ballActor.GetProperty().SetAmbient(0.2)
         ballActor.GetProperty().SetDiffuse(0.8)
+        ballActor.PickableOff()
         self.renderer.AddActor(ballActor)
 
         self.window.Render()
