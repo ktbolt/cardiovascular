@@ -19,19 +19,9 @@ except ImportError:
     print("matplotlib is not installed")
 
 class Solver(object):
-    """
-    The Solver class reads and stores solver input and results. 
-
-    The solver input file is read to extract node and segment geometry that can be optionally
-    displayed. Segments can also be selected. 
-    
-    Attributes:
-        read_segment_names (list[string]): List of segment names to read data for.
-    """
 
     class SegmentFields(object):
-        """ 
-        This class defines the location of segment fields in the solver file SEGMENT statement.
+        """ This class defines the location of segment fields in the solver file SEGMENT statement.
         """
         NAME = 1 
         ID = 2 
@@ -70,8 +60,9 @@ class Solver(object):
         self.params = params
         self.nodes = None
         self.segments = None
-        self.read_segment_names = None
-        self.write_segment_names = None
+        self.times = None
+        self.min_time_index = None
+        self.max_time_index = None
         self.graphics = None
         self.logger = logging.getLogger(get_logger_name())
 
@@ -88,8 +79,7 @@ class Solver(object):
         self.lines_segment_names = None
 
     def read_solver_file(self):
-        """ 
-        Read in a solver.in file.
+        """ Read in a solver.in file.
         """
         self.logger.info("---------- Read solver file ----------")
         #self.logger.info("Number of points: %d" % num_points)
@@ -146,19 +136,32 @@ class Solver(object):
             self.lines_polydata.SetLines(lines)
 
     def add_solver_options(self, tokens):
-        """ 
-        Add solver options.
+        """ Add solver options.
         """
         time_step = float(tokens[1])
         self.params.time_step = time_step
         save_freq = int(tokens[2])
         num_steps = int(tokens[3])
         self.params.num_steps = num_steps 
-        self.params.times = [i*time_step for i in range(0,num_steps+1,save_freq)]
+
+        min_time = self.params.time_range[0]
+        max_time = self.params.time_range[1]
+        self.min_time_index = None
+        self.max_time_index = None
+
+        self.times = []
+        for i in range(0,num_steps+1,save_freq):
+            time = i*time_step
+            if time >= min_time and time <= max_time:
+                self.times.append(time)
+                if self.min_time_index == None:
+                    self.min_time_index = i
+                self.max_time_index = i
+        #__for i in range(0,num_steps+1,save_freq):
+        print(self.times)
 
     def add_node(self, tokens):
-        """ 
-        Add a node..
+        """ Add a node..
         """
         id = tokens[1]
         x = float(tokens[2])
@@ -172,8 +175,7 @@ class Solver(object):
             self.vertices.InsertCellPoint(id)
 
     def add_segment(self, tokens):
-        """ 
-        Add a segment.
+        """ Add a segment.
         """
         fields = self.SegmentFields
      
@@ -183,49 +185,39 @@ class Solver(object):
         node2 = int(tokens[fields.OUTLET_NODE])
         bc_type = tokens[fields.BC_TYPE]
         self.segments[name] = Segment(id, name, node1, node2, bc_type)
-        #self.logger.info("Add segment name: %s" % name) 
+        self.logger.info("Add segment name: %s" % name) 
 
     def read_segment_data(self):
-        """ 
-        Read in segment data files.
+        """ Read in segment data files.
         """
-        self.read_segment_names = []
-
         if not self.params.data_names:
-            self.logger.warning("No data names given for reading data.")
+            self.logger.info("No data names given for reading data.")
             return
 
         if self.params.all_segments:
             self.params.segment_names = []
             for name,segment in self.segments.items():
-                #self.params.segment_names.append(name)
-                self.read_segment_names.append(name)
+                self.params.segment_names.append(name)
 
         elif self.params.outlet_segments:
             self.params.segment_names = []
             for name,segment in self.segments.items():
                 if segment.bc_type != self.BcTypes.NONE:
-                    #self.params.segment_names.append(name)
-                    self.read_segment_names.append(name)
+                    self.params.segment_names.append(name)
 
-        elif self.params.segment_names:
-            for segment_name in self.params.segment_names:
-                self.read_segment_names.append(segment_name)
-
-        if not  self.read_segment_names:
-            self.logger.warning("No segment names given for reading data.")
+        if not self.params.segment_names:
+            self.logger.info("No segment names given for reading data.")
             return
 
         data_names = self.params.data_names
-        for segment_name in self.read_segment_names:
+        for segment_name in self.params.segment_names:
             self.read_segment_data_file(segment_name, data_names)
 
     def read_segment_data_file(self, segment_name, data_names):
-        """ 
-        Read in a segment data file.
+        """ Read in a segment data file.
         """
-        #self.logger.info("---------- Read segment data file ----------")
-        #self.logger.info("Segment name: %s" % segment_name) 
+        self.logger.info("---------- Read segment data file ----------")
+        self.logger.info("Segment name: %s" % segment_name) 
 
         if not segment_name in self.segments:
             msg = "No segment named: %s" % segment_name
@@ -237,8 +229,17 @@ class Solver(object):
         sep = Parameters.FILE_NAME_SEP
         ext = Parameters.DATA_FILE_EXTENSION 
 
+        min_time = self.params.time_range[0]
+        max_time = self.params.time_range[1]
+        imin = self.min_time_index
+        imax = self.max_time_index 
+        times = self.times
+        self.logger.info("Min time: %f" % min_time)
+        self.logger.info("Max time: %f" % max_time)
+        self.logger.info("Times size: %d" % len(times))
+
         for data_name in data_names:
-            #self.logger.info("Data name: %s" % data_name) 
+            self.logger.info("Data name: %s" % data_name) 
             file_name = self.params.results_directory + "/" + self.params.model_name + segment_name + sep + data_name + ext
             num_rows = 0
             data = []
@@ -255,64 +256,43 @@ class Solver(object):
                         continue
                     values = [float(v) for v in tokens]
                     num_cols = len(values)
-                data.append(values)
+                data.append(values[imin:imax])
+                self.logger.info("Values size: %d" % len(values[imin:imax]))
                 #__while line
             #__with open(file_name) as fp
             segment.data[data_name] = data
         #__for data_name in self.params.data_names:
 
-        #self.logger.info("Number of rows read: %d" % num_rows) 
-        #self.logger.info("Number of columns read: %d" % num_cols) 
+        self.logger.info("Number of rows read: %d" % num_rows) 
+        self.logger.info("Number of columns read: %d" % num_cols) 
 
-    def write_selected_segments(self, segment_names):
-        """
-        Write segment data to a file for segments selected interactively.
-        """
-        self.write_segment_data(segment_names)
-
-    def write_segment_data(self, segment_names=None):
-        """
-        Write segment data to a file.
-
-        This function is called automatically from main() to write any data for
-        segments that may have been given on the command line. 
-        """
-        if (segment_names == None) and (self.read_segment_names == None):
-          return
-
-        if segment_names == None:
-            segment_names = self.read_segment_names
-
+    def write_segment_data(self):
         self.logger.info("---------- Write segment data ----------")
-        self.logger.info("Data names: %s" % ','.join(self.params.data_names))
-        self.logger.info("Segment names: %s" % ','.join(segment_names))
         file_format = self.params.output_format
-        output_dir = self.params.output_directory 
-        output_file_name = self.params.output_file_name 
         ext = "." + file_format 
         sep = "_"
 
         for data_name in self.params.data_names:
-            #self.logger.info("Data name: %s" % data_name) 
-            file_name = output_dir + "/" + output_file_name + sep + data_name + ext
-            times = self.params.times
+            self.logger.info("Data name: %s" % data_name) 
+            file_name = self.params.output_directory + "/" + self.params.output_file_name + sep + data_name + ext
+            times = self.times
 
             with open(file_name, "w") as fp:
-                for i,name in enumerate(segment_names):
-                    #self.logger.info("Segment name: %s" % name) 
+                for i,name in enumerate(self.params.segment_names):
+                    self.logger.info("Segment name: %s" % name) 
                     fp.write(name)
-                    if i != len(segment_names)-1:
+                    if i != len(self.params.segment_names)-1:
                         fp.write(",")
                 fp.write("\n")
 
                 for i,time in enumerate(times):
                     fp.write(str(time) + ",")
-                    for j,name in enumerate(segment_names):
+                    for j,name in enumerate(self.params.segment_names):
                         segment = self.segments[name]
                         data_list = segment.data[data_name]
                         data = data_list[-1]
                         fp.write(str(data[i]))
-                        if j != len(segment_names)-1:
+                        if j != len(self.params.segment_names)-1:
                             fp.write(",")
                     #__for j,name in enumerate(self.params.segments)
                     fp.write("\n")
@@ -338,7 +318,7 @@ class Solver(object):
             fig, ax = plt.subplots()
             ylabel = data_name
 
-            for j,name in enumerate(self.read_segment_names):
+            for j,name in enumerate(self.params.segment_names):
                 values = []
                 plot_times = [] 
                 for i,time in enumerate(times):

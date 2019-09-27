@@ -1,8 +1,8 @@
 
 test_name="Kawasaki_Disease_Patient_2"
 
-python=python3
 python=python
+python=python3
 
 ## Write a 1D solver input file.
 #

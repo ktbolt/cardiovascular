@@ -11,6 +11,6 @@ class Segment(object):
         self.node1 = node1
         self.node2 = node2
         self.bc_type = bc_type
-        self.data_name = None
-        self.data = None
+        #self.data_name = None
+        #self.data = None
 

@@ -158,7 +158,7 @@ class Graphics(object):
 
     def add_cyl(self, pt1, pt2, name):
         cyl = vtk.vtkCylinderSource()
-        cyl.SetRadius(0.05)
+        cyl.SetRadius(0.2)
         cyl.SetResolution(15)
         x = [0,0,0]
         y = [0,0,0]
@@ -221,6 +221,7 @@ class Graphics(object):
     def add_graphics_points(self, poly_data, color):
         ball = vtk.vtkSphereSource()
         ball.SetRadius(self.params.node_sphere_radius)
+        ball.SetRadius(0.5)
         ball.SetThetaResolution(12)
         ball.SetPhiResolution(12)
         balls = vtk.vtkGlyph3D()

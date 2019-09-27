@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <string>
+#include <array>
 
 #include "Slice.h"
 
@@ -27,7 +28,8 @@ void Slice::AddScalarData(double value)
 //
 void Slice::AddVectorData(double values[3])
 {
-  m_InterpolatedVectorData.push_back({values[0], values[1], values[2]});
+  std::array<double,3> avalues{values[0], values[1], values[2]};
+  m_InterpolatedVectorData.push_back(avalues);
 }
 
 //----------
@@ -36,7 +38,8 @@ void Slice::AddVectorData(double values[3])
 //
 void Slice::AddPoint(double point[3])
 {
-  m_InterpolationPoints.push_back({point[0], point[1], point[2]});
+  std::array<double,3> pts{point[0], point[1], point[2]};
+  m_InterpolationPoints.push_back(pts);
 }
 
 //-------

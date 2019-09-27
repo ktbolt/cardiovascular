@@ -11,9 +11,11 @@
 //
 #include <vtkNamedColors.h>
 #include <vtkPointData.h>
+#include <vtkPolyDataMapper.h>
 //
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
+#include <vtkSphereSource.h>
 //
 #include <vtkUnstructuredGrid.h>
 
@@ -33,17 +35,13 @@ Graphics::Graphics()
   m_RenderWindow = vtkSmartPointer<vtkRenderWindow>::New();
   m_RenderWindow->AddRenderer(m_Renderer);
   m_RenderWindow->SetSize(1000, 1000);
-  m_RenderWindow->Render();
-  m_RenderWindow->SetWindowName("Simulation Results Surface Slicer");
 
   // Add window interactor to use trackball and intercept key presses.
   //
   m_RenderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
   m_RenderWindowInteractor->SetRenderWindow(m_RenderWindow);
 
-  m_InteractionStyle = vtkSmartPointer<MouseCenterlineInteractorStyle>::New();
-  //m_InteractionStyle = vtkSmartPointer<MouseMeshInteractorStyle>::New();
-
+  m_InteractionStyle = vtkSmartPointer<MouseInteractorStyle>::New();
   m_InteractionStyle->SetGraphics(this);
   m_RenderWindowInteractor->SetInteractorStyle(m_InteractionStyle);
   m_InteractionStyle->SetDefaultRenderer(m_Renderer);
@@ -59,16 +57,14 @@ void Graphics::SetMesh(Mesh* mesh)
 {
   m_Mesh = mesh;
 }
-
-void Graphics::SetCenterlines(Centerlines& centerlines)
-{
-  m_Centerlines = centerlines;
-  m_InteractionStyle->SetCenterlines(centerlines);
-}
+ 
 
 void Graphics::Start()
 {
   //m_RenderWindowInteractor->Initialize();
+
+  m_RenderWindow->Render();
+  m_RenderWindow->SetWindowName("Select Mesh");
   m_RenderWindowInteractor->Start();
 }
 
@@ -113,49 +109,46 @@ void Graphics::SetDataName(std::string name)
   }
 }
 
-// Create a circle
-vtkSmartPointer<vtkActor> Graphics::CreateCircle()
+//---------------------
+// ShowDuplicateCoords
+//---------------------
+//
+void Graphics::ShowDuplicateCoords() 
 {
-  vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
-  polygonSource->SetNumberOfSides(50);
-  polygonSource->SetRadius(5);
-  polygonSource->SetCenter(0, 0, 0);
-
-  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputConnection(polygonSource->GetOutputPort());;
-      
-  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-  actor->SetMapper(mapper);
-  return actor;
-}   
-
-void Graphics::Refresh()
-{
-  m_RenderWindow->Render();
+    for (auto const& pt : m_Mesh->m_DupeCoords) {
+        vtkSmartPointer<vtkSphereSource> sphere = vtkSmartPointer<vtkSphereSource>::New();
+        sphere->SetCenter(pt[0], pt[1], pt[2]);
+        sphere->SetRadius(0.05);
+        vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        mapper->SetInputConnection(sphere->GetOutputPort());
+        vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+        AddGeometry(actor);
+    }
 }
 
-/////////////////////////////////////////////////////////////////////////
-//            M o u s e M e s h I n t e r a c t o r S t y l e          //
-/////////////////////////////////////////////////////////////////////////
 
-// This class defines a mouse interactor used to select a surface
-// element (triangle) and display its nodal data.
+/////////////////////////////////////////////////////////////////
+//            M o u s e I n t e r a c t o r S t y l e          //
+/////////////////////////////////////////////////////////////////
 
-MouseMeshInteractorStyle::MouseMeshInteractorStyle()
+MouseInteractorStyle::MouseInteractorStyle()
 {
   m_SelectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
   m_SelectedActor = vtkSmartPointer<vtkActor>::New();
   m_Colors = vtkSmartPointer<vtkNamedColors>::New();
+
 }
 
-void MouseMeshInteractorStyle::SetGraphics(Graphics* graphics)
+void MouseInteractorStyle::SetGraphics(Graphics* graphics)
 {
   m_Graphics = graphics;
 }
 
 // Process a keyboard press event.
 //
-void MouseMeshInteractorStyle::OnKeyPress() 
+void MouseInteractorStyle::OnKeyPress() 
 {
   // Get the keypress.
   vtkRenderWindowInteractor *rwi = this->Interactor;
@@ -178,7 +171,7 @@ void MouseMeshInteractorStyle::OnKeyPress()
 // SelectCell
 //------------
 //
-void MouseMeshInteractorStyle::SelectCell() 
+void MouseInteractorStyle::SelectCell() 
 {
   std::cout << "---------- Select Mesh Cell ----------" << std::endl;
   vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
@@ -203,11 +196,11 @@ void MouseMeshInteractorStyle::SelectCell()
   SelectMesh(cellID);
 }
 
-//-------------
-// SelectMesh 
-//-------------
+//--------------
+// AddSelection
+//--------------
 //
-void MouseMeshInteractorStyle::SelectMesh(int cellID)
+void MouseInteractorStyle::SelectMesh(int cellID)
 { 
   vtkSmartPointer<vtkIdTypeArray> ids = vtkSmartPointer<vtkIdTypeArray>::New();
   ids->SetNumberOfComponents(1);
@@ -231,7 +224,7 @@ void MouseMeshInteractorStyle::SelectMesh(int cellID)
 // SelectSurfaceMesh
 //-------------------
 //
-void MouseMeshInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSelection> selection)
+void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSelection> selection)
 { 
   auto mesh = m_Graphics->GetMesh();
   vtkPolyData* polydata = vtkPolyData::SafeDownCast(mesh->GetMesh());
@@ -309,147 +302,16 @@ void MouseMeshInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtk
   this->Interactor->GetRenderWindow()->Render();
 }
 
+
 //void MouseInteractorStyle::OnLeftButtonDown()
 //{
 //}
 
-vtkStandardNewMacro(MouseMeshInteractorStyle);
+vtkStandardNewMacro(MouseInteractorStyle);
 
-/////////////////////////////////////////////////////////////////////////////////////
-//            M o u s e C e n t e r l i n e I n t e r a c t o r S t y l e          //
-/////////////////////////////////////////////////////////////////////////////////////
 
-// This class defines a mouse interactor used to create a slice at a selected
-// point on a surface centerline.
 
-MouseCenterlineInteractorStyle::MouseCenterlineInteractorStyle()
-{
-  startSelected = false;
-}
 
-void MouseCenterlineInteractorStyle::SetCenterlines(Centerlines& centerlines)
-{
-  m_Centerlines = centerlines;
-}
 
-void MouseCenterlineInteractorStyle::SetGraphics(Graphics* graphics)
-{
-  m_Graphics = graphics;
-}
 
-//------------
-// OnKeyPress
-//------------
-//
-void MouseCenterlineInteractorStyle::OnKeyPress() 
-{
-  // Get the keypress.
-  vtkRenderWindowInteractor *rwi = this->Interactor;
-  std::string key = rwi->GetKeySym();
 
-  // Output the key that was pressed.
-  //std::cout << "Pressed " << key << std::endl;
-
-  // Undo. Removes the last slice.
-  if (key == "u") {
-    auto mesh = m_Graphics->GetMesh();
-    mesh->UndoSlice();
-
-  // Write slices to a file.
-  } else if (key == "w") {
-    auto mesh = m_Graphics->GetMesh();
-    mesh->WriteSlices();
-
-  // Quit.
-  } else if ((key == "Escape") || (key == "q")) {
-    exit(0);
-  }
-
-  vtkInteractorStyleTrackballCamera::OnKeyPress();
-}
-
-//------------------
-// SelectCenterline
-//------------------
-//
-void MouseCenterlineInteractorStyle::OnLeftButtonDown() 
-//void MouseCenterlineInteractorStyle::SelectCenterline() 
-{
-  // Pick current screen location.
-  //
-  int* clickPos = this->GetInteractor()->GetEventPosition();
-  vtkSmartPointer<vtkPropPicker> picker = vtkSmartPointer<vtkPropPicker>::New();
-  picker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
-
-  if (picker->GetActor() != nullptr) {
-    double* pos = picker->GetPickPosition();
-    //std::cout << "Pick position (world coordinates) is: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-    //std::cout << "Picked actor: " << picker->GetActor() << std::endl;
-
-    // Create a sphere.
-    if (startSphere == nullptr) {
-      startSphere = vtkSmartPointer<vtkSphereSource>::New();
-      vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-      mapper->SetInputConnection(startSphere->GetOutputPort());
-      vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-      actor->SetMapper(mapper);
-      actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-      //this->GetDefaultRenderer()->AddActor(actor);
-    }
-
-    if (startPlane == nullptr) {
-      startPlane = vtkSmartPointer<vtkPlaneSource>::New();
-      vtkSmartPointer<vtkPolyDataMapper> pmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-      pmapper->SetInputConnection(startPlane->GetOutputPort());
-      vtkSmartPointer<vtkActor> startPlaneActor = vtkSmartPointer<vtkActor>::New();
-      startPlaneActor->SetMapper(pmapper);
-      startPlaneActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-      //this->GetDefaultRenderer()->AddActor(startPlaneActor);
-    }
-
-    double radius = 0.1;
-    double inscribedRadius;
-    double normal[3], tangent[3], binormal[3], p1[3];
-    double planeWidth, origin[3], point1[3], point2[3], vec1[3], vec2[3];
-    int index;
-    int cellID;
-
-    // Get centerline data at the picked point.
-    m_Centerlines.locate_cell(pos, index, cellID, inscribedRadius, normal, tangent);
-
-    startSphere->SetCenter(pos[0], pos[1], pos[2]);
-    startSphere->SetRadius(radius);
-    //startSphere->SetRadius(radius);
-    //
-    planeWidth = 4.0*inscribedRadius;
-    //planeWidth = 2.0*inscribedRadius;
-    vtkMath::Cross(normal, tangent, binormal);
-    vtkMath::Normalize(binormal);
-    vtkMath::Normalize(tangent);
-    //vtkMath::Perpendiculars(normal, vec1, vec2, vtkMath::Pi()/2.0);
-    vtkMath::Perpendiculars(normal, vec1, vec2, 0.0);
-
-    for (int i = 0; i < 3; i++) {
-      origin[i] = pos[i] - planeWidth/2.0*tangent[i] - planeWidth/2.0*normal[i];
-      point1[i] = origin[i] + planeWidth*tangent[i];
-      point2[i] = origin[i] + planeWidth*normal[i];
-      p1[i] = pos[i] + 0.5*normal[i];
-      p1[i] = pos[i] + 0.5*tangent[i];
-    }
-    startPlane->SetCenter(pos[0], pos[1], pos[2]);
-    startPlane->SetNormal(tangent[0], tangent[1], tangent[2]);
-
-    auto mesh = m_Graphics->GetMesh();
-    auto dataName = m_Graphics->GetDataName();
-
-    // Extract a slice from the mesh.
-    mesh->SlicePlane(index, cellID, dataName, pos, tangent);
-  }
-
-  this->Interactor->GetRenderWindow()->Render();
-
-  // Forward events
-  vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-}
-
-vtkStandardNewMacro(MouseCenterlineInteractorStyle);
