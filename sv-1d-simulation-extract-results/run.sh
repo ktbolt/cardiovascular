@@ -23,9 +23,9 @@ python_int=python
 python_int=python3
 
 test_name="named_segments"
-test_name="outlet_segments"
 test_name="all_segments"
 test_name="selected_segments"
+test_name="outlet_segments"
 
 ## Convert and plot results at named segment outlets.
 #
