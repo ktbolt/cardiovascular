@@ -19,7 +19,7 @@ def create_contours(path_name, control_points, radius, ren):
     for i in range(0,len(control_points)):
         name = path_name + "_ct" + str(i)
         print ("Create a circle Contour: " + name)
-        Contour.SetContourKernel('Circle')
+        Contour.set_contour_kernel('Circle')
         c = Contour.pyContour()
         pt = control_points[i] 
 
@@ -37,8 +37,8 @@ def create_contours(path_name, control_points, radius, ren):
             #__for j in range(0,len(pos_pts))
         print(">>> min_d %g  min_id %d" % (min_d, min_i))
 
-            ## Create a contour at the min_i th pos_pts[]. 
-        c.NewObject(name, path_name, min_i)
+        ## Create a contour at the min_i th pos_pts[]. 
+        c.new_object(name, path_name, min_i)
 
         # Set control points.
         center = control_points[i] 

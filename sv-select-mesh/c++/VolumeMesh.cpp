@@ -44,8 +44,17 @@ void VolumeMesh::FindData()
     int type = m_Mesh->GetPointData()->GetArray(i)->GetDataType();
     auto name = m_Mesh->GetPointData()->GetArrayName(i);
     auto data = m_Mesh->GetPointData()->GetArray(i);
-    //auto size = data->m_Mesh->GetPointData();
     std::cout << "  " << i+1 << ": " << name << " type: " << type << std::endl;
+    if (!strcmp(name,"GlobalNodeID")) {
+        auto nodeIDs = vtkIntArray::SafeDownCast(data);
+        std::vector<int> ids;
+        for (int j = 0; j < data->GetNumberOfTuples(); j++) {
+            auto value = nodeIDs->GetValue(j);
+            ids.push_back(value);
+        } 
+        sort(ids.begin(), ids.end()); 
+        std::cout << "     Min/Max IDs: " << ids[0] << "  " << ids.back() << std::endl;
+    } 
     m_PointDataNames.insert(name);
   }
 
@@ -53,6 +62,10 @@ void VolumeMesh::FindData()
   std::cout << "Number of cell data arrays: " << numCellArrays << std::endl;
 }
 
+//--------------
+// CheckNodeIDs
+//--------------
+//
 void VolumeMesh::CheckNodeIDs()
 {
   std::cout << "---------- Checking node IDs ---------- " << std::endl;

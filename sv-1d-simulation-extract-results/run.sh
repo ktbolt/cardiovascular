@@ -46,9 +46,13 @@ plot="on"
 plot="off"
 time_range="0.01,0.8"
 
-test_name="outlet_segments"
-test_name="all_segments"
+python_int=python
+python_int=python3
+
 test_name="named_segments"
+test_name="all_segments"
+test_name="selected_segments"
+test_name="outlet_segments"
 
 ## Plot and write results at named segment outlets.
 #
