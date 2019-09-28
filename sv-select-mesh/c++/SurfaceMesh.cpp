@@ -70,8 +70,8 @@ void SurfaceMesh::CheckNodeIDs()
           auto dy = pt1[1] - pt2[1];
           auto dz = pt1[2] - pt2[2];
           if ((dx*dx == 0.0) && (dy*dy == 0.0) && (dz*dz == 0.0)) {
-              std::cout << i << ": pt1 " << pt1[0] << " " << pt1[1] << " " << pt1[2] << std::endl;
-              std::cout << j << ": pt2 " << pt2[0] << " " << pt2[1] << " " << pt2[2] << std::endl;
+              //std::cout << i << ": pt1 " << pt1[0] << " " << pt1[1] << " " << pt1[2] << std::endl;
+              //std::cout << j << ": pt2 " << pt2[0] << " " << pt2[1] << " " << pt2[2] << std::endl;
               numDupe += 1;
           }
       }
