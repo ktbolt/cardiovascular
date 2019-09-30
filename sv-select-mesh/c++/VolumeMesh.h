@@ -18,16 +18,17 @@ class VolumeMesh : public Mesh {
   public:
     void AddGeometry(Graphics& graphics);
     void FindData();
+    void FixMesh();
     vtkSmartPointer<vtkDoubleArray> GetDataArray(std::string name);
     vtkSmartPointer<vtkDataSet> GetMesh();
     vtkSmartPointer<vtkPolyData> GetPolyData();
-    bool IsVolume();
     bool IsSurface();
     void ReadMesh(const std::string fileName);
     void CheckNodeIDs();
 
   private:
     vtkSmartPointer<vtkUnstructuredGrid> m_Mesh;
+    vtkSmartPointer<vtkPolyData> m_Polydata;
     vtkIdType m_NumPoints;
     vtkIdType m_NumCells;
 

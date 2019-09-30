@@ -17,6 +17,7 @@ class SurfaceMesh : public Mesh {
   public:
     void AddGeometry(Graphics& graphics);
     void FindData();
+    void FixMesh();
     vtkSmartPointer<vtkDoubleArray> GetDataArray(std::string name);
     vtkSmartPointer<vtkDataSet> GetMesh();
     vtkSmartPointer<vtkPolyData> GetPolyData();

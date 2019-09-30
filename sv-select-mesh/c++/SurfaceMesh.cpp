@@ -4,6 +4,7 @@
 #include "SurfaceMesh.h"
 
 #include <vtkCellData.h>
+#include <vtkCleanPolyData.h>
 #include <vtkPointData.h>
 #include <vtkXMLPolyDataReader.h>
 
@@ -20,11 +21,26 @@ void SurfaceMesh::ReadMesh(const std::string fileName)
   reader->SetFileName(fileName.c_str());
   reader->Update();
 
-  m_Polydata->DeepCopy(reader->GetOutput());
+  vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
+  cleanPolyData->SetInputConnection(reader->GetOutputPort());
+  cleanPolyData->Update();
+
+  m_Polydata->DeepCopy(cleanPolyData->GetOutput());
+  //m_Polydata->DeepCopy(reader->GetOutput());
   vtkIdType m_NumPoints = m_Polydata->GetNumberOfPoints();
   vtkIdType m_NumPolys = m_Polydata->GetNumberOfPolys();
   std::cout << "  Number of points: " << m_NumPoints << std::endl;
   std::cout << "  Number of polygons: " << m_NumPolys << std::endl;
+}
+
+//---------
+// FixMesh
+//---------
+//
+void SurfaceMesh::FixMesh()
+{
+  std::cout << "---------- Fix Mesh ---------- " << std::endl;
+  std::cout << "**** not implemented **** " << std::endl;
 }
 
 //----------

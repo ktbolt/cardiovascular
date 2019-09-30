@@ -196,9 +196,9 @@ void MouseInteractorStyle::SelectCell()
   SelectMesh(cellID);
 }
 
-//--------------
-// AddSelection
-//--------------
+//------------
+// SelectMesh
+//------------
 //
 void MouseInteractorStyle::SelectMesh(int cellID)
 { 
@@ -215,6 +215,8 @@ void MouseInteractorStyle::SelectMesh(int cellID)
   selection->AddNode(selectionNode);
 
   if (m_Graphics->GetMesh()->IsSurface()) {
+    SelectSurfaceMesh(cellID, selection);
+  } else {
     SelectSurfaceMesh(cellID, selection);
   }
 

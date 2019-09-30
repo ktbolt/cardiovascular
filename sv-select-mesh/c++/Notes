@@ -1,0 +1,41 @@
+
+============================================================================
+Read volume mesh: ../extrude-convert.vtu
+  Number of points: 5508
+  Number of cells: 23750
+Number of point data arrays: 1
+Point data array names: 
+  1: GlobalNodeID type: 6
+    Number of IDs: 5508
+    ID range: 1, 5508
+Number of cell data arrays: 2
+Cell data array names: 
+  1: GlobalElementID type: 6
+  2: ModelRegionID type: 6
+---------- Checking node IDs ---------- 
+Number of node IDs: 5508
+Number of coordinates: 5508
+Number of duplicate coordinates: 1030
+
+
+============================================================================
+davep> ./select-mesh ../extrude-no-convert.vtu 
+File extension: vtu
+Read volume mesh: ../extrude-no-convert.vtu
+  Number of points: 4478
+  Number of cells: 23750
+Number of point data arrays: 1
+Point data array names: 
+  1: GlobalNodeID type: 6
+    Number of IDs: 4478
+    ID range: 1, 4478
+Number of cell data arrays: 2
+Cell data array names: 
+  1: ModelRegionID type: 6
+  2: GlobalElementID type: 6
+---------- Checking node IDs ---------- 
+Number of node IDs: 4478
+Number of coordinates: 4478
+Number of duplicate coordinates: 0
+
+

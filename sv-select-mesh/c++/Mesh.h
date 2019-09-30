@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <map>
 
 #include <vtkDataSet.h>
 #include <vtkDoubleArray.h>
@@ -21,10 +22,12 @@ class Mesh {
     virtual vtkSmartPointer<vtkDataSet> GetMesh() = 0;
     virtual void FindData() = 0;
     virtual void CheckNodeIDs() = 0;
+    virtual void FixMesh() = 0;
     virtual void ReadMesh(const std::string fileName) = 0;
     virtual bool IsSurface() = 0;
     bool HasData(const std::string& name);
     std::vector<std::array<double,3>> m_DupeCoords;
+    std::map<int,int> m_DupeNodeIDs;
 
   protected:
     std::set<std::string> m_PointDataNames;

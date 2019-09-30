@@ -53,6 +53,11 @@ int main(int argc, char* argv[])
   mesh.ReadMesh(fileName);
   mesh.FindData();
   mesh.CheckNodeIDs();
+  /* Experiment with removing mesh duplicate nodes.
+  if (mesh.m_DupeNodeIDs.size() > 0) {
+      mesh.FixMesh();
+  }
+  */
 
   // Create graphics interface.
   auto graphics = Graphics();
