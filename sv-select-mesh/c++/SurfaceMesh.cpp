@@ -15,6 +15,8 @@
 //
 void SurfaceMesh::ReadMesh(const std::string fileName)
 {
+  // Turning on cleaning screws up node IDs.
+  //auto cleanPolydata = true;
   auto cleanPolydata = false;
   auto shrinkPolydata = false;
 

@@ -659,6 +659,8 @@ processMeshes(vtkSmartPointer<vtkUnstructuredGrid> meshFromTetGen, vtkSmartPoint
     vtkSmartPointer<vtkIntArray> globalNodeIds1 = vtkSmartPointer<vtkIntArray>::New();
     globalNodeIds1->SetNumberOfTuples(boundaryMeshVolume->GetNumberOfPoints());
     globalNodeIds1->SetName("GlobalNodeID");
+    int numNewNodes = 0;
+    int numDupeNodes = 0;
 
     //for (int i = 0; i < 6; i++) {
     for (int i = 0; i < boundaryMeshVolume->GetNumberOfPoints(); i++) {
@@ -670,15 +672,22 @@ processMeshes(vtkSmartPointer<vtkUnstructuredGrid> meshFromTetGen, vtkSmartPoint
       if (ids == nullptr) {
         //std::cout << "  ids is null " << std::endl; 
         id = globalNodeID;
-        globalNodeID++;
+        globalNodeID += 1;
+        numNewNodes += 1;
       } else {
         int n = ids->GetNumberOfIds();
         auto id = ids->GetId(0);
-        //std::cout << "  Dupe node at: " << i << "  use: " << id << std::endl; 
+        auto id1 = ids->GetId(0);
+        auto id2 = ids->GetId(1);
+        numDupeNodes += 1;
+        std::cout << "  Dupe node at: n:" << n << "  i:" << i << "  use: " << id << std::endl; 
+        std::cout << "    id1: " << id1 << " " << "  id2: " << id2 << std::endl; 
       }
       globalNodeIds1->SetTuple1(i,id);
     }
     std::cout << "  globalNodeID: " << globalNodeID << std::endl; 
+    std::cout << "  numNewNodes: " << numNewNodes << std::endl; 
+    std::cout << "  numNewNodes: " << numNewNodes << std::endl; 
     boundaryMeshVolume->GetPointData()->AddArray(globalNodeIds1);
 
     // Add element IDs to interior mesh.
