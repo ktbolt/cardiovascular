@@ -160,10 +160,10 @@ void MouseInteractorStyle::OnKeyPress()
   }
   else if (key == "s") {
     SelectCell();
+  } else {
+    // Forward events
+    //vtkInteractorStyleTrackballCamera::OnKeyPress();
   }
-
-  // Forward events
-  //vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
 
 }
 
@@ -260,11 +260,18 @@ void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSele
    std::cout << "Cell ID is: " << cellID << std::endl;
    std::cout << "  Elem ID: " << elemID << std::endl;
    std::cout << "  Number of cell points: " << numPts << std::endl;
-   std::cout << "  Connectivity: ";
+   std::cout << "  Connectivity: " << std::endl;
+   std::cout << "    Indexes: ";
+   for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+     auto id = cell->PointIds->GetId(pointInd);
+     std::cout << id << "  ";
+   }
+   std::cout << std::endl;
+   std::cout << "    NodeIDs: ";
    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
      auto id = cell->PointIds->GetId(pointInd);
      auto nodeID = nodeIDs->GetValue(id);
-     std::cout << nodeID << " ";
+     std::cout << nodeID << "  ";
    }
    std::cout << std::endl;
 

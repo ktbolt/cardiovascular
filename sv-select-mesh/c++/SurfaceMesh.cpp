@@ -6,6 +6,7 @@
 #include <vtkCellData.h>
 #include <vtkCleanPolyData.h>
 #include <vtkPointData.h>
+#include <vtkShrinkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
 
 //----------
@@ -14,19 +15,34 @@
 //
 void SurfaceMesh::ReadMesh(const std::string fileName)
 {
+  auto cleanPolydata = false;
+  auto shrinkPolydata = false;
+
   std::cout << "Read surface mesh: " << fileName << std::endl;
+  std::cout << "  Clean polydata: " << cleanPolydata << std::endl;
   m_Polydata = vtkSmartPointer<vtkPolyData>::New();
 
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName(fileName.c_str());
   reader->Update();
 
-  vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
-  cleanPolyData->SetInputConnection(reader->GetOutputPort());
-  cleanPolyData->Update();
+  if (cleanPolydata) {
+      vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
+      cleanPolyData->SetInputConnection(reader->GetOutputPort());
+      cleanPolyData->Update();
+      m_Polydata->DeepCopy(cleanPolyData->GetOutput());
+  } else {
+      m_Polydata->DeepCopy(reader->GetOutput());
+  }
 
-  m_Polydata->DeepCopy(cleanPolyData->GetOutput());
-  //m_Polydata->DeepCopy(reader->GetOutput());
+  if (shrinkPolydata) {
+      vtkSmartPointer<vtkShrinkPolyData> shrink = vtkSmartPointer<vtkShrinkPolyData>::New();
+      shrink->SetShrinkFactor(0.8);
+      shrink->SetInputData(m_Polydata);
+      shrink->Update();
+      m_Polydata->DeepCopy(shrink->GetOutput());
+   }
+
   vtkIdType m_NumPoints = m_Polydata->GetNumberOfPoints();
   vtkIdType m_NumPolys = m_Polydata->GetNumberOfPolys();
   std::cout << "  Number of points: " << m_NumPoints << std::endl;
@@ -59,6 +75,19 @@ void SurfaceMesh::FindData()
     auto data = m_Polydata->GetPointData()->GetArray(i);
     //auto size = data->m_Polydata->GetPointData();
     std::cout << "  " << i+1 << ": " << name << " type: " << type << std::endl;
+
+    if (!strcmp(name, "GlobalNodeID")) {
+        auto nodeIDs = vtkIntArray::SafeDownCast(m_Polydata->GetPointData()->GetArray("GlobalNodeID"));
+        std::vector<int> ids;
+        for (int i = 0; i < nodeIDs->GetNumberOfTuples(); i++) {
+            auto id = nodeIDs->GetValue(i);
+            ids.push_back(id);
+        }
+        std::sort(ids.begin(), ids.end());
+        std::cout << "    Number of IDs: " << ids.size() << std::endl;
+        std::cout << "    ID range: " << ids[0] << ", " << ids.back() << std::endl;
+    }
+
     m_PointDataNames.insert(name);
   }
 
