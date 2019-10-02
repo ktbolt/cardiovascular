@@ -5,11 +5,29 @@ import math
 
 ## Create new path object
 #
+pt1 = [0.0, 0.0, 0.0]
+#pt1 = [0.0, 1.0, 1.0]
+
+#pt2 = [0.0, 1.0, 0.0]
+#pt2 = [1.0, 0.0, 0.0]
+#pt2 = [-1.0, 0.0, 0.0]
+#pt2 = [1.0, 1.0, 0.0]
+pt2 = [1.0, 2.0, 2.0]
+
+pt3 = [0.0, 2.0, 0.0]
+pt4 = [1.0, 2.0, 0.0]
+pt5 = [2.0, 2.0, 0.0]
+
+#pt1 = [ -0.1385,   1.0171,   0.3352] 
+#pt2 = [-0.2418,   1.7405,  -1.9305] 
+
 p = Path.pyPath()
 p.NewObject('path1')
-p.AddPoint([0.0,  0.0, 0.0])
-p.AddPoint([1.0, 1.0, 0.0])
-p.AddPoint([2.0, 2.0, 0.0])
+p.AddPoint(pt1)
+p.AddPoint(pt2)
+#p.AddPoint(pt3)
+#p.AddPoint(pt4)
+#p.AddPoint(pt5)
 p.PrintPoints()
 
 # Generate path points.
@@ -24,14 +42,12 @@ num_pos_pts = len(pos_pts)
 p.GetObject('path1')
 
 Solid.SetKernel('PolyData')
-pt1 = [1.0, 1.0, 0.0]
-pt2 = [2.0, 2.0, 0.0]
 dist_squared = vtk.vtkMath.Distance2BetweenPoints(pt1,pt2)
 dist = math.sqrt(dist_squared)
 
 axis = [pt2[i] - pt1[i] for i in range(0,3)]
 vtk.vtkMath.Normalize(axis)
-center = [(pt1[i] + pt2[i])/2.0 for i in range(0,3)]
+center = [(pt2[i] + pt1[i])/2.0 for i in range(0,3)]
 print('[PathFitCyl] Axis: [{0:f} {1:f} {2:f}]'.format(axis[0], axis[1], axis[2]))
 print('[PathFitCyl] Center: [{0:f} {1:f} {2:f}]'.format(center[0], center[1], center[2]))
 
@@ -71,7 +87,7 @@ for i in range(0,len(control_pts)):
     c.new_object(name, 'path1', min_i)
 
     # Set control points.
-    radius = 2.0
+    radius = 1.0
     center = control_pts[i] 
     #center = [0.0, 0.0, 0.0]
     c.SetCtrlPtsByRadius(center, radius)
