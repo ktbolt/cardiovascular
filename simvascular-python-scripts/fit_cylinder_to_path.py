@@ -139,6 +139,7 @@ class PathFitCyl(object):
         if Repository.Exists(cyl_pdname):
             print('[PathFitCyl] Remove cylinder {0:s} '.format(cyl_pdname))
             Repository.Delete(cyl_pdname)
+            GUI.RemoveDataNode(cyl_pdname, "Repository")
 
         if use_solid:
             Solid.SetKernel('PolyData')
