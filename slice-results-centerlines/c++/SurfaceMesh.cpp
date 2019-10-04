@@ -297,6 +297,10 @@ void SurfaceMesh::WriteSlices()
 //
 void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* slice) 
 {
+  if (dataName == "") {
+    return;
+  }
+
   auto debugInterpolate = false;
 
   std::cout << "---------- Interpolate ----------" << std::endl;

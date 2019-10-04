@@ -60,16 +60,16 @@ for i in range(0,len(path_control_points)):
 
   # Set control points.
   center = control_points[i] 
-  cont.SetCtrlPtsByRadius(center, radius)
-  cont.SetCtrlPtsByRadius(center, radius)
+  cont.set_control_points_by_radius(center, radius)
 
-  # Creat contour.
-  cont.Create()
-  print (">>> Contour center: " + str(cont.Center()))
+  # Creat contour. This is not needed for circle contour.
+  cont.create()
+  print (">>> Contour center: " + str(cont.center()))
+  print (">>> Contour area: " + str(cont.area()))
 
   # Get countour PolyData
   pname = name + 'p'
-  cont.GetPolyData(pname)
+  cont.get_polydata(pname)
   #c.GetPolyData('ctp')
   act = vis.pRepos(ren, pname)
 
