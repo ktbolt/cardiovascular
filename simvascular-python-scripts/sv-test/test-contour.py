@@ -88,6 +88,8 @@ class Contour(object):
         #self.sv_object = None
 
     def get_area(self):
+        emsg =  "   get_area: {0}"
+        umsg = "  get_area: Unexpected exception: {0}"
         self.logger.info("Testing Contour: Get area.")
         contour = self.sv_object 
 
@@ -97,8 +99,10 @@ class Contour(object):
             area = contour.area()
             self.logger.info("   Area: {0:g}".format(area))
             self.logger.info("   Pass")
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error));
         except Exception as error:
-            self.logger.info("   get_area: {0}".format(error))
+            self.logger.info(umsg.format(error));
 
     def get_perimeter(self):
         self.logger.info("Testing Contour: Get perimeter.")
@@ -208,6 +212,8 @@ class CircleContour(Contour):
         Test the set_control_points_by_radius function. This is a general function
         used by all of the Contour objects.
         """
+        emsg =  "   set_control_points_by_radius: {0}"
+        umsg = "  set_control_points_by_radius: Unexpected exception: {0}"
         self.logger.info("Testing CircleContour: Set control points by radius")
         contour = self.sv_object 
 
@@ -217,43 +223,55 @@ class CircleContour(Contour):
             contour.set_control_points_by_radius(self.center, self.radius)
             contour.create()
             self.logger.info("   Contour center: {0:s}".format(str(contour.center()))) 
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points_by_radius: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong number of arguments".format(test_num))
         try:
             contour.set_control_points_by_radius(self.center)
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points_by_radius: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong argument type".format(test_num))
         try:
             contour.set_control_points_by_radius(self.radius, self.center)
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points_by_radius: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong type in center".format(test_num))
         try:
             contour.set_control_points_by_radius([1.0,0.0,'b'], 1.0)
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points_by_radius: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong type for radius".format(test_num))
         try:
             contour.set_control_points_by_radius(self.center, 'b')
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points_by_radius: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Radius < 0.0".format(test_num))
         try:
             contour.set_control_points_by_radius(self.center, -1.0)
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points_by_radius: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
     #_def set_control_points_by_radius(self)
 
@@ -261,10 +279,13 @@ class CircleContour(Contour):
         """
         Test the Circle Contour set_control_pts function.
         """
-        contour = self.sv_object 
+        # Exception messages.
+        emsg =  "   set_control_points: {0}"
+        umsg = "  set_control_points: Unexpected exception: {0}"
         self.logger.info("\n")
         self.logger.info("Testing CircleContour: Set control points")
 
+        contour = self.sv_object 
         test_num = 1
         self.logger.info("{0}. Correct arguments".format(test_num))
         try:
@@ -274,36 +295,46 @@ class CircleContour(Contour):
             contour.set_control_points(control_pts)
             contour.create()
             self.logger.info("   Contour center: {0:s}".format(str(contour.center()))) 
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_point: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong number of arguments".format(test_num))
         try:
             contour.set_control_points(1.0, 2.0)
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong argument type".format(test_num))
         try:
             contour.set_control_points(1.0)
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong type in list of control points".format(test_num))
         try:
             contour.set_control_points([ [1.0,0.0,0.0], [-1, 'b', 'c'] ])
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
         test_num += 1
         self.logger.info("{0}. Wrong number of control points".format(test_num))
         try:
             contour.set_control_points([ [1.0,0.0,0.0] ])
+        except sv.contour.ContourException as error:
+            self.logger.info(emsg.format(error))
         except Exception as error:
-            self.logger.info("   set_control_points: {0}".format(error))
+            self.logger.error(umsg.format(error))
 
     #_def set_control_points(self)
 
