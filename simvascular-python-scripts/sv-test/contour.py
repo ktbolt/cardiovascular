@@ -15,18 +15,23 @@ path_control_points.append([3.0, 3.0, 0.0])
 path_control_points.append([4.0, 4.0, 0.0])
 path_control_points.append([5.0, 5.0, 0.0])
 
-path = sv.Path.pyPath()
-path.NewObject(path_name)
+path = sv.path.Path()
+path.new_object(path_name)
 
 ## Set path points.
 for i in range(0,len(path_control_points)):
-  path.AddPoint(path_control_points[i])
+  path.add_control_point(path_control_points[i])
 
 ## Create path geometry?
-path.CreatePath()
-points = path.GetPathPosPts()
-control_points = path.GetControlPts()
-pos_pts = path.GetPathPosPts()
+path.create()
+points = path.get_curve_points()
+control_points = path.get_control_points()
+
+# Get path PolyData
+path_pd_name = path_name + 'pd'
+path.get_polydata(path_pd_name)
+vis.pRepos(ren, path_pd_name)
+
 
 #----------------------------------------------------
 #                  Create Contours 
@@ -46,8 +51,8 @@ for i in range(0,len(path_control_points)):
   #
   min_d = 1e9
   min_i = -1
-  for j in range(0,len(pos_pts)):
-      pos = pos_pts[j]
+  for j in range(0,len(points)):
+      pos = points[j]
       d = sum([(pt[k]-pos[k])*(pt[k]-pos[k]) for k in range(3)])
       if (d < min_d):
           min_d = d
