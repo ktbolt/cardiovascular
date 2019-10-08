@@ -50,18 +50,17 @@ class Path(object):
             dy = 1.0
             num_path_control_pts = 5;
             self.path_control_points = [ [0.0, i*dy, 0.0] for i in range(0,num_path_control_pts)]
-            self.sv_object = sv.Path.pyPath()
-            self.sv_object.NewObject(self.name)
+            self.sv_object = sv.path.Path()
+            self.sv_object.new_object(self.name)
 
             # Set path points.
             for i in range(0,len(self.path_control_points)):
-                self.sv_object.AddPoint(self.path_control_points[i])
+                self.sv_object.add_control_point(self.path_control_points[i])
 
             # Create path geometry.
-            self.sv_object.CreatePath()
-            points = self.sv_object.GetPathPosPts()
-            control_points = self.sv_object.GetControlPts()
-            pos_pts = self.sv_object.GetPathPosPts()
+            self.sv_object.create()
+            points = self.sv_object.get_curve_points()
+            control_points = self.sv_object.get_control_points()
         except Exception as error:
             self.logger.error("create_sv_object: {0}".format(error))
 
