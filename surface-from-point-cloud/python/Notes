@@ -1,0 +1,5 @@
+
+python3 vtkReconstructSurface.py --path ./ --file shapeSnakeDiaSmooth.mat
+
+
+
