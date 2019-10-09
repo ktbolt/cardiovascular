@@ -443,7 +443,7 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
     auto dataName = m_Graphics->GetDataName();
 
     // Extract a slice from the mesh.
-    mesh->SlicePlane(index, cellID, dataName, pos, tangent);
+    mesh->SlicePlane(index, inscribedRadius, cellID, dataName, pos, tangent);
   }
 
   this->Interactor->GetRenderWindow()->Render();

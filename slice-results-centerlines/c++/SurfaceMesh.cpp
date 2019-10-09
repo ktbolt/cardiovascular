@@ -123,7 +123,7 @@ void SurfaceMesh::AddGeometry(Graphics& graphics)
   auto geom = graphics.CreateGeometry(m_Polydata);
   geom->GetProperty()->SetColor(0.8, 0.0, 0.0);
   //geom->GetProperty()->SetRepresentationToWireframe();
-  //geom->GetProperty()->EdgeVisibilityOn();
+  geom->GetProperty()->EdgeVisibilityOn();
   geom->GetProperty()->SetColor(0.8, 0.8, 0.8);
   geom->GetProperty()->SetOpacity(0.5);
   //geom->GetProperty()->SetRepresentationToWireframe();
@@ -138,7 +138,7 @@ void SurfaceMesh::AddGeometry(Graphics& graphics)
 //------------
 // Slice the surface mesh with a plane.
 //
-void SurfaceMesh::SlicePlane(int index, int cellID, std::string dataName, double pos[3], double normal[3]) 
+void SurfaceMesh::SlicePlane(int index, double radius, int cellID, std::string dataName, double pos[3], double normal[3]) 
 {
   std::cout << "---------- Slice Surface ----------" << std::endl;
 
@@ -177,7 +177,7 @@ void SurfaceMesh::SlicePlane(int index, int cellID, std::string dataName, double
   m_Slices.push_back(slice);
 
   // Calculate the area of the slice.
-  SliceArea(lines, slice);
+  SliceArea(radius, lines, slice);
 
   // Interpolate the surface data to the slice points.
   Interpolate(dataName, lines, slice);
@@ -417,7 +417,7 @@ void SurfaceMesh::Interpolate(std::string dataName, vtkPolyData* lines, Slice* s
 //
 // Compute the area of a surface slice.
 //
-void SurfaceMesh::SliceArea(vtkPolyData* lines, Slice* slice) 
+void SurfaceMesh::SliceArea(double incribedRadius, vtkPolyData* lines, Slice* slice) 
 {
   auto points = lines->GetPoints();
   vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
@@ -432,6 +432,30 @@ void SurfaceMesh::SliceArea(vtkPolyData* lines, Slice* slice)
   std::cout <<  "Area:   " << slice->area << std::endl;
   auto radius = sqrt(slice->area/M_PI);
   std::cout <<  "Area equivalent radius:   " << radius << std::endl;
+  std::cout <<  "Inscribed radius:   " << incribedRadius << std::endl;
+  double pdiff = 100.0 * fabs(radius - incribedRadius) / radius;
+  std::cout <<  "Percent differene:   " << pdiff << std::endl;
+
+  auto numPoints = lines->GetNumberOfPoints();
+  double center[3] = {slice->m_CenterlinePosition[0], slice->m_CenterlinePosition[1], slice->m_CenterlinePosition[2]};
+  double min_r = 1e9; 
+  double max_r = -1e9; 
+  double avg_r = 0.0; 
+  for (int i = 0; i < numPoints; i++) { 
+      double pt[3];
+      points->GetPoint(i, pt);
+      double dx = center[0] - pt[0];
+      double dy = center[1] - pt[1];
+      double dz = center[2] - pt[2];
+      double r = sqrt(dx*dx + dy*dy + dz*dz);
+      avg_r += r; 
+      if (r > max_r) max_r = r;
+      if (r < min_r) min_r = r;
+  }
+  avg_r /= numPoints;
+  std::cout <<  "Min radius: " << min_r << std::endl;
+  std::cout <<  "Max radius: " << max_r << std::endl;
+  std::cout <<  "Avg radius: " << avg_r << std::endl;
 
   // Show the cross section area.
   //
