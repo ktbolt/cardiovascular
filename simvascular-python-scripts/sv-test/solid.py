@@ -3,13 +3,18 @@ import sv_vis as vis
 
 import os
 
-#print(dir(sv))
 #help(sv.solid)
+print(dir(sv))
+#help(sv.solid.SolidModel)
+#help(sv.SolidParaSolid)
 
 # Set mesh kernel
 sv.solid.set_kernel('PolyData')
 
+solid = sv.solid.SolidModel()
+solid.new_object('cyl')
+solid.set_vtk_polydata('cap')
 
-#help(sv.SolidParaSolid)
+
 
 
