@@ -1,10 +1,10 @@
 import sv
-import sv_vis as vis
+#import sv_vis as vis
 import os
 import sys
 
 ## Create a render and window to display geometry.
-renderer, render_window = vis.initRen('demo')
+#renderer, render_window = vis.initRen('demo')
 
 surf_name = "shapeSnakeDiaSmooth"
 surf_file_name = surf_name + ".vtp"
@@ -92,6 +92,6 @@ msh.WriteMesh(mesh_file_name)
 msh.GetUnstructuredGrid('ug')
 sv.Repository.WriteVtkUnstructuredGrid("ug", "ascii", mesh_file_name)
 
-vis.interact(renderer, 1500000000)
+#vis.interact(renderer, 1500000000)
 
 
