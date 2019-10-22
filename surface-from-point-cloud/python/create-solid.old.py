@@ -83,6 +83,9 @@ msh.SetMeshOptions('VolumeMeshFlag',[1])
 #msh.SetMeshOptions('GlobalEdgeSize',[0.75])
 #msh.SetMeshOptions('MeshWallFirst',[1])
 msh.GenerateMesh()
+#face_ids = msh.GetFaceIds()
+#print("Face IDs: " + str(face_ids))
+#msh.GetFacePolyData("mesh_face_1", 1)
 
 # Save mesh to a file.
 mesh_name = capped_surf_name + "_mesh"
@@ -91,6 +94,23 @@ print("Write mesh to: " + mesh_file_name)
 msh.WriteMesh(mesh_file_name)
 msh.GetUnstructuredGrid('ug')
 sv.Repository.WriteVtkUnstructuredGrid("ug", "ascii", mesh_file_name)
+
+## Write mesh boundary faces to .vtk file.
+#
+msh.GetBoundaryFaces(30.0)
+mesh_surf = mesh_name + "_surf" 
+msh.GetPolyData(mesh_surf)
+mesh_surf_file = os.getcwd() + "/" + mesh_surf + ".vtk"
+sv.Repository.WriteVtkPolyData(mesh_surf, 'ascii', mesh_surf_file)
+
+## Write each face to a .vtk file.
+#
+for i in range(1,4):
+    mesh_face = mesh_name + "_face_" + str(i) 
+    mesh_face_pd = mesh_face + "_pd" 
+    msh.GetFacePolyData(mesh_face_pd, i)
+    mesh_face_file = os.getcwd() + "/" + mesh_face + ".vtk"
+    sv.Repository.WriteVtkPolyData(mesh_face_pd, 'ascii', mesh_face_file)
 
 #vis.interact(renderer, 1500000000)
 
