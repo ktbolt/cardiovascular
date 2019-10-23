@@ -40,7 +40,6 @@ static char* MODULE_NAME = "cos_module";
 
 PyDoc_STRVAR(module_doc, "cos_module module functions.");
 
-
 //----------------
 // Module methods
 //----------------
