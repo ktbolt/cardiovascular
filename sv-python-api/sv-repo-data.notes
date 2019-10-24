@@ -1,0 +1,225 @@
+
+=================================================================================== 
+ RepositoryDataT
+=================================================================================== 
+
+typedef enum {
+  RDT_INVALID = -1,
+  OBJ_NOT_FOUND_T,
+  POLY_DATA_T,
+  STRUCTURED_PTS_T,
+  UNSTRUCTURED_GRID_T,
+  PATH_T,
+  PATHGROUP_T,
+  SOLID_MODEL_T,
+  MESH_T,
+  TEMPORALDATASET_T,
+  ADAPTOR_T,
+  CONTOUR_T
+} RepositoryDataT;
+
+
+=================================================================================== 
+ cvRepositoryData 
+=================================================================================== 
+
+class SV_EXPORT_REPOSITORY cvRepositoryData {
+
+  public:
+
+  private:
+      RepositoryDataT type_;
+      char name_[RD_MAX_NAME_LEN];
+      int lockCnt_;
+      Tcl_HashTable labels_;
+
+};
+
+
+=================================================================================== 
+ cvDataSet 
+=================================================================================== 
+
+class SV_EXPORT_REPOSITORY cvDataObject : public cvRepositoryData {
+
+  public:
+      cvDataObject( RepositoryDataT type );
+      virtual ~cvDataObject();
+
+      vtkDataObject *GetVtkPtr() { return data_; };
+      virtual int GetMemoryUsage();
+
+  protected:
+      vtkDataObject *data_;
+
+};
+
+
+=================================================================================== 
+ cvDataSet 
+=================================================================================== 
+- this class is tiny.
+
+class SV_EXPORT_REPOSITORY cvDataSet : public cvDataObject {
+
+    public:
+      cvDataSet( RepositoryDataT type );
+      ~cvDataSet();
+
+    protected:
+      void ShallowCopy( vtkDataSet *src );
+};
+
+=================================================================================== 
+ cvSolidModel 
+=================================================================================== 
+Code/Source/sv/Model/SolidModel/sv_SolidModel.h
+------------------------------------------------
+
+class SV_EXPORT_SOLID cvSolidModel : public cvRepositoryData {
+}
+
+=================================================================================== 
+ cvPolyData 
+=================================================================================== 
+
+- inherits from vtkDataObject: cvDataSet->cvDataObject->vtkDataObject *data_
+
+class SV_EXPORT_REPOSITORY cvPolyData : public cvDataSet {
+
+}
+
+=================================================================================== 
+ PathElement 
+=================================================================================== 
+Code/Source/sv3/Path/sv3_PathElement.h
+--------------------------------------
+
+class SV_EXPORT_PATH PathElement : public cvRepositoryData
+
+  public:
+      std::vector<std::array<double,3> > GetControlPoints();
+
+  protected:
+      std::vector<svControlPoint> m_ControlPoints;
+      std::vector<PathPoint> m_PathPoints;
+      double m_Spacing;
+      CalculationMethod m_Method;
+      int m_CalculationNumber;
+}
+
+=================================================================================== 
+ PathGroup 
+=================================================================================== 
+
+class SV_EXPORT_PATH PathGroup : public cvRepositoryData
+{
+  public:
+      PathElement* GetPathElement(unsigned int t = 0) const;
+
+  protected:
+
+    std::vector< sv3::PathElement* > m_PathElementSet;
+}
+
+=================================================================================== 
+ Contour 
+=================================================================================== 
+
+class SV_EXPORT_SEGMENTATION Contour : public cvRepositoryData
+{
+  public:
+      struct svLSParam { double ctrx; double ctry; double ctrz; ... }
+
+  protected:
+      vtkPlane * m_vtkPlaneGeometry;
+      std::array<double,3> m_CenterPoint;
+      std::array<double,3> m_ScalingPoint;
+      int m_ControlPointSelectedIndex;
+      int m_MinControlPointNumber;
+      int m_MaxControlPointNumber;
+      std::vector<std::array<double,3> > m_ControlPoints;
+      std::vector<std::array<double,3> > m_ContourPoints;
+}
+
+--------------
+circleContour
+--------------
+class SV_EXPORT_SEGMENTATION circleContour : public Contour
+{
+  public:
+    virtual circleContour* Clone() override;
+    virtual std::string GetClassName() override;
+    virtual void SetControlPoint(int index, std::array<double,3> point) override;
+
+  protected:
+    no members
+}
+
+----------------
+levelSetContour
+----------------
+class SV_EXPORT_SEGMENTATION levelSetContour : public Contour
+{
+  public:
+
+  protected:
+    svLSParam* m_paras;
+    bool m_forceClosed;
+}
+
+---------------
+ContourPolygon
+---------------
+class SV_EXPORT_SEGMENTATION ContourPolygon : public Contour
+{
+  public:
+  protected:
+    no members
+}
+
+-----------------
+thresholdContour
+-----------------
+class SV_EXPORT_SEGMENTATION thresholdContour : public Contour
+{
+  public:
+
+  protected:
+    double m_thresholdValue;
+    bool m_forceClosed;
+}
+
+
+=================================================================================== 
+ cvFactoryRegistrar 
+=================================================================================== 
+Code/Source/sv/Utils/sv_FactoryRegistrar.h
+------------------------------------------
+
+class SV_EXPORT_UTILS cvFactoryRegistrar {
+  public:
+    cvFactoryRegistrar();
+
+    FactoryMethodPtr GetFactoryMethodPtr( int factory_type );
+    void SetFactoryMethodPtr( int factory_type, FactoryMethodPtr factory_ptr );
+
+    // Returns a pointer to whatever you've created with a factory
+    void* UseFactoryMethod( int factory_type );
+
+  protected:
+    FactoryMethodPtr factoryMethodPtrs[CV_MAX_FACTORY_METHOD_PTRS];
+
+};
+
+-------
+used in
+-------
+./sv/Mesh/AdaptObject/sv_AdaptObject.h:    static cvFactoryRegistrar gRegistrar;
+./sv/Mesh/AdaptObject/sv_adapt_init_py.h:  cvFactoryRegistrar* registrar;
+./sv/Model/SolidModel/sv_SolidModel.h:     static cvFactoryRegistrar gRegistrar;
+./sv/Model/SolidModel/sv_solid_init_py.h:  cvFactoryRegistrar* registrar;
+./sv3/Segmentation/sv3_Contour_init_py.h:  cvFactoryRegistrar* registrar;
+./sv3/Segmentation/sv3_Contour.h:          static cvFactoryRegistrar gRegistrar;
+
+

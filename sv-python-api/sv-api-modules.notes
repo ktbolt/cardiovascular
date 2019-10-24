@@ -1,0 +1,67 @@
+
+=================================================================================== 
+ contour module
+=================================================================================== 
+name: "contour"
+
+extern "C" SV_EXPORT_SEGMENTATION typedef struct {
+  PyObject_HEAD
+  sv3::Contour* geom;
+} pyContour;
+
+=================================================================================== 
+ geometry module
+=================================================================================== 
+name: "geometry"
+
+uses cvPolyData only through repository.
+
+
+=================================================================================== 
+ mesh module
+=================================================================================== 
+name: "mesh"
+
+extern "C" SV_EXPORT_MESH typedef struct {
+  PyObject_HEAD
+  cvMeshObject* geom;
+} pyMeshObject;
+
+
+=================================================================================== 
+ path module
+=================================================================================== 
+name: "path"
+
+extern "C" SV_EXPORT_PATH typedef struct {
+  PyObject_HEAD
+  sv3::PathElement* geom;
+} pyPath;
+
+static PyTypeObject pyPathType = {
+  "path.Path",               /* tp_name */
+  sizeof(pyPath),            /* tp_basicsize */
+}
+
+static PyObject*
+sv4Path_get_polydata(pyPath* self, PyObject* args){}
+
+=================================================================================== 
+ solid module
+=================================================================================== 
+name: "solid"
+
+typedef struct {
+    PyObject_HEAD
+    cvSolidModel* geom;
+} pySolidModel;
+
+  
+static PyTypeObject pySolidModelType = {
+  "solid.SolidModel",        /* tp_name */
+  sizeof(pySolidModel),      /* tp_basicsize */
+}
+
+static PyObject *
+SolidModel_get_model(pySolidModel* self, PyObject* args) {}
+
