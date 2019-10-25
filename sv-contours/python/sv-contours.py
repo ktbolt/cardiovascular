@@ -91,7 +91,7 @@ def read_ctgr_file(args, logger):
             #logger.info("   Contour id: %s" % id)
             
             for control_pts in contour_t.iter('contour_points'):
-                #logger.info("      Control points ")
+                #logger.info("      Contour points ")
                 for point in control_pts.iter('point'):
                     x = point.attrib['x']
                     y = point.attrib['y']

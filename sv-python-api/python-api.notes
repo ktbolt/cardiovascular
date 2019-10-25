@@ -1,0 +1,11 @@
+
+===================================================================================================================
+                                           PyMODINIT_FUNC
+===================================================================================================================
+PyMODINIT_FUNC does 3 things implicitly when stated as the function return type:
+
+It implicitly sets the return type of the function as PyObject*.
+It declares any special linkages.
+It declares the function as extern “C.” In case you’re using C++, it tells the C++ compiler not to do name-mangling on the symbols.
+
+
