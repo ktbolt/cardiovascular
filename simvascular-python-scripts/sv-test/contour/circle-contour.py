@@ -32,7 +32,6 @@ path_pd_name = path_name + 'pd'
 path.get_polydata(path_pd_name)
 vis.pRepos(ren, path_pd_name)
 
-
 #----------------------------------------------------
 #                  Create Contours 
 #----------------------------------------------------
@@ -45,6 +44,7 @@ for i in range(0,len(path_control_points)):
   print ("Create a circle Contour: " + name)
   sv.contour.set_contour_kernel('Circle')
   cont = sv.contour.Contour()
+  print(cont)
   pt = control_points[i] 
   ## Find index of the point in pos_pts[] corresponding
   #  to the ith control point.

@@ -4,7 +4,7 @@
 int Shape::nshapes = 0;
 
 void
-Shape::move(double dx, double dy)
+Shape::Move(double dx, double dy)
 {
 }
 
