@@ -253,6 +253,7 @@ void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSele
    //
    vtkGenericCell* cell = vtkGenericCell::New();
    polydata->GetCell(cellID, cell);
+   auto points = cell->GetPoints();
    auto numPts = cell->GetNumberOfPoints();
    auto nodeIDs = vtkIntArray::SafeDownCast(polydata->GetPointData()->GetArray("GlobalNodeID"));
    auto elemIDs = vtkIntArray::SafeDownCast(polydata->GetCellData()->GetArray("GlobalElementID"));
@@ -262,8 +263,13 @@ void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSele
    std::cout << "  Number of cell points: " << numPts << std::endl;
    std::cout << "  Connectivity: " << std::endl;
    std::cout << "    Indexes: ";
+   double pt[3], center[3] = {0.0, 0.0, 0.0};
    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
      auto id = cell->PointIds->GetId(pointInd);
+     points->GetPoint(pointInd, pt);
+     center[0] += pt[0];
+     center[1] += pt[1];
+     center[2] += pt[2];
      std::cout << id << "  ";
    }
    std::cout << std::endl;
@@ -272,6 +278,21 @@ void MouseInteractorStyle::SelectSurfaceMesh(int cellID, vtkSmartPointer<vtkSele
      auto id = cell->PointIds->GetId(pointInd);
      auto nodeID = nodeIDs->GetValue(id);
      std::cout << nodeID << "  ";
+   }
+   std::cout << std::endl;
+
+   std::cout << "    Center dist: ";
+   center[0] /= numPts;
+   center[1] /= numPts;
+   center[2] /= numPts;
+   for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
+     auto id = cell->PointIds->GetId(pointInd);
+     points->GetPoint(pointInd, pt);
+     auto dx = center[0] - pt[0];
+     auto dy = center[1] - pt[1];
+     auto dz = center[2] - pt[2];
+     auto r = sqrt(dx*dx + dy*dy + dz*dz);
+     std::cout << r << "  ";
    }
    std::cout << std::endl;
 
