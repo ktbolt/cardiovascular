@@ -22,6 +22,13 @@ sv.Solid.SetKernel('PolyData')
 
 ## Read inner aorta solid model.
 inner_model_name = 'aorta-inner'
+file_name = "/Users/parkerda/SimVascular/Demo/Models/aorta-inner.vtp"
+
+if not os.path.exists(file_name):
+    print("ERROR: File does not exist.")
+    sys.exit(1)
+print("File exists.")
+
 solid = sv.Solid.pySolidModel()
 solid.ReadNative(inner_model_name, model_dir+os.path.sep+inner_model_name+'.vtp')
 
