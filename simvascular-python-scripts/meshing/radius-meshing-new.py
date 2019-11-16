@@ -91,7 +91,7 @@ def get_face_center_ids(model_polydata_name, face_centers):
 
     return face_point_ids 
 
-def get_face_center(solid, face_id):
+def get_face_center(solid, face_id, color=[1,0,0]):
     '''
     Get the center of a solid model face.
     '''
@@ -107,7 +107,7 @@ def get_face_center(solid, face_id):
     # Show the face.
     face_actor = sv_vis.pRepos(renderer, model_face)[1]
     #sv_vis.polyDisplayWireframe(renderer, model_face_2)
-    face_actor.GetProperty().SetColor(1,0,1)
+    face_actor.GetProperty().SetColor(color[0],color[1],color[2])
     return face_center 
 
 def read_solid_model(model_name):
@@ -122,7 +122,8 @@ def read_solid_model(model_name):
     print ("Model face IDs: " + str(solid.get_face_ids()))
     model_polydata_name = model_name + "_pd"
     solid.get_polydata(model_polydata_name)
-    sv_vis.pRepos(renderer, model_polydata_name)
+    model_actor = sv_vis.pRepos(renderer, model_polydata_name)[1]
+    model_actor.GetProperty().SetColor(0.8, 0.8, 0.8)
     #sv_vis.polyDisplayWireframe(renderer, model_polydata)
     sv_vis.polyDisplayPoints(renderer, model_polydata_name)
     return solid, model_polydata_name, solid_file_name 
@@ -137,15 +138,21 @@ renderer, render_window = sv_vis.initRen('mesh-mess')
 #
 model_name = "aorta-outer"
 face_ids = [2, 3]
+#
+model_name = "demo"
+face_ids = [2, 3, 4]
 
 solid, model_polydata_name, solid_file_name = read_solid_model(model_name)
 
 ## Get cap faces centers.
 #
+colors = [ [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1] ]
 face_centers = []
-for face_id in face_ids:
-    face_center = get_face_center(solid, face_id)
+for i,face_id in enumerate(face_ids):
+    color = colors[i]
+    face_center = get_face_center(solid, face_id, color)
     face_centers.append(face_center)
+    print("Face {0:d}  color: {1:s}".format(face_id, str(color)))
 
 ## Find point IDs for face centers.
 #
