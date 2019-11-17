@@ -19,6 +19,10 @@ def generate_mesh(model_name, solid_file_name, dist_name):
     mesh.new_object('mesh')
     mesh.load_model(solid_file_name)
 
+    mesh.get_boundary_faces(80)
+    face_info = mesh.get_model_face_info()
+    print ("Mesh model face info: " + str(face_info))
+
     edge_size = 0.4733
 
     mesh.new_mesh()
@@ -51,13 +55,17 @@ def calculate_centerlines(model_name, model_polydata_name, source_ids, target_id
     The distance to centerlines is stored in polydata referenced by 'dist_name'.
     '''
     lines_name = model_name + "_lines"
+    sep_lines_name = model_name + "_sep_lines"
     voronoi_name = model_name + "_voronoi"
     dist_name = model_name + "_distance"
     sv.vmtk_utils.centerlines(model_polydata_name, source_ids, target_ids, lines_name, voronoi_name)
-    sv.vmtk_utils.distance_to_centerlines(model_polydata_name, lines_name, dist_name)
+    sv.vmtk_utils.separate_centerlines(lines_name, sep_lines_name)
+    sv.vmtk_utils.distance_to_centerlines(model_polydata_name, sep_lines_name, dist_name)
     # Display the centerlines.
-    lines_actor = sv_vis.pRepos(renderer, lines_name)[1]
+    lines_actor = sv_vis.pRepos(renderer, sep_lines_name)[1]
     lines_actor.GetProperty().SetColor(0,1,0)
+    lines_file_name = lines_name + '.vtp' 
+    sv.repository.write_vtk_polydata(sep_lines_name, "ascii", lines_file_name)
 
     dist_pd = sv.repository.export_to_vtk(dist_name)
     dist_array = dist_pd.GetPointData().GetArray('DistanceToCenterlines')
@@ -137,10 +145,12 @@ renderer, render_window = sv_vis.initRen('mesh-mess')
 # are targets for the centerline calculation.
 #
 model_name = "aorta-outer"
-face_ids = [2, 3]
+
+if model_name == "aorta-outer":
+    face_ids = [2, 3]
 #
-model_name = "demo"
-face_ids = [2, 3, 4]
+elif model_name == "demo":
+    face_ids = [2, 3, 4]
 
 solid, model_polydata_name, solid_file_name = read_solid_model(model_name)
 
@@ -154,19 +164,42 @@ for i,face_id in enumerate(face_ids):
     face_centers.append(face_center)
     print("Face {0:d}  color: {1:s}".format(face_id, str(color)))
 
+## Display a sphere at the point with a zero distance
+#
+model_polydata = sv.repository.export_to_vtk(model_polydata_name)
+points = model_polydata.GetPoints()
+pt = [0.0, 0.0, 0.0]
+id = 2554 
+points.GetPoint(id, pt)
+sphere = vtk.vtkSphereSource()
+sphere.SetCenter(pt[0], pt[1], pt[2])
+sphere.SetRadius(0.05)
+sphere.Update()
+sphere_name = "sphere"
+sv.repository.import_vtk_polydata(sphere.GetOutput(), sphere_name)
+sphere_actor = sv_vis.pRepos(renderer, sphere_name)[1]
+sphere_actor.GetProperty().SetColor(1,1,1)
+sv_vis.polyDisplayWireframe(renderer, sphere_name)
+
 ## Find point IDs for face centers.
 #
 face_point_ids = get_face_center_ids(model_polydata_name, face_centers)
+print("Face point IDs: {0:s}".format(str(face_point_ids)))
 
 ## Calculate centerlines.
 #
 source_ids = face_point_ids[0:1]
 target_ids = face_point_ids[1:] 
+print("Source IDs: {0:s}".format(str(source_ids)))
+print("Target IDs: {0:s}".format(str(target_ids)))
 dist_name = calculate_centerlines(model_name, model_polydata_name, source_ids, target_ids)
 
 ## Generate the mesh for the solid model. 
 #
-generate_mesh(model_name, solid_file_name, dist_name)
+try:
+    generate_mesh(model_name, solid_file_name, dist_name)
+except:
+    pass
 
 ## Display the graphics.
 sv_vis.interact(renderer, sys.maxsize)
