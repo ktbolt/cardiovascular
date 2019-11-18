@@ -28,33 +28,36 @@ def display_sphere(model_polydata_name, id):
     sphere_actor.GetProperty().SetColor(1,1,1)
     sv_vis.polyDisplayWireframe(renderer, sphere_name)
 
-def generate_mesh(model_name, solid_file_name, dist_name):
+def generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based=False):
     '''
     Generate a mesh from a solid model.
     '''
-    sv.Mesh.SetKernel('TetGen')
-    mesh = sv.Mesh.Mesh()
+    sv.MeshObject.SetKernel('TetGen')
+    mesh = sv.MeshObject.pyMeshObject()
     mesh.NewObject('mesh')
     mesh.LoadModel(solid_file_name)
 
-    mesh.GetBoundaryFaces(80)
-    face_info = mesh.GetModelFaceInfo()
-    print ("Mesh model face info: " + str(face_info))
-
     mesh.NewMesh()
-    mesh.SetMeshingOptions('GlobalEdgeSize', [edge_size])
-    mesh.SetMeshingOptions('SurfaceMeshFlag',[1])
-    mesh.SetMeshingOptions('VolumeMeshFlag',[1])
-    mesh.SetMeshingOptions('MeshWallFirst',[1])
-    mesh.SetMeshingOptions('Optimization',[3])
-    mesh.SetMeshingOptions('QualityRatio',[1.4])
-    mesh.SetMeshingOptions('UseMMG',[1])
-    mesh.SetMeshingOptions('NoBisect',[1])
-    mesh.SetMeshingOptions('setWalls',[1])
+    mesh.SetMeshOptions('GlobalEdgeSize', [edge_size])
+    mesh.SetMeshOptions('SurfaceMeshFlag',[1])
+    mesh.SetMeshOptions('VolumeMeshFlag',[1])
+    mesh.SetMeshOptions('MeshWallFirst',[1])
+    mesh.SetMeshOptions('Optimization',[3])
+    mesh.SetMeshOptions('QualityRatio',[1.4])
+    mesh.SetMeshOptions('UseMMG',[1])
+    mesh.SetMeshOptions('NoBisect',[1])
 
-    # Set the centerline distance array for the mesh.
-    #mesh.set_vtk_polydata(dist_name)
-    #mesh.set_size_function_based_mesh(edge_size, "DistanceToCenterlines")
+    # Set walls if not doing fast meshing.
+    #mesh.SetWalls(walls)
+
+    if radius_based:
+        #cl_name = "mesh_centerlines"
+        #dist_name = "mesh_dist"
+        #mesh.Centerlines(cl_name, dist_name)
+        # Set the centerline distance array for the mesh.
+        mesh.SetVtkPolyData(dist_name)
+        mesh.SetSizeFunctionBasedMesh(edge_size, "DistanceToCenterlines")
+        mesh.SetMeshOptions('UseMMG',[0])
 
     mesh.GenerateMesh()
 
@@ -150,6 +153,14 @@ def read_solid_model(model_name):
     model_actor.GetProperty().SetColor(0.8, 0.8, 0.8)
     #sv_vis.polyDisplayWireframe(renderer, model_polydata)
     sv_vis.polyDisplayPoints(renderer, model_polydata_name)
+
+    '''
+    solid1 = sv.Solid.pySolidModel()
+    solid1.ReadNative(model_name+"_1", solid_file_name)
+    solid1.DeleteFaces([2,3])
+    print ("Model1 face IDs: " + str(solid1.GetFaceIds()))
+    '''
+
     return solid, model_polydata_name, solid_file_name 
 
 ## Create a render and window to display geometry.
@@ -161,18 +172,33 @@ renderer, render_window = sv_vis.initRen('mesh-mess')
 # are targets for the centerline calculation.
 #
 model_name = "aorta-outer"
+model_name = "capped"
+model_name = "open"
 model_name = "aorta-small"
 
 if model_name == "aorta-outer":
     edge_size = 0.4733
     face_ids = [2, 3]
+    walls = [1]
 #
 elif model_name == "demo":
     face_ids = [2, 3, 4]
+    walls = [1]
 
 elif model_name == "aorta-small":
     edge_size = 0.4431
     face_ids = [2, 3]
+    walls = [1]
+
+elif model_name == "capped":
+    edge_size = 0.4431
+    face_ids = [2, 3]
+    walls = [1]
+
+elif model_name == "open":
+    edge_size = 0.4431
+    face_ids = []
+    walls = [1]
 
 solid, model_polydata_name, solid_file_name = read_solid_model(model_name)
 
@@ -206,10 +232,11 @@ display_sphere(model_polydata_name, id)
 
 ## Generate the mesh for the solid model. 
 #
+radius_based = True
 try:
-    generate_mesh(model_name, solid_file_name, dist_name)
-except:
-    pass
+    generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based)
+except  Exception as e:
+    print("Exception: {0:s}".format(str(e)))
 
 ## Display the graphics.
 sv_vis.interact(renderer, sys.maxsize)
