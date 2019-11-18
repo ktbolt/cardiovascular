@@ -10,6 +10,24 @@ import sys
 import vtk
 import math
 
+def display_sphere(model_polydata_name, id):
+    '''
+    Display a sphere at the given point. 
+    '''
+    model_polydata = sv.repository.export_to_vtk(model_polydata_name)
+    points = model_polydata.GetPoints()
+    pt = [0.0, 0.0, 0.0]
+    points.GetPoint(id, pt)
+    sphere = vtk.vtkSphereSource()
+    sphere.SetCenter(pt[0], pt[1], pt[2])
+    sphere.SetRadius(0.05)
+    sphere.Update()
+    sphere_name = "sphere" + str(id)
+    sv.repository.import_vtk_polydata(sphere.GetOutput(), sphere_name)
+    sphere_actor = sv_vis.pRepos(renderer, sphere_name)[1]
+    sphere_actor.GetProperty().SetColor(1,1,1)
+    sv_vis.polyDisplayWireframe(renderer, sphere_name)
+
 def generate_mesh(model_name, solid_file_name, dist_name):
     '''
     Generate a mesh from a solid model.
@@ -23,8 +41,6 @@ def generate_mesh(model_name, solid_file_name, dist_name):
     face_info = mesh.get_model_face_info()
     print ("Mesh model face info: " + str(face_info))
 
-    edge_size = 0.4733
-
     mesh.new_mesh()
     mesh.set_meshing_options('GlobalEdgeSize', [edge_size])
     mesh.set_meshing_options('SurfaceMeshFlag',[1])
@@ -34,11 +50,11 @@ def generate_mesh(model_name, solid_file_name, dist_name):
     mesh.set_meshing_options('QualityRatio',[1.4])
     mesh.set_meshing_options('UseMMG',[1])
     mesh.set_meshing_options('NoBisect',[1])
-    mesh.set_meshing_options('GlobalEdgeSize',[edge_size])
+    mesh.set_meshing_options('setWalls',[1])
 
     # Set the centerline distance array for the mesh.
-    mesh.set_vtk_polydata(dist_name)
-    mesh.set_size_function_based_mesh(edge_size, "DistanceToCenterlines")
+    #mesh.set_vtk_polydata(dist_name)
+    #mesh.set_size_function_based_mesh(edge_size, "DistanceToCenterlines")
 
     mesh.generate_mesh()
 
@@ -145,12 +161,18 @@ renderer, render_window = sv_vis.initRen('mesh-mess')
 # are targets for the centerline calculation.
 #
 model_name = "aorta-outer"
+model_name = "aorta-small"
 
 if model_name == "aorta-outer":
+    edge_size = 0.4733
     face_ids = [2, 3]
 #
 elif model_name == "demo":
     face_ids = [2, 3, 4]
+
+elif model_name == "aorta-small":
+    edge_size = 0.4431
+    face_ids = [2, 3]
 
 solid, model_polydata_name, solid_file_name = read_solid_model(model_name)
 
@@ -164,23 +186,6 @@ for i,face_id in enumerate(face_ids):
     face_centers.append(face_center)
     print("Face {0:d}  color: {1:s}".format(face_id, str(color)))
 
-## Display a sphere at the point with a zero distance
-#
-model_polydata = sv.repository.export_to_vtk(model_polydata_name)
-points = model_polydata.GetPoints()
-pt = [0.0, 0.0, 0.0]
-id = 2554 
-points.GetPoint(id, pt)
-sphere = vtk.vtkSphereSource()
-sphere.SetCenter(pt[0], pt[1], pt[2])
-sphere.SetRadius(0.05)
-sphere.Update()
-sphere_name = "sphere"
-sv.repository.import_vtk_polydata(sphere.GetOutput(), sphere_name)
-sphere_actor = sv_vis.pRepos(renderer, sphere_name)[1]
-sphere_actor.GetProperty().SetColor(1,1,1)
-sv_vis.polyDisplayWireframe(renderer, sphere_name)
-
 ## Find point IDs for face centers.
 #
 face_point_ids = get_face_center_ids(model_polydata_name, face_centers)
@@ -193,6 +198,11 @@ target_ids = face_point_ids[1:]
 print("Source IDs: {0:s}".format(str(source_ids)))
 print("Target IDs: {0:s}".format(str(target_ids)))
 dist_name = calculate_centerlines(model_name, model_polydata_name, source_ids, target_ids)
+
+## Display a sphere at the source. 
+#
+id = source_ids[0]
+display_sphere(model_polydata_name, id)
 
 ## Generate the mesh for the solid model. 
 #
