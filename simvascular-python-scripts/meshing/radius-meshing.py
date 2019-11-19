@@ -48,13 +48,13 @@ def generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based=Fa
     mesh.SetMeshOptions('NoBisect',[1])
 
     # Set walls if not doing fast meshing.
-    #mesh.SetWalls(walls)
+    mesh.SetWalls(walls)
 
     if radius_based:
-        #cl_name = "mesh_centerlines"
-        #dist_name = "mesh_dist"
-        #mesh.Centerlines(cl_name, dist_name)
-        # Set the centerline distance array for the mesh.
+        if not dist_name:
+            cl_name = "mesh_centerlines"
+            dist_name = "mesh_dist"
+            mesh.Centerlines(cl_name, dist_name)
         mesh.SetVtkPolyData(dist_name)
         mesh.SetSizeFunctionBasedMesh(edge_size, "DistanceToCenterlines")
         mesh.SetMeshOptions('UseMMG',[0])
@@ -154,13 +154,6 @@ def read_solid_model(model_name):
     #sv_vis.polyDisplayWireframe(renderer, model_polydata)
     sv_vis.polyDisplayPoints(renderer, model_polydata_name)
 
-    '''
-    solid1 = sv.Solid.pySolidModel()
-    solid1.ReadNative(model_name+"_1", solid_file_name)
-    solid1.DeleteFaces([2,3])
-    print ("Model1 face IDs: " + str(solid1.GetFaceIds()))
-    '''
-
     return solid, model_polydata_name, solid_file_name 
 
 ## Create a render and window to display geometry.
@@ -171,14 +164,15 @@ renderer, render_window = sv_vis.initRen('mesh-mess')
 # Assume the first id in 'face_ids' is the source, the rest
 # are targets for the centerline calculation.
 #
+no_caps = False
 model_name = "aorta-outer"
 model_name = "capped"
-model_name = "open"
+model_name = "no-caps"
 model_name = "aorta-small"
 
 if model_name == "aorta-outer":
     edge_size = 0.4733
-    face_ids = [2, 3]
+    face_ids = [1, 3]
     walls = [1]
 #
 elif model_name == "demo":
@@ -195,10 +189,11 @@ elif model_name == "capped":
     face_ids = [2, 3]
     walls = [1]
 
-elif model_name == "open":
+elif model_name == "no-caps":
     edge_size = 0.4431
     face_ids = []
     walls = [1]
+    no_caps = True
 
 solid, model_polydata_name, solid_file_name = read_solid_model(model_name)
 
@@ -219,16 +214,20 @@ print("Face point IDs: {0:s}".format(str(face_point_ids)))
 
 ## Calculate centerlines.
 #
-source_ids = face_point_ids[0:1]
-target_ids = face_point_ids[1:] 
-print("Source IDs: {0:s}".format(str(source_ids)))
-print("Target IDs: {0:s}".format(str(target_ids)))
-dist_name = calculate_centerlines(model_name, model_polydata_name, source_ids, target_ids)
+if not no_caps:
+    source_ids = face_point_ids[0:1]
+    target_ids = face_point_ids[1:] 
+    print("Source IDs: {0:s}".format(str(source_ids)))
+    print("Target IDs: {0:s}".format(str(target_ids)))
+    dist_name = calculate_centerlines(model_name, model_polydata_name, source_ids, target_ids)
+else:
+     dist_name = None
 
 ## Display a sphere at the source. 
 #
-id = source_ids[0]
-display_sphere(model_polydata_name, id)
+if not no_caps:
+    id = source_ids[0]
+    display_sphere(model_polydata_name, id)
 
 ## Generate the mesh for the solid model. 
 #
