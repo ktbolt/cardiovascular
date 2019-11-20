@@ -54,15 +54,20 @@ def generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based=Fa
 
     ## Radius based meshing.
     #
+    # The call to mesh.CenterlinesDistance() adds the distance data array 
+    # named "DistanceToCenterlines" to the distance polydata created
+    # for 'dist_name'.
+    #
     if radius_based:
         # Need to call SetWalls() to remove caps from the model geometry.
+        mesh.SetMeshOptions('UseMMG',[0])
         mesh.SetWalls(walls)
         cl_name = "mesh_centerlines"
         dist_name = "mesh_dist"
-        mesh.Centerlines(cl_name, dist_name)
+        mesh.CenterlinesDistance(cl_name, dist_name)
         mesh.SetVtkPolyData(dist_name)
+        # Set the mesh edge size using the "DistanceToCenterlines" array. 
         mesh.SetSizeFunctionBasedMesh(edge_size, "DistanceToCenterlines")
-        mesh.SetMeshOptions('UseMMG',[0])
     #_if radius_based
 
     mesh.GenerateMesh()
