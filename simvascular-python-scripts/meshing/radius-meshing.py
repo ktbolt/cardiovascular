@@ -32,12 +32,17 @@ def generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based=Fa
     '''
     Generate a mesh from a solid model.
     '''
+
+    ## Load a model into the mesh.
+    #
     sv.MeshObject.SetKernel('TetGen')
     mesh = sv.MeshObject.pyMeshObject()
     mesh.NewObject('mesh')
     mesh.LoadModel(solid_file_name)
-
     mesh.NewMesh()
+
+    ## Set mesh options.
+    #
     mesh.SetMeshOptions('GlobalEdgeSize', [edge_size])
     mesh.SetMeshOptions('SurfaceMeshFlag',[1])
     mesh.SetMeshOptions('VolumeMeshFlag',[1])
@@ -47,17 +52,18 @@ def generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based=Fa
     mesh.SetMeshOptions('UseMMG',[1])
     mesh.SetMeshOptions('NoBisect',[1])
 
-    # Set walls if not doing fast meshing.
-    mesh.SetWalls(walls)
-
+    ## Radius based meshing.
+    #
     if radius_based:
-        if not dist_name:
-            cl_name = "mesh_centerlines"
-            dist_name = "mesh_dist"
-            mesh.Centerlines(cl_name, dist_name)
+        # Need to call SetWalls() to remove caps from the model geometry.
+        mesh.SetWalls(walls)
+        cl_name = "mesh_centerlines"
+        dist_name = "mesh_dist"
+        mesh.Centerlines(cl_name, dist_name)
         mesh.SetVtkPolyData(dist_name)
         mesh.SetSizeFunctionBasedMesh(edge_size, "DistanceToCenterlines")
         mesh.SetMeshOptions('UseMMG',[0])
+    #_if radius_based
 
     mesh.GenerateMesh()
 
@@ -164,7 +170,7 @@ renderer, render_window = sv_vis.initRen('mesh-mess')
 # Assume the first id in 'face_ids' is the source, the rest
 # are targets for the centerline calculation.
 #
-no_caps = False
+calculate_centerlines = False
 model_name = "aorta-outer"
 model_name = "capped"
 model_name = "no-caps"
@@ -193,7 +199,6 @@ elif model_name == "no-caps":
     edge_size = 0.4431
     face_ids = []
     walls = [1]
-    no_caps = True
 
 solid, model_polydata_name, solid_file_name = read_solid_model(model_name)
 
@@ -211,12 +216,14 @@ for i,face_id in enumerate(face_ids):
 #
 face_point_ids = get_face_center_ids(model_polydata_name, face_centers)
 print("Face point IDs: {0:s}".format(str(face_point_ids)))
+source_ids = face_point_ids[0:1]
+target_ids = face_point_ids[1:] 
 
 ## Calculate centerlines.
 #
-if not no_caps:
-    source_ids = face_point_ids[0:1]
-    target_ids = face_point_ids[1:] 
+# Calculate centerlines based on the model.
+#
+if calculate_centerlines:
     print("Source IDs: {0:s}".format(str(source_ids)))
     print("Target IDs: {0:s}".format(str(target_ids)))
     dist_name = calculate_centerlines(model_name, model_polydata_name, source_ids, target_ids)
@@ -225,13 +232,13 @@ else:
 
 ## Display a sphere at the source. 
 #
-if not no_caps:
-    id = source_ids[0]
-    display_sphere(model_polydata_name, id)
+id = source_ids[0]
+display_sphere(model_polydata_name, id)
 
 ## Generate the mesh for the solid model. 
 #
 radius_based = True
+#radius_based = False
 try:
     generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based)
 except  Exception as e:
