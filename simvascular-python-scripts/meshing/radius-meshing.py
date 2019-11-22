@@ -68,10 +68,18 @@ def generate_mesh(model_name, solid_file_name, walls, dist_name, radius_based=Fa
     mesh.GenerateMesh()
 
     ## Save mesh to a file.
-    mesh_file_name = os.getcwd() + "/" + model_name + "-mesh.vtp"
-    mesh.WriteMesh(mesh_file_name)
+    #
+    #mesh.WriteMesh(mesh_file_name)
+    #mesh.GetUnstructuredGrid('ug')
+    #sv.Repository.WriteVtkUnstructuredGrid("ug", "ascii", mesh_file_name)
+    mesh_file_name = os.getcwd() + "/" + model_name + "-mesh.vtu"
     mesh.GetUnstructuredGrid('ug')
-    sv.Repository.WriteVtkUnstructuredGrid("ug", "ascii", mesh_file_name)
+    ugrid = sv.Repository.ExportToVtk('ug')
+    writer = vtk.vtkXMLUnstructuredGridWriter()
+    writer.SetFileName(mesh_file_name)
+    writer.SetInputData(ugrid)
+    writer.Update()
+    writer.Write()
 
 def calculate_centerlines(model_name, model_polydata_name, source_ids, target_ids):
     '''
