@@ -16,10 +16,9 @@ Selecting the **Text Editor** button at the bottom of the **Python Console** swi
 
 <img src="images/console-text.png" alt="SimVascular Python Console" width=800 style="float: left; margin-right: 10px;" />
 
-The **Text Editor** panel is used to load, run and edit a Python script stored in a file. Once loaded, the contents of the Python script are displayed and can be run. Python commands can be interactively editied and the contents of the panel rerun. The modified script can then be written to a file.
+The **Text Editor** panel is used to load, run and edit a Python script stored in a file. A Python script file is loaded from a file by selecting the <img src="images/load-script.png" alt="drawing" width="20"/> icon located on the top left of the **Python Console**. Once loaded the contents of the Python script are displayed and can be run by selecting the <img src="images/run-script.png" alt="drawing" width="20"/> icon. Select the **Console** button at the bottom of the **Python Console** to switch back to the Python console to see the results of running the script.
 
-A Python script file is loaded by selecting the <img src="images/load-script.png" alt="drawing" width="20"/> icon located on the top left of the **Python Console**. The script can then be run by selecting the <img src="images/run-script.png" alt="drawing" width="20"/> icon. Write a modified script to a file by selecting the <img src="images/save-script.png" alt="drawing" width="20"/> icon.
-
+Python commands can be interactively editied and the contents of the panel rerun. The modified script can then be written to a file by selecting the <img src="images/save-script.png" alt="drawing" width="20"/> icon.
 
 ## List of SimVascular Python Scripts ##
 
