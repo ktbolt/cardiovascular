@@ -3,6 +3,8 @@
 
 This directory contains scripts for applications using the SimVascular Python Scripting Interface. The SimVascular Python Scripting Interface provides an API for accessing data nodes created by SimVascular modules (e.g. ) from the **SV Data Manager**. For example, the **SV Path Planning** module creates data nodes under the **Paths** entry in the **SV Data Manager**.
 
+> Note that the SimVascular Python API is currently being reimplemented to be more Pythonic. Stay tuned!
+
 The SimVascular Python Scripting Interface is accessed from the GUI by selecting the <img src="images/icon.png" alt="drawing" width="20"/> icon from the SimVascular toolbar. This brings up the **Python Console**. The **Python Console** has two panels providing two modes of operation: 1) **Console** and 2) **Text Editor**. **Console** panel provides a Python interpreter for interactively exexcuting commands to be typed in at the **>>>** prompt. 
 
 <img src="images/console.png" alt="SimVascular Python Console" width=800 style="float: left; margin-right: 10px;" />
