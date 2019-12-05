@@ -10,6 +10,7 @@ print(dir(sv))
 
 # Set mesh kernel
 sv.solid.set_kernel('PolyData')
+sv.solid.set_kernel('Parasolid')
 
 solid = sv.solid.SolidModel()
 solid.new_object('cyl')
