@@ -42,6 +42,7 @@ num_pos_pts = len(pos_pts)
 p.GetObject('path1')
 
 Solid.SetKernel('PolyData')
+Solid.SetKernel('Parasolid')
 dist_squared = vtk.vtkMath.Distance2BetweenPoints(pt1,pt2)
 dist = math.sqrt(dist_squared)
 

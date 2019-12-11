@@ -15,11 +15,24 @@ b = Solid.pySolidModel()
 b.Cylinder('cyl2', 2, 2.0, ctr, axis)
 b.GetPolyData('cyl2_pd',0.5)
 
+ctr = [0.5, -0.5, -0.5] 
+ctr = [0.481476,-0.0680931,-1]
+ctr = [-0.414211,-0.753699,1] 
+c = Solid.pySolidModel()
+c.Sphere('sphere1', 0.1, ctr)
+c.GetPolyData('sphere1_pd',0.5)
+c.WriteNative("sphere")
+
 ren, renwin = vis.initRen('demo')
 act = vis.pRepos(ren,'cyl1_pd')
 vis.polyDisplayWireframe(ren, 'cyl1_pd')
+
 act2 = vis.pRepos(ren,'cyl2_pd')
 vis.polyDisplayWireframe(ren, 'cyl2_pd')
+
+act3 = vis.pRepos(ren,'sphere1_pd')[1]
+act3.GetProperty().SetColor(0.0, 1.0, 0.0)
+
 
 wall = Solid.pySolidModel()
 wall.Subtract('wall', 'cyl2', 'cyl1')
