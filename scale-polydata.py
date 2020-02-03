@@ -35,8 +35,8 @@ center = centerFilter.GetCenter()
 #
 transform = vtk.vtkTransform()
 transform.Translate(center[0], center[1], center[2])
-s = 0.1
-transform.Scale(s, s, s)
+scale_factor = 0.1
+transform.Scale(scale_factor, scale_factor, scale_factor)
 transform.Translate(-center[0], -center[1], -center[2])
 transformFilter = vtk.vtkTransformFilter()
 transformFilter.SetInputData(surface)
