@@ -26,7 +26,7 @@ def create_solid_from_path(src_path_name, starting_radius):
         # Randomize the radius and create the circular contour.
         #center_pt = [0, 0, 0]
         center_pt = pos_points[create_from_path_point]
-        radius = prev_radius + 0* (random.random() - 0.5)
+        radius = prev_radius + 5* (random.random() - 0.5)
         prev_radius = radius
         contour.SetCtrlPtsByRadius(center_pt, radius)
 
@@ -37,6 +37,7 @@ def create_solid_from_path(src_path_name, starting_radius):
 
     # Resample the contour polydata objects.
     num_samples = 60  # Number of samples to take around circumference of contour?
+    num_samples = 20  # Number of samples to take around circumference of contour?
     path_ctrs_pds_rspl = []
     for id in path_ctr_pds:
         new_id = id + "_resampled"
@@ -116,7 +117,7 @@ ren, renwin = vis.initRen(window_name)
 actor1 = vis.pRepos(ren, path1_solid_name)
 actor2 = vis.pRepos(ren, path2_solid_name)
 # Set the renderer to draw the solids as a wireframe.
-vis.polyDisplayWireframe(ren, path1_solid_name)
-vis.polyDisplayWireframe(ren, path2_solid_name)
+#vis.polyDisplayWireframe(ren, path1_solid_name)
+#vis.polyDisplayWireframe(ren, path2_solid_name)
 
 vis.interact(ren, 15000)

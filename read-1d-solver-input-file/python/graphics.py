@@ -54,7 +54,8 @@ class Graphics(object):
 
     def add_cyl(self, pt1, pt2):
         cyl = vtk.vtkCylinderSource()
-        cyl.SetRadius(0.2)
+        r = 0.1
+        cyl.SetRadius(r)
         cyl.SetResolution(15)
         x = [0,0,0]
         y = [0,0,0]
@@ -101,6 +102,7 @@ class Graphics(object):
         #mapper.SetInputConnection(transformPD.GetOutputPort())
         mapper.SetInputConnection(cyl.GetOutputPort())
         actor.SetUserMatrix(transform.GetMatrix())
+        actor.GetProperty().SetColor(1.0, 0.0, 0.0)
 
         actor.SetMapper(mapper)
         self.renderer.AddActor(actor)
@@ -150,6 +152,7 @@ class Graphics(object):
         ballActor.SetMapper(mapBalls)
         #ballActor.GetProperty().SetColor(tomato)
         #ballActor.GetProperty().SetColor([1.0, 1.0, 1.0])
+        ballActor.GetProperty().SetColor([0.0, 1.0, 0.0])
         ballActor.GetProperty().SetSpecularColor(1, 1, 1)
         ballActor.GetProperty().SetSpecular(0.3)
         ballActor.GetProperty().SetSpecularPower(20)
