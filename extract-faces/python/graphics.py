@@ -3,6 +3,7 @@
 from os import path
 import logging
 from manage import get_logger_name
+from math import sqrt 
 
 import vtk
 print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
@@ -14,6 +15,7 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver("KeyPressEvent", self.onKeyPressEvent)
         self.AddObserver("CharEvent", self.onCharEvent)
         self.graphics = graphics
+        self.selected_points = []
 
     def leftButtonPressEvent(self, obj, event):
         """ 
@@ -30,10 +32,30 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             return
 
         print(" ")
-        print("Picked position: {0:f} {1:f} {2:f} ".format(position[0], position[1], position[2]))
+        print("Picked position: {0:g} {1:g} {2:g} ".format(position[0], position[1], position[2]))
         print("Cell id is: {0:d}".format(cell_id))
 
-        self.graphics.add_sphere(position, [0.0, 1.0, 0.0])
+        min_i = -1
+        min_d = 1e5
+        min_p = []
+        surface = self.graphics.mesh.surface
+        points = surface.GetPoints()
+
+        for i in range(points.GetNumberOfPoints()):
+            p = 3*[0.0]
+            points.GetPoint(i,p)
+            dx = p[0] - position[0]
+            dy = p[1] - position[1]
+            dz = p[2] - position[2]
+            d = sqrt(dx*dx + dy*dy + dz*dz)
+            if d < min_d:
+                min_d = d
+                min_p = p
+                min_i = i  
+
+        print("Picked node: {0:d} {1:g} {2:g} {3:g} ".format(min_i, min_p[0], min_p[1], min_p[2]))
+
+        self.graphics.add_sphere(min_p, [0.0, 1.0, 0.0])
 
         self.OnLeftButtonDown()
         return
@@ -57,6 +79,52 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         if (key == 's'):
             self.leftButtonPressEvent(None, event)
+        elif (key == 'f'):
+            self.fix()
+
+
+    def fix(self):
+        print("---------- fix ----------")
+        # proj: 18801 78.032 107.444 111.834 
+        # Picked node: 18724 78.044 107.418 111.818 
+        # Picked node: 18800 78.002 107.488 111.866 
+
+        proj_p = [78.032, 107.444, 111.834] 
+        p1 = [78.002, 107.488, 111.866]
+        p2 = [78.044, 107.418, 111.818]
+        surface = self.graphics.mesh.surface
+        points = surface.GetPoints()
+        polygons = surface.GetPolys().GetData()
+
+        newPolyData = vtk.vtkPolyData()
+        newPoints = vtk.vtkPoints()
+        for i in range(points.GetNumberOfPoints()): 
+            p = 3*[0.0]
+            points.GetPoint(i,p)
+            newPoints.InsertNextPoint(p)
+        newPolyData.SetPoints(newPoints)
+
+        newCells = vtk.vtkCellArray()
+        for cell_id in range(surface.GetNumberOfCells()): 
+            cell = surface.GetCell(cell_id)
+            dim = cell.GetCellDimension()
+            num_cell_nodes = cell.GetNumberOfPoints()
+            print("Cell: {0:d}".format(cell_id))
+            print("    dim: {0:d}".format(dim))
+            print("    cell_num_nodes: {0:d}".format(num_cell_nodes))
+            tri = vtk.vtkTriangle()
+            for j in range(0, num_cell_nodes):
+                node_id = cell.GetPointId(j)
+                print("    node id: {0:d}".format(node_id))
+                tri.GetPointIds().SetId(j, node_id)
+            newCells.InsertNextCell(tri)
+
+        newPolyData.SetPolys(newCells)
+
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName("fix.vtp");
+        writer.SetInputData(newPolyData)
+        writer.Write()
 
     #__def onKeyPressEvent
 
@@ -108,7 +176,7 @@ class Graphics(object):
     def add_sphere(self, center, color):
         sphere = vtk.vtkSphereSource()
         sphere.SetCenter(center[0], center[1], center[2])
-        sphere.SetRadius(0.001)
+        sphere.SetRadius(0.0001)
         sphere.Update()
         polydata = sphere.GetOutput()
         mapper = vtk.vtkPolyDataMapper()
@@ -154,7 +222,7 @@ class Graphics(object):
                 color[1] = 0.8
                 color[2] = 0.0
             elif component.GetNumberOfCells() < 3:
-                width = 5.0
+                width = 3.0
                 color[0] = 1.0
                 color[1] = 0.0
                 color[2] = 0.0

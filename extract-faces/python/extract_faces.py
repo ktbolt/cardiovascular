@@ -82,6 +82,7 @@ if __name__ == '__main__':
     mesh = Mesh(params)
     mesh.graphics = graphics
     mesh.read_mesh()
+    graphics.mesh = mesh
     graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8])
     graphics.add_graphics_edge_components(mesh.boundary_edge_components, [0.8, 0.0, 0.0])
     graphics.add_graphics_face_components(mesh.boundary_face_components, [0.8, 0.0, 0.0])
