@@ -107,116 +107,179 @@ def write_mesh(mesh, region_id):
     writer.Write()
 #_write_mesh(mesh, region_id)
 
-## Read mesh.
-#
-file_name = 'extrude.vtu' 
-reader = vtk.vtkXMLUnstructuredGridReader()
-reader.SetFileName(file_name)
-reader.Update()
-mesh = reader.GetOutput()
 
-num_points = mesh.GetNumberOfPoints()
-points = mesh.GetPoints()
-print("Number of points: {0:d}".format(num_points))
+if __name__ == '__main__':
 
-num_cells = mesh.GetNumberOfCells()
-print("Number of cells: {0:d}".format(num_cells))
-cells = mesh.GetCells()
+    ## Read mesh.
+    #
+    file_name = sys.argv[1]
+    reader = vtk.vtkXMLUnstructuredGridReader()
+    reader.SetFileName(file_name)
+    reader.Update()
+    mesh = reader.GetOutput()
 
-## Get the cells for each region.
-#
-print("")
-print("Count the cells for each region ...")
-model_ids = mesh.GetCellData().GetArray('ModelRegionID')
-regions = defaultdict(list)
-for cell_id in range(num_cells):
-    value = model_ids.GetValue(cell_id)
-    regions[value].append(cell_id)
-print("Number of regions: {0:d}".format(len(regions)))
-for region_id, cells in regions.items(): 
-    print("Region {0:d}: number of cells: {1:d}".format(region_id, len(cells)))
+    num_points = mesh.GetNumberOfPoints()
+    points = mesh.GetPoints()
+    print("Number of points: {0:d}".format(num_points))
 
-## Get mesh for region 1.
-#
-print("")
-print("========== Region 1 mesh ==========")
-mesh_1 = get_region_mesh(mesh, 1) 
-write_mesh(mesh_1, 1) 
-#
-num_points_1 = mesh_1.GetNumberOfPoints()
-points_1 = mesh_1.GetPoints()
-print("Number of points: {0:d}".format(num_points_1))
-#
-num_cells_1 = mesh_1.GetNumberOfCells()
-print("Number of cells: {0:d}".format(num_cells_1))
-cells_1 = mesh_1.GetCells()
-#
-node_id_map = defaultdict(int)
-node_coord_map = defaultdict(list)
-node_ids_1 = mesh_1.GetPointData().GetArray('GlobalNodeID')
-pt = 3*[0.0]
-for i in range(num_points_1):
-    nid = node_ids_1.GetValue(i)
-    points_1.GetPoint(i, pt)
-    node_id_map[nid] += 1
-    node_coord_map[nid].append([pt[0], pt[1], pt[2]])
-    #print("Point {0:d}: {1:d}  {2:s}".format(i, nid, str(pt)))
+    num_cells = mesh.GetNumberOfCells()
+    print("Number of cells: {0:d}".format(num_cells))
+    cells = mesh.GetCells()
 
-## Get mesh for region 2.
-#
-print("")
-print("========== Region 2 mesh ==========")
-mesh_2 = get_region_mesh(mesh, 2) 
-write_mesh(mesh_2, 2) 
-#
-num_points_2 = mesh_2.GetNumberOfPoints()
-points_2 = mesh_2.GetPoints()
-print("Number of points: {0:d}".format(num_points_2))
-#
-num_cells_2 = mesh_2.GetNumberOfCells()
-print("Number of cells: {0:d}".format(num_cells_2))
-cells_2 = mesh_2.GetCells()
-#
-node_ids_2 = mesh_2.GetPointData().GetArray('GlobalNodeID')
-for i in range(num_points_2):
-    nid = node_ids_2.GetValue(i)
-    points_2.GetPoint(i, pt)
-    node_id_map[nid] += 1
-    node_coord_map[nid].append([pt[0], pt[1], pt[2]])
-    #print("Point {0:d}: {1:d}  {2:s}".format(i, id, str(pts[0])))
-    #print("Point {0:d}: {1:d}  {2:s}".format(i, nid, str(pt)))
-    #pts = node_coord_map[id]
-    #print("      {0:s}".format(str(pts[0])))
+    ## Get the cells for each region.
+    #
+    print("")
+    print("Count the cells for each region ...")
+    model_ids = mesh.GetCellData().GetArray('ModelRegionID')
+    regions = defaultdict(list)
+    for cell_id in range(num_cells):
+        value = model_ids.GetValue(cell_id)
+        regions[value].append(cell_id)
+    print("Number of regions: {0:d}".format(len(regions)))
+    for region_id, cells in regions.items(): 
+        print("Region {0:d}: number of cells: {1:d}".format(region_id, len(cells)))
 
-num_dupe = 0
-for nid, count in node_id_map.items(): 
-    if count != 1:
-        pts = node_coord_map[nid]
-        #print("Node id {0:d}: number: {1:d}".format(nid, count))
-        #print("    {0:s}: ".format(str(pts[0])))
-        #print("    {0:s}: ".format(str(pts[1])))
-        num_dupe += 1
-print("Number of duplicate nodes: {0:d} ".format(num_dupe))
+    ## Check for duplicate nodes.
+    pt = 3*[0.0]
+    max_x = -1e9
+    max_y = -1e9
+    max_z = -1e9
+    min_x = 1e9
+    min_y = 1e9
+    min_z = 1e9
+    for i in range(num_points):
+        points.GetPoint(i, pt)
+        x = pt[0]
+        y = pt[1]
+        z = pt[2]
+        if x < min_x:
+            min_x = x 
+        elif x > max_x:
+            max_x = x 
+        if y < min_y:
+            min_y = y 
+        elif y > max_y:
+            max_y = y 
+        if z < min_z:
+            min_z = z 
+        elif z > max_z:
+            max_z = z 
+    #_for i in range(num_points):
 
-## Show mesh.
-#
-# Create renderer and graphics window.
-renderer = vtk.vtkRenderer()
-renderer_win = vtk.vtkRenderWindow()
-renderer_win.AddRenderer(renderer)
-renderer.SetBackground(0.6, 0.6, 0.6)
-renderer_win.SetSize(1000, 1000)
+    point_hash = defaultdict(list)
+    num_dupe_points = 0
+    for i in range(num_points):
+        points.GetPoint(i, pt)
+        x = pt[0]
+        y = pt[1]
+        z = pt[2]
+        xs = (x-min_x) / (max_x-min_x)
+        ys = (y-min_y) / (max_y-min_y)
+        zs = (z-min_z) / (max_z-min_z)
+        ih = xs*num_points 
+        jh = ys*num_points 
+        kh = zs*num_points 
+        index = int(ih + jh + kh)
+        pts = point_hash[index]
+        if len(pts) == 0:
+            point_hash[index].append([pt[0], pt[1], pt[2]])
+        else:
+            found_pt = False
+            for hpt in pts:
+                dx = hpt[0] - pt[0]
+                dy = hpt[1] - pt[1]
+                dz = hpt[2] - pt[2]
+                d = dx*dx + dy*dy + dz*dz
+                if d == 0.0:
+                    found_pt = True
+                    num_dupe_points += 1
+                    break
+            #_for hpt in pts
+            if not found_pt:
+                point_hash[index].append([pt[0], pt[1], pt[2]])
+    #_for i in range(num_points)
+    print("Number of duplicate points: {0:d}".format(num_dupe_points))
 
+    ## Get mesh for region 1.
+    #
+    print("")
+    print("========== Region 1 mesh ==========")
+    mesh_1 = get_region_mesh(mesh, 1) 
+    write_mesh(mesh_1, 1) 
+    #
+    num_points_1 = mesh_1.GetNumberOfPoints()
+    points_1 = mesh_1.GetPoints()
+    print("Number of points: {0:d}".format(num_points_1))
+    #
+    num_cells_1 = mesh_1.GetNumberOfCells()
+    print("Number of cells: {0:d}".format(num_cells_1))
+    cells_1 = mesh_1.GetCells()
+    #
+    node_id_map = defaultdict(int)
+    node_coord_map = defaultdict(list)
+    node_ids_1 = mesh_1.GetPointData().GetArray('GlobalNodeID')
+    pt = 3*[0.0]
+    for i in range(num_points_1):
+        nid = node_ids_1.GetValue(i)
+        points_1.GetPoint(i, pt)
+        node_id_map[nid] += 1
+        node_coord_map[nid].append([pt[0], pt[1], pt[2]])
+        #print("Point {0:d}: {1:d}  {2:s}".format(i, nid, str(pt)))
 
-add_mesh_geom(reader, mesh, renderer)
+    ## Get mesh for region 2.
+    #
+    print("")
+    print("========== Region 2 mesh ==========")
+    mesh_2 = get_region_mesh(mesh, 2) 
+    write_mesh(mesh_2, 2) 
+    #
+    num_points_2 = mesh_2.GetNumberOfPoints()
+    points_2 = mesh_2.GetPoints()
+    print("Number of points: {0:d}".format(num_points_2))
+    #
+    num_cells_2 = mesh_2.GetNumberOfCells()
+    print("Number of cells: {0:d}".format(num_cells_2))
+    cells_2 = mesh_2.GetCells()
+    #
+    node_ids_2 = mesh_2.GetPointData().GetArray('GlobalNodeID')
+    for i in range(num_points_2):
+        nid = node_ids_2.GetValue(i)
+        points_2.GetPoint(i, pt)
+        node_id_map[nid] += 1
+        node_coord_map[nid].append([pt[0], pt[1], pt[2]])
+        #print("Point {0:d}: {1:d}  {2:s}".format(i, id, str(pts[0])))
+        #print("Point {0:d}: {1:d}  {2:s}".format(i, nid, str(pt)))
+        #pts = node_coord_map[id]
+        #print("      {0:s}".format(str(pts[0])))
 
-add_interface_points(node_coord_map, renderer)
+    num_dupe = 0
+    for nid, count in node_id_map.items(): 
+        if count != 1:
+            pts = node_coord_map[nid]
+            #print("Node id {0:d}: number: {1:d}".format(nid, count))
+            #print("    {0:s}: ".format(str(pts[0])))
+            #print("    {0:s}: ".format(str(pts[1])))
+            num_dupe += 1
+    print("Region 1 and 2 share {0:d} nodes.".format(num_dupe))
 
-# Create a trackball interacter to transoform the geometry using the mouse.
-interactor = vtk.vtkRenderWindowInteractor()
-interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-interactor.SetRenderWindow(renderer_win)
-interactor.Start()
+    ## Show mesh.
+    #
+    # Create renderer and graphics window.
+    renderer = vtk.vtkRenderer()
+    renderer_win = vtk.vtkRenderWindow()
+    renderer_win.AddRenderer(renderer)
+    renderer.SetBackground(0.6, 0.6, 0.6)
+    renderer_win.SetSize(800, 800)
+
+    add_mesh_geom(reader, mesh, renderer)
+
+    add_interface_points(node_coord_map, renderer)
+
+    # Create a trackball interacter to transoform the geometry using the mouse.
+    interactor = vtk.vtkRenderWindowInteractor()
+    interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+    interactor.SetRenderWindow(renderer_win)
+    interactor.Start()
 
 
 
