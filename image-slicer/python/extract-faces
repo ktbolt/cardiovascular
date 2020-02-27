@@ -1,0 +1,17 @@
+[extract-faces] INFO - Parse arguments ...
+[extract-faces] INFO - Image file: aorta.vti
+[extract-faces] INFO - Path file: aorta.pth
+[extract-faces] INFO - Volume: 
+[extract-faces] INFO -   dimensions: (512, 64, 512)
+[extract-faces] INFO -   spacing: (0.078125, 0.2, 0.078125)
+[extract-faces] INFO -   origin: (-20.3961, -5.11, -22.9461)
+[extract-faces] INFO -   bounds: (-20.3961, 19.525775, -5.11, 7.490000000000001, -22.9461, 16.975775)
+[extract-faces] INFO -   width: 511
+[extract-faces] INFO -   height: 63
+[extract-faces] INFO -   depth: 511
+[extract-faces] INFO -   scalar_range: (0.0, 334.0)
+[extract-faces] INFO - Path ID: 1
+[extract-faces] INFO -   Element ID: 0
+[extract-faces] INFO -     Number of control points: 27
+[extract-faces] INFO -     Number of path points: 616
+[extract-faces] INFO - Path length: 47.057
