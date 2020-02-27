@@ -85,9 +85,9 @@ if __name__ == '__main__':
     # Extract an isosurface.
     #image.extract_isosurface(110)
     # Show some slices in ijk.
-    image.display_axis_slice('i', 255)
-    image.display_axis_slice('j', 30)
-    image.display_axis_slice('k', 255)
+    #image.display_axis_slice('i', 255)
+    #image.display_axis_slice('j', 30)
+    #image.display_axis_slice('k', 255)
 
     ## Read in the paths.
     #

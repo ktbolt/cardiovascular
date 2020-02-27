@@ -23,8 +23,12 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         Process left mouse button press.
         """
         clickPos = self.GetInteractor().GetEventPosition()
-        picker = vtk.vtkCellPicker()
+
+        # vtk.vtkCellPicker() does not select path lines.
+        #picker = vtk.vtkCellPicker()
+        picker = vtk.vtkPropPicker()
         picker.Pick(clickPos[0], clickPos[1], 0, self.renderer)
+        #picker.SetTolerance(0.0001)
 
         position = picker.GetPickPosition()
 
@@ -43,12 +47,13 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             actor.GetProperty().SetColor(0.0, 1.0, 0.0)
             self.renderer.AddActor(actor)
 
+        '''
         cell_id = picker.GetCellId()
-
         print("###### cellid: " + str(cell_id))
 
         if cell_id == -1: 
             return
+        '''
 
         return
 
