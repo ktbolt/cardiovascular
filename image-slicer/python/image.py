@@ -13,8 +13,11 @@ class Image(object):
         self.params = params
         self.volume = None
         self.graphics = None
+        self.paths = None
         self.logger = logging.getLogger(get_logger_name())
         self.greyscale_lut = None
+        self.hue_lut = None 
+        self.sat_lut = None
         self.colors = vtk.vtkNamedColors()
 
     def create_greyscale_lut(self, scalar_range):
@@ -86,6 +89,7 @@ class Image(object):
 
         self.logger.info("Volume: ")
         self.logger.info("  dimensions: %s" % str(self.dimensions))
+        self.logger.info("  extent: %s" % str(self.extent))
         self.logger.info("  spacing: %s" % str(self.spacing))
         self.logger.info("  origin: %s" % str(self.origin))
         self.logger.info("  bounds: %s" % str(self.bounds))
@@ -93,6 +97,14 @@ class Image(object):
         self.logger.info("  height: %d" % self.height)
         self.logger.info("  depth: %d" % self.depth)
         self.logger.info("  scalar_range: %s" % str(self.scalar_range))
+
+        self.graphics.add_sphere(self.origin, radius=0.2)
+
+        x0, y0, z0 = self.origin
+        xSpacing, ySpacing, zSpacing = self.spacing
+        xMin, xMax, yMin, yMax, zMin, zMax = self.extent
+        center = [x0 + 0.5*xSpacing * (xMax-1), y0 + 0.5*ySpacing * (yMax-1), z0 + 0.5*zSpacing * (zMax-1)]
+        #self.graphics.add_sphere(center, radius=0.1, color=[1.0,0.0,0.0])
 
     def display_edges(self):
         outline = vtk.vtkOutlineFilter()
@@ -197,6 +209,120 @@ class Image(object):
         volume.SetMapper(volumeMapper)
         volume.SetProperty(volumeProperty)
         self.graphics.renderer.AddViewProp(volume)
+
+    def extract_slice(self, origin, tangent, normal, binormal):
+        print(" ")
+        print("---------- Image Extract Slice ----------") 
+        print("origin: " + str(origin))
+        print("tangent: " + str(tangent))
+        print("normal: " + str(normal))
+        print("binormal: " + str(binormal))
+
+        '''
+        xform = vtk.vtkMatrix4x4()
+        x0, y0, z0 = self.origin
+        xSpacing, ySpacing, zSpacing = self.spacing 
+        xMin, xMax, yMin, yMax, zMin, zMax = self.extent
+        center = [x0 + 0.5*xSpacing*xMax, y0 + 0.5*ySpacing*yMax, z0 + 0.5*zSpacing*zMax]
+
+        print("Center: " + str(center))
+
+        xform.DeepCopy((tangent[0], normal[0], binormal[0], center[0],
+                        tangent[1], normal[1], binormal[1], center[1],
+                        tangent[2], normal[2], binormal[2], center[2],
+                                 0,         0,           0,         1))
+
+        axial = vtk.vtkMatrix4x4()
+        axial.DeepCopy((1, 0, 0, center[0],
+                        0, 1, 0, center[1],
+                        0, 0, 1, center[2],
+                        0, 0, 0, 1))
+
+
+        reslice = vtk.vtkImageReslice()
+        reslice.SetInputData(self.volume)
+        reslice.SetOutputDimensionality(2)
+        #reslice.SetResliceAxes(axial)
+        #reslice.SetResliceAxes(xform)
+
+        #reslice.SetResliceAxesDirectionCosines(tangent[0], tangent[1], tangent[2], normal[0], normal[1], normal[2], binormal[0], binormal[1], binormal[2])
+
+        reslice.SetResliceAxesDirectionCosines(normal, binormal, tangent)
+
+        s = 0.1
+        s = 0.01
+        center = [x0+0.5*xSpacing*(xMax-xMin), y0+0.5*ySpacing*(yMax-yMin), z0+s*zSpacing*(zMax-zMin)]
+        reslice.SetResliceAxesOrigin(center)
+
+        saxes = reslice.GetResliceAxes()
+        #print("Slice axes: " + str(saxes))
+        #reslice.SetResliceTransform(tr)
+
+        #reslice.SetOutputOrigin(origin)
+        #reslice.SetOutputSpacing(self.spacing)
+        reslice.SetInterpolationModeToLinear()
+        #reslice.BorderOn()
+        #reslice.ReleaseDataFlagOn()
+        reslice.Update()
+
+        islice = reslice.GetOutput()
+        extent = islice.GetExtent()
+        print("Slice number of points: {0:d}".format(islice.GetNumberOfPoints()))
+        print("Slice number of cells: {0:d}".format(islice.GetNumberOfCells()))
+        print("Slice origin: {0:s}".format(str(islice.GetOrigin())))
+        print("Slice extent: {0:s}".format(str(extent)))
+        print("Slice scalar range: {0:s}".format(str(islice.GetScalarRange())))
+
+        # Map the image through the lookup table
+        color = vtk.vtkImageMapToColors()
+        color.SetLookupTable(self.greyscale_lut)
+        color.SetInputData(reslice.GetOutput())
+        color.Update()
+        '''
+
+        slice_plane = vtk.vtkPlane()
+        slice_plane.SetOrigin(origin[0], origin[1], origin[2])
+        slice_plane.SetNormal(tangent[0], tangent[1], tangent[2])
+
+        reslice_mapper = vtk.vtkImageResliceMapper() 
+        image_slice = vtk.vtkImageSlice() 
+        image_slice.SetMapper(reslice_mapper) 
+        reslice_mapper.SetInputData(self.volume) 
+        reslice_mapper.SliceFacesCameraOff()
+        reslice_mapper.SliceAtFocalPointOff()
+        reslice_mapper.SetSlicePlane(slice_plane)
+        reslice_mapper.Update()
+
+        self.graphics.add_actor(image_slice)
+
+        ## Show slice bounds.
+        #
+        imageBoundsCube = vtk.vtkCubeSource()
+        imageBoundsCube.SetBounds(self.bounds)
+        imageBoundsCube.Update()
+        #
+        cutter = vtk.vtkCutter()
+        cutter.SetCutFunction(slice_plane);
+        cutter.SetInputData(imageBoundsCube.GetOutput());
+        cutter.Update()
+        cutterMapper = vtk.vtkPolyDataMapper()
+        cutterMapper.SetInputData(cutter.GetOutput())
+        #
+        planeBorder = vtk.vtkActor()
+        planeBorder.GetProperty().SetColor(1.0, 1.0, 0)
+        planeBorder.GetProperty().SetOpacity(1.0)
+        planeBorder.GetProperty().SetLighting(0)
+        planeBorder.GetProperty().SetLineWidth(4)
+        planeBorder.SetMapper(cutterMapper)
+        self.graphics.add_actor(planeBorder)
+
+        '''
+        actor = vtk.vtkImageActor()
+        actor.GetMapper().SetInputData(color.GetOutput())
+        actor.GetMapper().BorderOn() 
+        self.graphics.add_actor(actor)
+        '''
+
 
     def extract_isosurface(self, value):
         mc = vtk.vtkMarchingCubes()

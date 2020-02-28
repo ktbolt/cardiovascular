@@ -6,14 +6,25 @@ from math import sqrt
 import logging
 from manage import get_logger_name
 
+class PathData(object):
+    def __init__(self, pid, index, point, tangent, rotation):
+        self.id = pid
+        self.index = index
+        self.point = point
+        self.tangent = tangent 
+        self.rotation = rotation
+
 class PathElement(object):
     '''
     The PathElement class is used to represent a SimVascular path element.
     '''
     def __init__(self, path_name):
         self.id = path_name
+        self.ids = []
         self.points = []
         self.control_points = []
+        self.tangents = []
+        self.rotations = []
 
 class Path(object):
     '''
@@ -25,18 +36,29 @@ class Path(object):
         self.graphics = graphic
         self.logger = logging.getLogger(get_logger_name())
 
-    def get_length(self):
-        length = 0.0
+    def select(self, position):
+        path_data = {}
+        min_dist = 1e9
+        min_pt = None
+        min_i = None
         for element in self.elements:
             pts = element.points
-            for i in range(0, len(pts)-1):
-              pt1 = pts[i]
-              pt2 = pts[i+1]
-              dist = sqrt(sum([(pt1[j]-pt2[j])*(pt1[j]-pt2[j]) for j in range(0,3)]))
-              length += dist
+            for i in range(0, len(pts)):
+                pt = pts[i]
+                dist = sqrt(sum([(pt[j]-position[j])*(pt[j]-position[j]) for j in range(0,3)]))
+                if dist < min_dist:
+                    min_dist = dist
+                    min_element = element
+                    min_i = i
             #_for i in range(0, len(pts)-1)
         #_for element in self.elements
-        return length 
+        
+        pid = min_element.ids[min_i]
+        index = min_i
+        point = min_element.points[min_i]
+        tangent = min_element.tangents[min_i]
+        rotation = min_element.rotations[min_i]
+        return PathData(pid, index, point, tangent, rotation)
 
     @classmethod
     def read_path_file(cls, params, graphics):
@@ -85,13 +107,23 @@ class Path(object):
 
                for path_pts in path_element_t.iter('path_points'):
                    for path_pt in path_pts.iter('path_point'):
-                       id = path_pt.attrib['id']
+                       pid = path_pt.attrib['id']
+                       path_element.ids.append(pid)
                        for pos in path_pt.iter('pos'):
                            x = pos.attrib['x']
                            y = pos.attrib['y']
                            z = pos.attrib['z']
                            path_element.points.append([float(x),float(y),float(z)])
-                       #_for pos in path_pt.iter('pos')
+                       for tangent in path_pt.iter('tangent'):
+                           x = tangent.attrib['x']
+                           y = tangent.attrib['y']
+                           z = tangent.attrib['z']
+                           path_element.tangents.append([float(x),float(y),float(z)])
+                       for rotation in path_pt.iter('rotation'):
+                           x = rotation.attrib['x']
+                           y = rotation.attrib['y']
+                           z = rotation.attrib['z']
+                           path_element.rotations.append([float(x),float(y),float(z)])
                    #_for path_pt in path_pts.iter('path_point')
                #_for path_pts in path_element_t.iter('path_points')
 
@@ -107,6 +139,18 @@ class Path(object):
         return paths
     #_read_path_file(cls, file_name)
 
+    def get_length(self):
+        length = 0.0
+        for element in self.elements:
+            pts = element.points
+            for i in range(0, len(pts)-1):
+              pt1 = pts[i]
+              pt2 = pts[i+1]
+              dist = sqrt(sum([(pt1[j]-pt2[j])*(pt1[j]-pt2[j]) for j in range(0,3)]))
+              length += dist
+            #_for i in range(0, len(pts)-1)
+        #_for element in self.elements
+        return length 
 
     def create_path_geometry(self):
        """ 

@@ -1,0 +1,67 @@
+
+------------------
+ vtkImageMapper3D 
+------------------
+ - abstract class for mapping images to the screen
+ - vtkImageMapper3D is a mapper that will draw a 2D image, or a slice of a 3D image. 
+ - The slice plane can be set automatically follow the camera, so that it slices through the focal point and faces the camera.
+
+- GetSlicePlane()
+  + A plane that describes what slice of the input is being rendered by the mapper.
+  + This plane is in world coordinates, not data coordinates. 
+  + Before using this plane, call Update or UpdateInformation to make sure the plane is up-to-date. 
+
+---------------
+ vtkExtractVOI
+---------------
+- select piece (e.g., volume of interest) and/or subsample structured points dataset
+
+- vtkExtractVOI is a filter that selects a portion of an input structured points dataset, or subsamples an input dataset. 
+- (The selected portion of interested is referred to as the Volume Of Interest, or VOI.) 
+- The output of this filter is a structured points dataset. 
+- The filter treats input data of any topological dimension (i.e., point, line, image, or volume) and can generate 
+  output data of any topological dimension.
+
+-----------------------
+ vtkImageResliceMapper
+-----------------------
+
+- map a slice of a vtkImageData to the screen
+
+- vtkImageResliceMapper will cut a 3D image with an abitrary slice plane and draw the results on the screen. 
+- The slice can be set to automatically follow the camera, so that the camera controls the slicing.
+
+- SetSlicePlane()
+  + Set the slice that will be used to cut through the image.
+  + This slice should be in world coordinates, rather than data coordinates. 
+  + Use SliceFacesCamera and SliceAtFocalPoint if you want the slice to automatically follow the camera.
+
+
+---------------------
+ vtkImageSliceMapper
+---------------------
+
+- map a slice of a vtkImageData to the screen
+
+- vtkImageSliceMapper is a mapper that will draw a 2D image, or a slice of a 3D image. 
+- For 3D images, the slice may be oriented in the X, Y, or Z direction. 
+- This mapper works via 2D textures with accelerated zoom and pan operations.
+
+
+- SetCropping()
+  + Use the specified CroppingRegion.
+  + The default is to display the full slice.
+
+- SetCroppingRegion(int[6])
+
+- double *GetBounds() 
+  + The bounding box (array of six doubles) of data expressed as (xmin,xmax, ymin,ymax, zmin,zmax). 
+
+- SetPoints()
+  + Set points that describe a polygon on which the slice will be rendered.
+
+
+- SetDisplayExtent()
+
+
+

@@ -3,6 +3,7 @@
 [extract-faces] INFO - Path file: aorta.pth
 [extract-faces] INFO - Volume: 
 [extract-faces] INFO -   dimensions: (512, 64, 512)
+[extract-faces] INFO -   extent: (0, 511, 0, 63, 0, 511)
 [extract-faces] INFO -   spacing: (0.078125, 0.2, 0.078125)
 [extract-faces] INFO -   origin: (-20.3961, -5.11, -22.9461)
 [extract-faces] INFO -   bounds: (-20.3961, 19.525775, -5.11, 7.490000000000001, -22.9461, 16.975775)
