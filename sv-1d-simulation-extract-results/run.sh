@@ -20,11 +20,11 @@ export PYTHONPATH=$PYTHONPATH:$SVPROJECT_DIR/SimVascular/Python/site-packages
 res_dir=./example
 file=solver.in
 #
-res_dir=/home/davep/tmp/1d-solver
-file=12_AortoFem_Pulse_R.in
+#res_dir=/home/davep/tmp/1d-solver
+#file=12_AortoFem_Pulse_R.in
 #
-res_dir=/Users/parkerda/tmp/1d-sim-results/
-file=12_AortoFem_Pulse_R.in
+#res_dir=/Users/parkerda/tmp/1d-sim-results/
+#file=12_AortoFem_Pulse_R.in
 #
 #res_dir=/Users/parkerda/tmp/1d-bif
 #file=05_bifurcation_RCR.in
@@ -87,7 +87,7 @@ elif [ $test_name  == "outlet_segments" ]; then
         --display-geometry ${disp_geom}  \
         --node-sphere-radius ${radius}   \
         --plot ${plot}                   \
-        --outlet-segments ${outlet_segs} \
+        --outlet-segments                \
         --data-names ${data_names}       \
         --time-range ${time_range}       \
         --output-directory ${out_dir}    \
