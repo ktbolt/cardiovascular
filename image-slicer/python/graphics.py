@@ -134,7 +134,7 @@ class Graphics(object):
         self.window = vtk.vtkRenderWindow()
         self.window.AddRenderer(self.renderer)
         self.renderer.SetBackground(0.5, 0.5, 0.5)
-        self.window.SetSize(2000, 2000)
+        self.window.SetSize(1000, 1000)
         #self.window.Render()
 
         # Create a trackball interacter to transoform the geometry using the mouse.
