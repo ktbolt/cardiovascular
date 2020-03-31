@@ -80,14 +80,18 @@ The commands create a **ContourDist** Python object called **contour** that is u
 # Executing Python Scripts from the Command Line  #
 
 SimVascular can also run a Python script from the command line. This requires running a shell script that executes SimVascular from a terminal. SimVascular is executed from the command line using
+```
+    Linux: /usr/local/sv/simvascular/DATE/simvascular    
 
-Linux: /usr/local/sv/simvascular/DATE/simvascular                      DATE is the install date (e.g. 2019-08-09).
-MacOS: /Applications/SimVascular.app/Contents/MacOS/SimVascular
+    MacOS: /Applications/SimVascular.app/Contents/MacOS/SimVascular
+```
+where DATE is the install date (e.g. 2019-08-09).
 
 You can then execute a Python script using 
 
-/usr/local/sv/simvascular/DATE/simvascular --python -- SCRIPT
-
+```
+    /usr/local/sv/simvascular/DATE/simvascular --python -- SCRIPT
+```
 
 
 
