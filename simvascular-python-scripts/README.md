@@ -1,5 +1,5 @@
 
-# SimVascular Python Scripts #
+# Executing Python Scripts within the SimVascular GUI  #
 
 This directory contains scripts for applications using the SimVascular Python Scripting Interface. The SimVascular Python Scripting Interface provides an API for accessing data nodes created by SimVascular modules (e.g. ) from the **SV Data Manager**. For example, the **SV Path Planning** module creates data nodes under the **Paths** entry in the **SV Data Manager**.
 
@@ -77,3 +77,4 @@ The commands create a **ContourDist** Python object called **contour** that is u
 </figure>
 <br> <br>
 
+# Executing Python Scripts from the Command Line  #
