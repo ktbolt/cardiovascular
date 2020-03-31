@@ -1,5 +1,5 @@
 
-# SimVascular Python Scripts #
+# Executing Python Scripts within the SimVascular GUI  #
 
 This directory contains scripts for applications using the SimVascular Python Scripting Interface. The SimVascular Python Scripting Interface provides an API for accessing data nodes created by SimVascular modules (e.g. ) from the **SV Data Manager**. For example, the **SV Path Planning** module creates data nodes under the **Paths** entry in the **SV Data Manager**.
 
@@ -76,4 +76,23 @@ The commands create a **ContourDist** Python object called **contour** that is u
 <figcaption>Python Console showing how to calculate distances using a ContourDistance object.  </figcaption>
 </figure>
 <br> <br>
+
+# Executing Python Scripts from the Command Line  #
+
+SimVascular can also run a Python script from the command line. This requires running a shell script that executes SimVascular from a terminal. SimVascular is executed from the command line using
+```
+    Linux: /usr/local/sv/simvascular/DATE/simvascular    
+
+    MacOS: /Applications/SimVascular.app/Contents/MacOS/SimVascular
+```
+where DATE is the install date (e.g. 2019-08-09).
+
+You can then execute a Python script using 
+
+```
+    /usr/local/sv/simvascular/DATE/simvascular --python -- SCRIPT
+```
+
+
+
 
