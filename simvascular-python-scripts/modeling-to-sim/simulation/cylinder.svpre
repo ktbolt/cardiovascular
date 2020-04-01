@@ -1,0 +1,17 @@
+mesh_and_adjncy_vtu mesh-complete/mesh-complete.mesh.vtu
+set_surface_id_vtp mesh-complete/mesh-complete.exterior.vtp 1
+noslip_vtp mesh-complete/mesh-surfaces/face_1.vtp
+zero_pressure_vtp mesh-complete/mesh-surfaces/face_2.vtp
+fluid_density 0.001060
+fluid_viscosity 0.004000
+prescribed_velocities_vtp mesh-complete/mesh-surfaces/face_2.vtp
+bct_period 0.2
+bct_analytical_shape plug
+bct_point_number 201
+bct_fourier_mode_number 10
+bct_create mesh-complete/mesh-surfaces/face_2.vtp inflow.flow
+bct_write_dat bct.dat
+bct_write_vtp bct.vtp
+write_numstart 0 numstart.dat
+write_geombc geombc.dat.1
+write_restart restart.0.1
