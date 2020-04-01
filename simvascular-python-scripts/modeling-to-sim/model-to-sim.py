@@ -148,7 +148,7 @@ writer.Write()
 #-------------------------------------------------------------#
 #                 S i m u l a t i o n                         #
 #-------------------------------------------------------------#
-print("---------- Mesh generation ----------")
+print("---------- Simulation ----------")
 sim_dir = "./simulation/"
 sim_mesh = sim_dir + "mesh-complete/"
 sim_mesh_surf = sim_mesh + "mesh-surfaces/"
