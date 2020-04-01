@@ -1,4 +1,17 @@
 
+'''
+This script is an example of how to prepare a model for simulation.
+
+The workflow is:
+
+  1) Read in closed surface from a .vtp file representing solid model. 
+
+  2) Generate a finite element mesh from the model
+
+  3) Generate the mesh and .svpre files needed to run a simulation using svsolver. 
+
+'''
+
 import os
 from shutil import copyfile
 import sv
@@ -39,7 +52,7 @@ elif solid_name == "demo":
 # Set the solid modeling kernel.
 sv.Solid.SetKernel('PolyData')
 
-# Read the cylinder.stl surface model.
+# Read the closed surface representing a solid model.
 solid = sv.Solid.pySolidModel()
 solid.ReadNative(solid_name, solid_file_name)
 
