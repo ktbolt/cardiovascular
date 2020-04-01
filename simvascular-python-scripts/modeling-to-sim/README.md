@@ -1,5 +1,5 @@
 
-This script is an example of how to prepare a model for simulation.
+This script is an example of how to prepare a model for simulation. It uses an STL file named **cylinder.stl** as a solid model.
 
 Running the **model-to-sim.py** script 
 
