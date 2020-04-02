@@ -1,6 +1,8 @@
 
 This script is an example of how to prepare a model for simulation. It uses two models as examples
+
     1) cylinder.vtp
+    
     2) demo.vtp
 
 Running the **model-to-sim.py** script 
@@ -28,11 +30,11 @@ Running the **model-to-sim.py** script
      The directory structure used by svsolver is already created. All files are
      written to the **MODEL_NAME-simulation** directory, where MODEL_NAME = cylinder or demo.
 
-     a) Copy volume and surface meshes MODEL_NAME-simulation/mesh-complete
+     a) Copy volume and surface meshes **MODEL_NAME-simulation/mesh-complete**
 
-     b) Copy mesh wall to MODEL_NAME-simulation/mesh-complete
+     b) Copy mesh wall to **MODEL_NAME-simulation/mesh-complete**
 
-     c) Copy mesh faces to MODEL_NAME-simulation/mesh-complete/mesh-surfaces
+     c) Copy mesh faces to **MODEL_NAME-simulation/mesh-complete/mesh-surfaces**
 
      d) Generate .svpre file 
 
