@@ -1,0 +1,23 @@
+mesh_and_adjncy_vtu mesh-complete/mesh-complete.mesh.vtu
+set_surface_id_vtp mesh-complete/mesh-complete.exterior.vtp 1
+set_surface_id_vtp mesh-complete/mesh-surfaces/face_2.vtp 2
+set_surface_id_vtp mesh-complete/mesh-surfaces/face_3.vtp 3
+set_surface_id_vtp mesh-complete/mesh-surfaces/face_4.vtp 4
+initial_pressure 0.000000
+initial_velocity 0.000100 0.000100 0.000100 
+noslip_vtp mesh-complete/mesh-surfaces/face_1.vtp
+fluid_density 1.060000
+fluid_viscosity 0.040000
+prescribed_velocities_vtp mesh-complete/mesh-surfaces/face_2.vtp
+bct_period 1.000000 
+bct_analytical_shape parabolic
+bct_point_number 2
+bct_fourier_mode_number 1 
+bct_create mesh-complete/mesh-surfaces/face_2.vtp inflow.flow
+bct_write_dat bct.dat
+bct_write_vtp bct.vtp
+pressure_vtp mesh-complete/mesh-surfaces/face_3.vtp 0.000000 
+pressure_vtp mesh-complete/mesh-surfaces/face_4.vtp 0.000000 
+write_numstart 0 numstart.dat
+write_geombc geombc.dat.1
+write_restart restart.0.1

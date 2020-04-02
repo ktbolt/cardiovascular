@@ -35,8 +35,8 @@ if solid_name == 'cylinder':
     #   face 1: surface
     #   face 2: inlet
     #   face 3: outlet
-    solid_file_name = 'cylinder.stl'
-    edge_size = 0.5
+    solid_file_name = 'cylinder.vtp'
+    edge_size = 0.8
     walls = [1]
 
 elif solid_name == "demo":
@@ -46,7 +46,7 @@ elif solid_name == "demo":
     #   face 3: outlet1
     #   face 4: outlet2
     solid_file_name = 'demo.vtp'
-    edge_size = 0.4
+    edge_size = 0.2
     walls = [1]
 
 # Set the solid modeling kernel.
@@ -63,11 +63,11 @@ print ("Face IDs: " + str(solid_face_ids))
 
 ## Remesh the solid.
 #
-# This is used for STL models to produce a better 
+# This cab be used for STL models to produce a better 
 # surface representation.
 #
-print("Remeshing ... ")
-solid.RemeshFace(solid_face_ids, edge_size)
+#print("Remeshing ... ")
+#solid.RemeshFace(solid_face_ids, edge_size)
 
 # Write the solid model.
 solid_file_name = "./model/" + solid_name + '-solid.vtp'
@@ -97,6 +97,10 @@ mesh.SetMeshOptions('GlobalEdgeSize', [edge_size])
 mesh.SetMeshOptions('SurfaceMeshFlag',[1])
 mesh.SetMeshOptions('VolumeMeshFlag',[1])
 mesh.SetMeshOptions('MeshWallFirst',[1])
+mesh.SetMeshOptions('UseMMG',[1])
+mesh.SetMeshOptions('setWalls',[3.0])
+mesh.SetMeshOptions('QualityRatio',[1.4])
+mesh.SetMeshOptions('NoBisect',[0])
 
 # Set the mesh walls.
 mesh.SetWalls(walls)
@@ -149,7 +153,7 @@ writer.Write()
 #                 S i m u l a t i o n                         #
 #-------------------------------------------------------------#
 print("---------- Simulation ----------")
-sim_dir = "./simulation/"
+sim_dir = "./" + solid_name + "-simulation/"
 sim_mesh = sim_dir + "mesh-complete/"
 sim_mesh_surf = sim_mesh + "mesh-surfaces/"
 
@@ -191,27 +195,50 @@ for i,file_name in enumerate(mesh_face_file_names):
 #
 sim_mesh = "mesh-complete/"
 sim_mesh_surf = sim_mesh + "mesh-surfaces/"
-surf_id = 1
 svpre_file_name = sim_dir + solid_name + ".svpre"
+density = 1.06
+viscosity = 0.04
+bct_period = 1.0
+bct_point_number = 2
+bct_fourier_mode_number = 1
+
 with open(svpre_file_name, 'w') as sfile: 
     sfile.write("mesh_and_adjncy_vtu {0:s}\n".format(sim_mesh+"mesh-complete.mesh.vtu"))
-    sfile.write("set_surface_id_vtp {0:s} {1:d}\n".format(sim_mesh+"mesh-complete.exterior.vtp", surf_id))
-    # BCs
+    sfile.write("set_surface_id_vtp {0:s} {1:d}\n".format(sim_mesh+"mesh-complete.exterior.vtp", 1))
+    sfile.write("set_surface_id_vtp {0:s} {1:d}\n".format(sim_mesh_surf+"face_2.vtp", 2))
+    sfile.write("set_surface_id_vtp {0:s} {1:d}\n".format(sim_mesh_surf+"face_3.vtp", 3))
+    if solid_name == "demo":
+        sfile.write("set_surface_id_vtp {0:s} {1:d}\n".format(sim_mesh_surf+"face_4.vtp", 4))
+
+    # Initial conditions.
+    sfile.write("initial_pressure {0:f}\n".format(0.0))
+    sfile.write("initial_velocity {0:f} {1:f} {2:f} \n".format(0.0001, 0.0001, 0.0001))
+
+    # Surface BC
     sfile.write("noslip_vtp {0:s}\n".format(sim_mesh_surf+"face_1.vtp"))
-    sfile.write("zero_pressure_vtp {0:s}\n".format(sim_mesh_surf+"face_2.vtp"))
+
     # Fluid properties.
-    sfile.write("fluid_density {0:f}\n".format(0.00106))
-    sfile.write("fluid_viscosity {0:f}\n".format(0.004))
+    sfile.write("fluid_density {0:f}\n".format(density))
+    sfile.write("fluid_viscosity {0:f}\n".format(viscosity))
+
     # Inflow BC.
     sfile.write("prescribed_velocities_vtp {0:s}\n".format(sim_mesh_surf+"face_2.vtp"))
-    sfile.write('bct_period 0.2\n')
-    sfile.write('bct_analytical_shape plug\n')
-    sfile.write('bct_point_number 201\n')
-    sfile.write('bct_fourier_mode_number 10\n')
+    sfile.write('bct_period {0:f} \n'.format(bct_period))
+    sfile.write('bct_analytical_shape parabolic\n')
+    sfile.write('bct_point_number {0:d}\n'.format(bct_point_number))
+    sfile.write('bct_fourier_mode_number {0:d} \n'.format(bct_fourier_mode_number))
     sfile.write('bct_create {0:s} {1:s}\n'.format(sim_mesh_surf+"face_2.vtp", 'inflow.flow'))
     sfile.write('bct_write_dat {0:s}\n'.format('bct.dat'))
     sfile.write('bct_write_vtp {0:s}\n'.format('bct.vtp'))
 
+    # Outlet BCs
+    if solid_name == 'cylinder':
+        sfile.write("pressure_vtp {0:s} {1:f} \n".format(sim_mesh_surf+"face_2.vtp", 0.0))
+    elif solid_name == "demo":
+        sfile.write("pressure_vtp {0:s} {1:f} \n".format(sim_mesh_surf+"face_3.vtp", 0.0))
+        sfile.write("pressure_vtp {0:s} {1:f} \n".format(sim_mesh_surf+"face_4.vtp", 0.0))
+
+    # Write bc files. 
     sfile.write('write_numstart 0 {0:s}\n'.format('numstart.dat'))
     sfile.write('write_geombc {0:s}\n'.format('geombc.dat.1'))
     sfile.write('write_restart {0:s}\n'.format('restart.0.1'))
