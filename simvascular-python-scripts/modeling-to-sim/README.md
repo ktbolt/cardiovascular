@@ -1,5 +1,7 @@
 
-This script is an example of how to prepare a model for simulation. It uses an STL file named **cylinder.stl** as a solid model.
+This script is an example of how to prepare a model for simulation. It uses two models as examples
+    1) cylinder.vtp
+    2) demo.vtp
 
 Running the **model-to-sim.py** script 
 
@@ -24,13 +26,13 @@ Running the **model-to-sim.py** script
   3) Generates the mesh and .svpre files needed to run a simulation using svsolver. 
 
      The directory structure used by svsolver is already created. All files are
-     written to the **simulation** directory.
+     written to the **MODEL_NAME-simulation** directory, where MODEL_NAME = cylinder or demo.
 
-     a) Copy volume and surface meshes simulation/mesh-complete
+     a) Copy volume and surface meshes MODEL_NAME-simulation/mesh-complete
 
-     b) Copy mesh wall to simulation/mesh-complete
+     b) Copy mesh wall to MODEL_NAME-simulation/mesh-complete
 
-     c) Copy mesh faces to simulation/mesh-complete/mesh-surfaces
+     c) Copy mesh faces to MODEL_NAME-simulation/mesh-complete/mesh-surfaces
 
      d) Generate .svpre file 
 
@@ -39,9 +41,9 @@ Running the **model-to-sim.py** script
 
      A solver.inp file is already created.
 
-     a) cd **simulation** directory
+     a) cd **MODEL_NAME-simulation** directory
 
-     b) svpre cylinder.svpre
+     b) svpre MODEL_NAME.svpre
 
      c) mpiexec -np 4 svsolver solver.inp
 
