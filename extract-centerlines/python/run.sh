@@ -1,8 +1,10 @@
 
+export PATH="/Users/parkerda/vmtk/bin:$PATH"
+
 test_name="Kawasaki_Disease_Patient_2"
 
 python=python
-python=python3
+#python=python3
 
 ## Write a 1D solver input file.
 #

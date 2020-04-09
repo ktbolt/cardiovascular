@@ -74,6 +74,7 @@ class Centerlines(object):
 
         ## Extract centerlines using vmtk.
         #
+        self.logger.info(" ");
         self.logger.info("Calculating surface centerlines ...");
         centerlines = vmtkscripts.vmtkCenterlines()
         centerlines.Surface = mesh.surface
@@ -100,9 +101,23 @@ class Centerlines(object):
             centerlines.SourcePoints = source_centers
             centerlines.TargetPoints = target_centers
 
-        #centerlines.Execute()
-        #self.geometry = centerlines.Centerlines
-        #self.logger.info("The surface centerlines have been calculated.");
-        #self.graphics.add_graphics_geometry(self.geometry, [0.0,0.0,1.0])
+        centerlines.Execute()
+        self.geometry = centerlines.Centerlines
+        self.logger.info("The surface centerlines have been calculated.");
+        self.graphics.add_graphics_geometry(self.geometry, [0.0,0.0,1.0])
 
+        self.logger.info("Split and group centerlines along branches ...");
+        branch_extractor = vmtkscripts.vmtkBranchExtractor()
+        branch_extractor.Centerlines = self.geometry
+        branch_extractor.Execute()
+        self.branch_geometry = branch_extractor.Centerlines
+        #print(self.centerlines_branch_geometry)
+        self.logger.info("The centerlines branches have been calculated.");
+
+        file_name = "branch_geometry.vtp"
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName(file_name)
+        writer.SetInputData(self.branch_geometry)
+        writer.Update()
+        writer.Write()
 

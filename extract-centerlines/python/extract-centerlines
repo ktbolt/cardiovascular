@@ -16,3 +16,67 @@
 [extract-centerlines] INFO - Face ID: 14   number of cells: 92   source: False
 [extract-centerlines] INFO - Face ID: 15   number of cells: 190   source: False
 [extract-centerlines] INFO - Face ID: 17   number of cells: 703   source: False
+[extract-centerlines] INFO - ---------- calculate centerlines ----------
+[extract-centerlines] INFO - ---------- Extract Centerlines ---------- 
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 16 ----- 
+[extract-centerlines] INFO - Source
+[extract-centerlines] INFO - Center ID: 30811
+[extract-centerlines] INFO - Center: [-0.7622463883756947, 0.6612136309402709, -16.054814069575695]
+[extract-centerlines] INFO - ID Center: [-0.7648677825927734, 0.6743815541267395, -16.04859161376953]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 17 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 20260
+[extract-centerlines] INFO - Center: [-1.0204858269282797, -4.0498145104811165, -25.121435636590025]
+[extract-centerlines] INFO - ID Center: [-1.0534920692443848, -4.076021194458008, -25.13077735900879]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 9 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 37545
+[extract-centerlines] INFO - Center: [1.4008831645781066, -0.1773631062937913, -7.045956972317818]
+[extract-centerlines] INFO - ID Center: [1.4118210077285767, -0.1799483597278595, -7.051789283752441]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 10 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 33831
+[extract-centerlines] INFO - Center: [-0.9588529022534689, -0.6883950205395619, -7.047772050698598]
+[extract-centerlines] INFO - ID Center: [-0.98053377866745, -0.7232488393783569, -7.04907751083374]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 11 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 52101
+[extract-centerlines] INFO - Center: [-5.322215171655019, 6.265341087182363, -20.655529840787253]
+[extract-centerlines] INFO - ID Center: [-5.319162368774414, 6.283261299133301, -20.648324966430664]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 12 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 44771
+[extract-centerlines] INFO - Center: [-3.827045522484125, -2.4042668038723516, -16.935607592264812]
+[extract-centerlines] INFO - ID Center: [-3.839897394180298, -2.4038755893707275, -16.936298370361328]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 13 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 67300
+[extract-centerlines] INFO - Center: [-5.397750441233317, -1.070969009399414, -17.224476470947266]
+[extract-centerlines] INFO - ID Center: [-5.3991923332214355, -1.072335124015808, -17.223379135131836]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 14 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 41663
+[extract-centerlines] INFO - Center: [-6.625510167384493, 4.951256537782973, -19.63243883934574]
+[extract-centerlines] INFO - ID Center: [-6.617040634155273, 4.947639465332031, -19.644792556762695]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 15 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 14397
+[extract-centerlines] INFO - Center: [-1.5540512158159625, -1.9902902028016878, -7.0337395065709165]
+[extract-centerlines] INFO - ID Center: [-1.5784986019134521, -1.9631373882293701, -7.036950588226318]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - Calculating surface centerlines ...
+[extract-centerlines] INFO - Use source and target IDs
+[extract-centerlines] INFO - Source IDs: [30811]
+[extract-centerlines] INFO - Target IDs: [20260, 37545, 33831, 52101, 44771, 67300, 41663, 14397]
+[extract-centerlines] INFO - The surface centerlines have been calculated.
+[extract-centerlines] INFO - Split and group centerlines along branches ...
+[extract-centerlines] INFO - The centerlines branches have been calculated.

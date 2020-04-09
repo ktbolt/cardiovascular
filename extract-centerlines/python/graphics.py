@@ -56,6 +56,7 @@ class Graphics(object):
     def add_graphics_geometry(self, poly_data, color, sphere=False):
         gr_geom = self.create_graphics_geometry(poly_data, sphere)
         gr_geom.GetProperty().SetColor(color[0], color[1], color[2])
+        gr_geom.GetProperty().SetOpacity(0.5)
         self.renderer.AddActor(gr_geom)
         self.window.Render()
 
