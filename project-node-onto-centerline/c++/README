@@ -1,0 +1,10 @@
+
+cd build 
+
+./project-nodes  ../demo.vtu  ../demo-centerlines.vtp 
+
+  or 
+
+./build/project-nodes demo.vtu demo-centerlines.vtp 
+
+
