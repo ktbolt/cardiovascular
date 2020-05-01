@@ -3,6 +3,7 @@
 '''
 import argparse
 import logging
+import os
 import sys
 import xml.etree.ElementTree as et
 import vtk
@@ -144,7 +145,10 @@ def read_ctgr_file(args, contour_scale, contour_ids, logger):
         scaled_contour_groups.append(scaled_contour_group)
     #_for contour_group_t 
 
-    tree.write("new.ctgr")
+    # Write the scaled file name.
+    scaled_file_name = os.path.splitext(file_name)[0] + "-scaled.ctgr" 
+    tree.write(scaled_file_name)
+
     return contour_groups, scaled_contour_groups
 
 def read_vtp_file(args, logger):
