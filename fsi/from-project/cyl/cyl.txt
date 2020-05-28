@@ -1,0 +1,161 @@
+#Format Version 1.0
+# General simulation parameters
+# -----------------------------------------------------
+Number of spatial dimensions: 3
+Number of time steps: 1000
+Time step size: 1e-3
+Continue previous simulation: 0
+Save results in a folder: 1
+Increment in saving restart files: 10
+Name prefix of saved files: result
+Increment in saving files: 10
+Start saving after time step: 1
+Save averaged results: 1
+Spectral radius of infinite time step: 0.2
+Searched file name to trigger stop: STOP_SIM
+Simulation requires remeshing: F
+Verbose: 1
+Warning: 1
+Debug: 0
+
+# Domains
+#------------------------------------------------------
+Add mesh: cyl-fsi-mesh-complete_domain-solid {
+   Mesh file path (vtu): cyl-fsi-mesh-complete_domain-solid/mesh-complete.mesh.vtu
+   Add face: solid_inlet {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-solid/mesh-surfaces/solid_inlet.vtp
+   }
+   Add face: solid_inner {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-solid/mesh-surfaces/solid_inner.vtp
+   }
+   Add face: solid_outer {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-solid/mesh-surfaces/solid_outer.vtp
+   }
+   Add face: solid_outlet {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-solid/mesh-surfaces/solid_outlet.vtp
+   }
+   Domain: 1
+}
+Add mesh: cyl-fsi-mesh-complete_domain-fluid {
+   Mesh file path (vtu): cyl-fsi-mesh-complete_domain-fluid/mesh-complete.mesh.vtu
+   Add face: fluid_inlet {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-fluid/mesh-surfaces/fluid_inlet.vtp
+   }
+   Add face: fluid_interface {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-fluid/mesh-surfaces/fluid_interface.vtp
+   }
+   Add face: fuild_outlet {
+      Face file path (vtp): cyl-fsi-mesh-complete_domain-fluid/mesh-surfaces/fuild_outlet.vtp
+   }
+   Domain: 2
+}
+
+Add projection: fluid_interface { Project from face: solid_inner }
+
+# Equations
+#------------------------------------------------------
+Add equation: FSI {
+   Coupled: 1
+   Min iterations: 1
+   Max iterations: 10
+   Tolerance: 1e-4
+   Residual dB reduction: -20
+
+   Domain: 1 { 
+      Equation: fluid
+      Density: 1
+      Viscosity: 0.04
+      Backflow stabilization coefficient: 0.3
+   }
+
+   Domain: 2 { 
+      Equation: struct
+      Constitutive model: stVK
+      Density: 1
+      Elasticity modulus: 100000
+      Poisson ratio: 0.4
+   }
+
+   LS type: GMRES {
+      Max iterations: 10
+      Tolerance: 1e-4
+      Absolute tolerance: 1e-4
+      Krylov space dimension: 50
+   }
+
+   Output: Spatial {
+      Displacement: t
+      Velocity: t
+      Pressure: t
+      WSS: t
+   }
+
+   Add BC: fluid_inlet {
+      Type: Dirichlet
+      Time dependence: Steady
+      Value: -10
+      Profile: Parabolic
+      Zero out perimeter: 1
+      Impose flux: 1
+   }
+
+   Add BC: fuild_outlet {
+      Type: Neumann
+      Time dependence: Steady
+      Value: 0
+      Profile: Flat
+   }
+
+   Add BC: solid_inlet {
+      Type: Dirichlet
+      Time dependence: Steady
+      Value: 0
+      Profile: Flat
+      Zero out perimeter: 1
+      Impose flux: 1
+   }
+
+   Add BC: solid_outlet {
+      Type: Dirichlet
+      Time dependence: Steady
+      Value: 0
+      Profile: Flat
+      Zero out perimeter: 1
+      Impose flux: 1
+   }
+
+}
+
+Add equation: mesh {
+   Coupled: 1
+   Min iterations: 1
+   Max iterations: 10
+   Tolerance: 1e-4
+   Residual dB reduction: -20
+
+   Poisson ratio: 0.3
+
+   Output: Spatial {
+      Displacement: t
+   }
+
+   Add BC: fluid_inlet {
+      Type: Dirichlet
+      Time dependence: Steady
+      Value: 0
+      Profile: Flat
+      Zero out perimeter: 1
+      Impose flux: 1
+   }
+
+   Add BC: fuild_outlet {
+      Type: Dirichlet
+      Time dependence: Steady
+      Value: 0
+      Profile: Flat
+      Zero out perimeter: 1
+      Impose flux: 1
+   }
+
+}
+
