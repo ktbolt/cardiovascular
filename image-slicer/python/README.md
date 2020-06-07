@@ -23,6 +23,6 @@ A SimVascular path is an interpolating spline through a set of control points. E
 
 <img style="margin:0px auto;display:block" src="images/volume-slice.png" />
 
-The image shows a 2D k-axis volume slice. The SimVascular path is shown as a red line with control points (blue markers). A 2D slice has been extract from the image volume by selecting a point on the path. The path position, tangent and normal define a plane used to interpolate image data.
+*The image shows a 2D k-axis volume slice. The SimVascular path is shown as a red line with control points (blue markers). A 2D slice has been extract from the image volume by selecting a point on the path. The path position, tangent and normal define a plane used to interpolate image data.*
 
 
