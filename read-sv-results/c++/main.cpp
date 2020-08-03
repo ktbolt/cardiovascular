@@ -22,6 +22,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
+#include <vtkXMLUnstructuredGridWriter.h>
 
 //-----------
 // PrintData
@@ -193,6 +194,16 @@ void PrintMesh(vtkUnstructuredGrid* mesh)
     }
     std::cout << std::endl;
   }
+
+ // Write just the mesh.
+ /*
+ std::string fileName = "mesh.vtu";
+ vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+ writer->SetFileName(fileName.c_str());
+ writer->SetInputData(mesh);
+ writer->Update();
+ */
+
 }
 
 //-----------

@@ -1,10 +1,8 @@
-'''
-This script is used to create a model of a vessel wall by performing a Boolean 
-subtract operation between models of the inner and outer vessel contours.
+''' This script is used to create a model of a vessel wall by performing a Boolean 
+    subtract operation between models of the inner and outer vessel contours.
 
-The script reads two models from the PROJECT/Models directory. Set the 'project_dir' to the
-location of your project containing the models.
-
+    The script reads two models from the PROJECT/Models directory. Set the 'project_dir' to the
+    location of your project containing the models.
 '''
 import os, pwd
 import sys

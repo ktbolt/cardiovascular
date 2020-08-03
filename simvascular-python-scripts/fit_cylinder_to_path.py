@@ -147,7 +147,7 @@ class PathFitCyl(object):
             length = dist
             solid.Cylinder(cyl_name, radius, length, center, axis)
             solid.GetPolyData(cyl_pdname, 0.5)
-            GUI.ImportPolyDataFromRepos(cyl_pdname)
+            GUI.ImportPolyDataFromRepos(cyl_pdname, "Models")
         else:
             cyl = self.create_cylinder(pt1, pt2, radius)
             writer = vtk.vtkPolyDataWriter()
@@ -159,7 +159,7 @@ class PathFitCyl(object):
                 writer.SetInputData(cyl)
                 writer.Update()
                 Repository.ReadVtkPolyData(cyl_pdname, file_name)
-                GUI.ImportPolyDataFromRepos(cyl_pdname)
+                GUI.ImportPolyDataFromRepos(cyl_pdname, "Models")
             except:
                 print("[PathFitCyl] ****ERROR: Can't write to {0:s} ".format(dir))
 
@@ -212,7 +212,7 @@ class PathFitCyl(object):
 #
 # This test is used for the SV Demo project.
 #
-test_demo = False
+test_demo = True
 
 if test_demo:
     path_name = 'aorta'

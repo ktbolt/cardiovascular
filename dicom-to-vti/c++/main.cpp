@@ -21,7 +21,7 @@ int main ( int argc, char *argv[] )
 
   // Write vti.
   vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New(); 
-  writer->SetFileName("volumd.vti"); 
+  writer->SetFileName("volume.vti"); 
   writer->SetInputData(reader->GetOutput()); 
   writer->Write(); 
   }

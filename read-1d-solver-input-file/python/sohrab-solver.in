@@ -1,0 +1,281 @@
+# ================================
+# cow_caas MODEL - UNITS IN CGS
+# ================================
+
+# ==========
+# MODEL CARD
+# ==========
+# - Name of the model (string)
+
+MODEL cow_caas
+
+
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ==========
+# NODE CARD
+# ==========
+# - Node Name (double)
+# - Node X Coordinate (double)
+# - Node Y Coordinate (double)
+# - Node Z Coordinate (double)
+
+NODE 0 86.8314 67.7467 69.6719
+NODE 1 86.8314 67.7467 59.6719
+NODE 2 113.9473648071289 52.84859848022461 42.38675308227539
+NODE 3 103.01493835449219 55.76670837402344 27.99596405029297
+NODE 4 120.38335418701172 74.88758850097656 1.446734070777893
+NODE 5 87.59142303466797 65.92744445800781 32.69085693359375
+NODE 6 92.13404083251953 76.77751922607422 10.203064918518066
+NODE 7 94.27976989746094 83.14610290527344 4.075333595275879
+NODE 8 86.74174499511719 80.34156036376953 4.530704021453857
+NODE 9 77.91027069091797 51.65019226074219 30.123811721801758
+NODE 10 57.90684127807617 79.09507751464844 3.593367099761963
+NODE 11 59.88364028930664 51.278141021728516 41.853790283203125
+
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ==========
+# JOINT CARD
+# ==========
+# - Joint Name (string)
+# - Joint Node (double)
+# - Joint Inlet Name (string)
+# - Joint Outlet Name (string)
+
+
+
+### DO NOT CHANGE THIS SECTION - generated automatically
+#
+# ================================
+# JOINTINLET AND JOINTOUTLET CARDS
+# ================================
+# - Inlet/Outlet Name (string)
+# - Total Number of segments (int)
+# - List of segments (list of int)
+
+JOINT J0 1 IN0 OUT0
+JOINTINLET IN0 1 0
+JOINTOUTLET OUT0 2 1 11
+
+JOINT J1 3 IN1 OUT1
+JOINTINLET IN1 1 2
+JOINTOUTLET OUT1 2 3 4
+
+JOINT J2 5 IN2 OUT2
+JOINTINLET IN2 1 4
+JOINTOUTLET OUT2 2 5 8
+
+JOINT J3 6 IN3 OUT3
+JOINTINLET IN3 1 5
+JOINTOUTLET OUT3 2 6 7
+
+JOINT J4 9 IN4 OUT4
+JOINTINLET IN4 1 8
+JOINTOUTLET OUT4 2 9 10
+
+# ============
+# SEGMENT CARD
+# ============
+# - Segment Name (string)
+# - Segment ID (int)
+# - Segment Length (double)
+# - Total Finite Elements in Segment (int)
+# - Segment Inlet Node (int)
+# - Segment Outlet Node (int)
+# - Segment Inlet Area (double)
+# - Segment Outlet Area (double)
+# - Segment Inflow Value (double)
+# - Segment Material (string)
+# - Type of Loss (string - 'NONE','STENOSIS','BRANCH_THROUGH_DIVIDING','BRANCH_SIDE_DIVIDING','BRANCH_THROUGH_CONVERGING',
+#                          'BRANCH_SIDE_CONVERGING','BIFURCATION_BRANCH')
+# - Branch Angle (double)
+# - Upstream Segment ID (int)
+# - Branch Segment ID (int)
+# - Boundary Condition Type (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',
+#                                     'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')
+# - Data Table Name (string)
+
+SEGMENT Group0_Seg0 0 1.00 20 0 1 0.45 0.45 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group2_Seg1 1 4.125224071 82 1 2 0.20 0.20 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group3_Seg2 2 4.4718710010651066 89 2 3 0.8334923698764278 0.7334923698764278 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group5_Seg3 3 4.5968591240159455 92 3 4 0.7219954793435416 0.6635139375689154 0.0 MAT1 NONE 0.0 0 0 RCR RCR_0
+SEGMENT Group7_Seg4 4 5.0077513976265486 100 3 5 0.60169920830846975 0.5718702655388168 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group8_Seg5 5 2.6449038174637323 52 5 6 0.6202441505789495 0.4880427899981447 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group9_Seg6 6 0.6472742082910858 12 6 7 0.69486543290087806 0.59486543290087806 0.0 MAT1 NONE 0.0 0 0 RCR RCR_1
+SEGMENT Group11_Seg7 7 0.5827185320517146 11 6 8 0.6643848627331706 0.5643848627331706 0.0 MAT1 NONE 0.0 0 0 RCR RCR_2
+SEGMENT Group12_Seg8 8 4.952942889838434 99 5 9 0.4561695979806297 0.21985576168943037 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group13_Seg9 9 5.57498767615969 111 9 10 0.8434540181197602 0.7434540181197602 0.0 MAT1 NONE 0.0 0 0 RCR RCR_3
+SEGMENT Group14_Seg10 10 3.0487963306813484 61 9 11 0.6956689386137004 0.5956689386137004 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+SEGMENT Group15_Seg11 11 3.626132097 72 11 1 0.25 0.25 0.0 MAT1 NONE 0.0 0 0 NOBOUND NONE
+
+DATATABLE RCR_0 LIST
+0.0 24.0
+0.0 0.0002
+0.0 800
+ENDDATATABLE
+
+DATATABLE RCR_1 LIST
+0.0 24.0
+0.0 0.0002
+0.0 800
+ENDDATATABLE
+
+DATATABLE RCR_2 LIST
+0.0 24.0
+0.0 0.0002
+0.0 800
+ENDDATATABLE
+
+DATATABLE RCR_3 LIST
+0.0 24.0
+0.0 0.0002
+0.0 800
+ENDDATATABLE
+
+
+
+
+DATATABLE INFLOW LIST
+ 0.000000 10.662864
+ 0.010000 10.654864
+ 0.020000 10.643864
+ 0.030000 10.613864
+ 0.040000 10.576745
+ 0.050000 10.474451
+ 0.060000 10.320579
+ 0.070000 10.113348
+ 0.080000 9.454006
+ 0.090000 8.447076
+ 0.100000 7.592898
+ 0.110000 7.315521
+ 0.120000 7.238065
+ 0.130000 7.187560
+ 0.140000 7.168287
+ 0.150000 7.188449
+ 0.170000 7.251998
+ 0.180000 7.349884
+ 0.190000 7.474850
+ 0.200000 7.741496
+ 0.210000 8.194754
+ 0.220000 8.788036
+ 0.230000 9.474756
+ 0.240000 10.508736
+ 0.250000 11.999634
+ 0.260000 13.413865
+ 0.270000 14.383733
+ 0.280000 15.227054
+ 0.290000 15.896709
+ 0.310000 16.220784
+ 0.320000 16.227567
+ 0.330000 16.066846
+ 0.340000 15.801339
+ 0.350000 15.476203
+ 0.360000 15.077405
+ 0.370000 14.412001
+ 0.380000 13.703555
+ 0.390000 13.229581
+ 0.400000 12.917003
+ 0.410000 12.657052
+ 0.420000 12.455284
+ 0.430000 12.320164
+ 0.450000 12.242008
+ 0.460000 12.178222
+ 0.470000 12.090935
+ 0.480000 11.860918
+ 0.490000 11.112093
+ 0.500000 10.245662
+ 0.510000 9.788849
+ 0.520000 9.978555
+ 0.530000 10.484124
+ 0.540000 11.010090
+ 0.550000 11.266413
+ 0.560000 11.091344
+ 0.570000 10.669085
+ 0.590000 10.294816
+ 0.600000 10.218510
+ 0.610000 10.264610
+ 0.620000 10.344313
+ 0.630000 10.434589
+ 0.640000 10.557744
+ 0.650000 10.756663
+ 0.660000 10.962339
+ 0.670000 11.101511
+ 0.680000 11.165792
+ 0.690000 11.218990
+ 0.700000 11.256551
+ 0.710000 11.271719
+ 0.730000 10.984292
+ 0.740000 10.292763
+ 0.750000 9.591793
+ 0.760000 9.250778
+ 0.770000 9.091900
+ 0.780000 8.971456
+ 0.790000 8.878333
+ 0.800000 8.803679
+ 0.810000 8.747327
+ 0.820000 8.696630
+ 0.830000 8.636942
+ 0.840000 8.555544
+ 0.850000 8.454792
+ 0.870000 8.351884
+ 0.880000 8.263959
+ 0.890000 8.189235
+ 0.900000 8.121068
+ 0.910000 8.058922
+ 0.920000 8.001194
+ 0.930000 7.946959
+ 0.940000 7.895984
+ 0.950000 7.846139
+ 0.960000 7.795513
+ 0.970000 7.743081
+ 0.980000 7.689468
+ 0.990000 7.635460
+ 1.000000 7.625160
+ENDDATATABLE
+
+
+# ==================
+# SOLVEROPTIONS CARD
+# ==================
+# - Solver Time Step (double), 
+# - Steps Between Saves (int), 
+# - Max Number of Steps (int)
+# - Number of quadrature points for finite elements (int), 
+# - Name of Datatable for inlet conditions (string)
+# - Type of boundary condition (string - 'NOBOUND','PRESSURE','AREA','FLOW','RESISTANCE','RESISTANCE_TIME','PRESSURE_WAVE',
+#                                        'WAVE','RCR','CORONARY','IMPEDANCE','PULMONARY')
+# - Convergence tolerance (double), 
+# - Formulation Type (int - 0 Advective, 1 Conservative), 
+# - Stabilization (int - 0 No stabilization, 1 With stabilization)
+
+SOLVEROPTIONS 5e-06 100 200000 2 INFLOW FLOW 1.0e-5 0 1
+
+# =============
+# MATERIAL CARD
+# =============
+# - Material Name (string)
+# - Material Type (string - 'LINEAR','OLUFSEN')
+# - Material Density (double)
+# - Material Viscosity (double)
+# - Material Exponent (double)
+# - Material Parameter 1 (double)
+# - Material Parameter 2 (double)
+# - Material Parameter 3 (double)
+
+MATERIAL MAT1 OLUFSEN 1.06 0.04 113324.0 1.0 20000000.0 -22.5267 865000.0
+
+# ============
+# OUTPUT CARD
+# ============
+#
+# 1. Output file format. The following output types are supported:
+#		TEXT. The output of every segment is written in separate text files for the flow rate, pressure, area and Reynolds number. The rows contain output values at varying locations along the segment while columns contains results at various time instants.
+#		VTK. The results for all time steps are plotted to a 3D-like model using the XML VTK file format.
+# 2. VTK export option. Two options are available for VTK file outputs:
+#		0 - Multiple files (default). A separate file is written for each saved increment. A pvd file is also provided which contains the time information of the sequence. This is the best option to create animations.
+#		1 - The results for all time steps are plotted to a single XML VTK file.
+
+OUTPUT TEXT

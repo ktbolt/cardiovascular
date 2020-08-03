@@ -1,7 +1,11 @@
 
+from pathlib import Path
+import sys
+home = str(Path.home())
+
 ## Print the DICOM tags for all files.
 
-dir=/Users/parkerda/SimVascular/erica-schwarz/data/8
+dir=home+"/SimVascular/erica-schwarz/data/8"
 sn=1.2.840.113619.2.312.3596.12002390.11470.1592004653
 
 for filename in ${dir}/*.dcm; do

@@ -98,8 +98,8 @@ def get_region_mesh(mesh, region_id):
     return thresholder.GetOutput()
 #_get_region_mesh(mesh, region_id)
 
-def write_mesh(mesh, region_id): 
-    file_name = "mesh-" + str(region_id) + ".vtu"
+def write_mesh(file_base_name, mesh, region_id): 
+    file_name = file_base_name + "-mesh-" + str(region_id) + ".vtu"
     writer = vtk.vtkXMLUnstructuredGridWriter()
     writer.SetFileName(file_name)
     writer.SetInputData(mesh)
@@ -113,6 +113,7 @@ if __name__ == '__main__':
     ## Read mesh.
     #
     file_name = sys.argv[1]
+    file_base_name, ext = os.path.splitext(file_name)
     reader = vtk.vtkXMLUnstructuredGridReader()
     reader.SetFileName(file_name)
     reader.Update()
@@ -205,7 +206,7 @@ if __name__ == '__main__':
     print("")
     print("========== Region 1 mesh ==========")
     mesh_1 = get_region_mesh(mesh, 1) 
-    write_mesh(mesh_1, 1) 
+    write_mesh(file_base_name, mesh_1, 1) 
     #
     num_points_1 = mesh_1.GetNumberOfPoints()
     points_1 = mesh_1.GetPoints()
@@ -231,7 +232,7 @@ if __name__ == '__main__':
     print("")
     print("========== Region 2 mesh ==========")
     mesh_2 = get_region_mesh(mesh, 2) 
-    write_mesh(mesh_2, 2) 
+    write_mesh(file_base_name, mesh_2, 2) 
     #
     num_points_2 = mesh_2.GetNumberOfPoints()
     points_2 = mesh_2.GetPoints()
@@ -261,6 +262,9 @@ if __name__ == '__main__':
             #print("    {0:s}: ".format(str(pts[1])))
             num_dupe += 1
     print("Region 1 and 2 share {0:d} nodes.".format(num_dupe))
+
+    ## Write meshes.
+    #
 
     ## Show mesh.
     #

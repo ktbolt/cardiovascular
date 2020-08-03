@@ -1,12 +1,17 @@
 #!/usr/bin/env python
+'''Convert a DICOM image series into a VTK .vtk image file.
+
+   Usage: 
+
+     dicom-to-vtk.py DICOM_DIRECTORY
+
+'''
 import os
 from pathlib import Path
 import sys 
 import SimpleITK as sitk
 
-home = str(Path.home())
-data_directory = home+"/SimVascular/data/OSMSC0005-pulmonary/image_data/volume/"
-
+data_directory = sys.argv[1]
 series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(data_directory)
 
 if not series_IDs:
@@ -25,20 +30,11 @@ print("Number of series file names: {0:d}".format(len(series_file_names)))
 #
 series_reader.MetaDataDictionaryArrayUpdateOn()
 series_reader.LoadPrivateTagsOn()
-#series_reader.ReadImageInformation()()
 image3D = series_reader.Execute()
-print(type(image3D))
 
-direction = image3D.GetDirection()
-print("direction: {0:s}".format(str(direction))) 
-
+## Write the .vtk file.
+#
 writer = sitk.ImageFileWriter()
 writer.SetFileName("volume.vtk")
 writer.Execute(image3D)
-
-'''
-for k in series_reader.GetMetaDataKeys():
-    v = series_reader.GetMetaData(k)
-    print("({0}) = = \"{1}\"".format(k, v))
-'''
 

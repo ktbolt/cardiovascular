@@ -18,6 +18,7 @@ export PYTHONPATH=$PYTHONPATH:$SVPROJECT_DIR/SimVascular/Python/site-packages
 ## Set input parameters
 #
 res_dir=./example
+res_dir=/Users/parkerda/SimVascular/sim-1d-SU201_2005-resistance/Simulations1d/su201/
 file=solver.in
 #
 #res_dir=/home/davep/tmp/1d-solver
@@ -44,7 +45,9 @@ radius="0.1"
 
 plot="on"
 plot="off"
-time_range="0.01,0.8"
+time_range="0.0,4.8"
+time_range="0.0,0.8"
+time_range="0.4,4.0"
 
 python_int=python
 python_int=python3
