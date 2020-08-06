@@ -1,0 +1,18 @@
+#!/bin/bash
+
+INPUT_DIR=${1? Error: No input directory given.}
+OUTPUT_DIR=${2:-$INPUT_DIR}
+
+ABS_PATH=$(realpath $INPUT_DIR)
+
+if [[ ! -d $ABS_PATH ]]; then
+    echo "Directory $ABS_PATH does not exist."
+    exit 1
+fi
+
+echo "Converting DICOM stacks to VTK..."
+for d in $(find $ABS_PATH -maxdepth 1 -type d); do
+    python dicom-to-vtk.py -i $d -o $OUTPUT_DIR
+done
+
+echo "Finished converting DICOM stacks to VTK."
