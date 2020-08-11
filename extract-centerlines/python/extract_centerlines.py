@@ -65,7 +65,7 @@ def set_parameters(**kwargs):
             logger.error("The surface file '%s' was not found." % params.surface_file_name)
             return None
 
-    params.source_face_ids = [int(id) for id in kwargs.get(Args.SOURCE_FACE_IDS).strip().split()]
+    params.source_face_ids = [int(id) for id in kwargs.get(Args.SOURCE_FACE_IDS).strip().split(',')]
     logger.info("Source face ids: %s" % params.source_face_ids)
 
     params.target_face_ids = [int(id) for id in kwargs.get(Args.TARGET_FACE_IDS).strip().split(',')]

@@ -67,7 +67,10 @@ def set_parameters(**kwargs):
         params.filter_faces = int(kwargs.get(Args.FILTER_FACES))
 
     params.angle = kwargs.get(Args.ANGLE)
+
     params.show_edges = kwargs.get(Args.SHOW_EDGES)
+    params.show_faces = kwargs.get(Args.SHOW_FACES)
+
     params.use_feature_angle = kwargs.get(Args.USE_FEATURE_ANGLE)
 
     return params
@@ -99,9 +102,12 @@ if __name__ == '__main__':
         mesh.show_edges()
 
     graphics.mesh = mesh
-    #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=show_wire)
-    graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
-    #mesh.show_faces()
+
+    if params.show_faces:
+        mesh.show_faces()
+    else:
+        #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=show_wire)
+        graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
 
     graphics.mesh = mesh
     graphics.show()

@@ -16,14 +16,43 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver("CharEvent", self.onCharEvent)
         self.graphics = graphics
         self.selected_points = []
+        self.picked_actor = None
+        self.last_picked_actor = None
 
-    def leftButtonPressEvent(self, obj, event):
-        '''Process left mouse button press.
+    def select_event(self, obj, event):
+        '''Process a select event. 
         '''
         clickPos = self.GetInteractor().GetEventPosition()
         picker = vtk.vtkCellPicker()
         picker.Pick(clickPos[0], clickPos[1], 0, self.renderer)
 
+        # Get selecected geometry. 
+        self.picked_actor = picker.GetActor()
+        if self.picked_actor == None:
+            #self.OnLeftButtonDown()
+            return
+
+        graphics = self.graphics
+
+        # Identify the selected face.
+        picked_face = None
+        for face_id, face in self.graphics.face_actors.items():
+            if self.picked_actor == face[0]:
+              graphics.logger.info(" ")
+              graphics.logger.info("Selected face: %d" % face_id)
+              graphics.picked_face = face 
+              picked_face = face 
+              self.picked_actor = face 
+
+        if picked_face:
+            if self.last_picked_actor:
+                actor = self.last_picked_actor[0]
+                color = self.last_picked_actor[1]
+                actor.GetProperty().SetColor(color)
+            self.picked_actor[0].GetProperty().SetColor([0.0, 1.0, 0.0])
+            self.last_picked_actor = self.picked_actor
+
+        '''
         position = picker.GetPickPosition()
         cell_id = picker.GetCellId()
 
@@ -56,7 +85,8 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         self.graphics.add_sphere(min_p, [0.0, 1.0, 0.0])
 
-        self.OnLeftButtonDown()
+        #self.OnLeftButtonDown()
+        '''
         return
 
     def onCharEvent(self, renderer, event):
@@ -75,53 +105,7 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         key = self.GetInteractor().GetKeySym()
 
         if (key == 's'):
-            self.leftButtonPressEvent(None, event)
-        elif (key == 'f'):
-            self.fix()
-
-
-    def fix(self):
-        print("---------- fix ----------")
-        # proj: 18801 78.032 107.444 111.834 
-        # Picked node: 18724 78.044 107.418 111.818 
-        # Picked node: 18800 78.002 107.488 111.866 
-
-        proj_p = [78.032, 107.444, 111.834] 
-        p1 = [78.002, 107.488, 111.866]
-        p2 = [78.044, 107.418, 111.818]
-        surface = self.graphics.mesh.surface
-        points = surface.GetPoints()
-        polygons = surface.GetPolys().GetData()
-
-        newPolyData = vtk.vtkPolyData()
-        newPoints = vtk.vtkPoints()
-        for i in range(points.GetNumberOfPoints()): 
-            p = 3*[0.0]
-            points.GetPoint(i,p)
-            newPoints.InsertNextPoint(p)
-        newPolyData.SetPoints(newPoints)
-
-        newCells = vtk.vtkCellArray()
-        for cell_id in range(surface.GetNumberOfCells()): 
-            cell = surface.GetCell(cell_id)
-            dim = cell.GetCellDimension()
-            num_cell_nodes = cell.GetNumberOfPoints()
-            print("Cell: {0:d}".format(cell_id))
-            print("    dim: {0:d}".format(dim))
-            print("    cell_num_nodes: {0:d}".format(num_cell_nodes))
-            tri = vtk.vtkTriangle()
-            for j in range(0, num_cell_nodes):
-                node_id = cell.GetPointId(j)
-                print("    node id: {0:d}".format(node_id))
-                tri.GetPointIds().SetId(j, node_id)
-            newCells.InsertNextCell(tri)
-
-        newPolyData.SetPolys(newCells)
-
-        writer = vtk.vtkXMLPolyDataWriter()
-        writer.SetFileName("fix.vtp");
-        writer.SetInputData(newPolyData)
-        writer.Write()
+            self.select_event(None, event)
 
     #__def onKeyPressEvent
 
@@ -133,6 +117,8 @@ class Graphics(object):
         self.renderer = None
         self.window = None
         self.interactor = None
+        self.pick_face = None
+        self.face_actors = {}
         self.logger = logging.getLogger(get_logger_name())
         self.initialize_graphics()
 

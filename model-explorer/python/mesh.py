@@ -134,16 +134,25 @@ class Mesh(object):
         self.logger.info("========== show_faces ==========")
         self.logger.info("Number of faces: {0:d}".format(len(self.boundary_faces)))
         num_faces = len(self.boundary_faces)
-        random.seed(1)
+        max_face = None
+        max_ncells = 0
+
+        for fid,face in self.boundary_faces.items():
+            ncells = face.surface.GetNumberOfCells()
+            if ncells > max_ncells:
+                max_ncells = ncells
+                max_face = face
 
         for fid,face in self.boundary_faces.items():
             npts = face.surface.GetNumberOfPoints()
             ncells = face.surface.GetNumberOfCells()
             self.logger.info("  id:{0:d} num cells: {1:d}".format(face.model_face_id, ncells))
-            r = random.uniform(0, 1)
-            b = random.uniform(0, 1)
-            g = random.uniform(0, 1)
-            self.graphics.add_graphics_geometry(face.surface, [r,b,g])
+            if face == max_face:
+                color = [0.8, 0.8, 0.8]
+            else:
+                color = [1.0, 0.0, 0.0]
+            actor = self.graphics.add_graphics_geometry(face.surface, color)
+            self.graphics.face_actors[fid] = (actor, color)
 
     def filter_faces(self, min_num_cells):
         self.logger.info("========== filter_faces ==========")
