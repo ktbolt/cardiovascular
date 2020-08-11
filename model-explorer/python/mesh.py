@@ -1,0 +1,253 @@
+#!/usr/bin/env python
+
+from os import path
+import logging
+from manage import get_logger_name
+from math import sqrt
+import random
+
+import vtk
+print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
+
+try:
+    from vmtk import vtkvmtk,vmtkscripts
+except ImportError:
+    print("vmtk not found.")
+
+from face import Face
+
+class VtkDataNames(object):
+    GlobalElementID = "GlobalElementID"
+    ModelRegionID = "ModelRegionID"
+    ModelFaceID = "ModelFaceID"
+
+class Mesh(object):
+
+    def __init__(self, params):
+        self.params = params
+        self.surface = None
+        self.mesh_from_vtp = None 
+        self.graphics = None
+        self.boundary_faces = None
+        self.boundary_edges = None
+        self.boundary_edge_components = None
+        self.boundary_face_components = None
+        self.logger = logging.getLogger(get_logger_name())
+
+    def extract_faces(self):
+        '''Extract the surface faces using an angle between faces.
+
+          [TODO:DaveP] This is not finished.
+        '''
+        self.logger.info("========== extract faces ========== ")
+        angle = self.params.angle
+        surface = self.surface
+        self.logger.info("Angle: {0:f}".format(angle))
+
+        feature_edges = vtk.vtkFeatureEdges()
+        feature_edges.SetInputData(surface)
+        feature_edges.BoundaryEdgesOff();
+        feature_edges.ManifoldEdgesOff();
+        feature_edges.NonManifoldEdgesOff();
+        feature_edges.FeatureEdgesOn();
+        feature_edges.SetFeatureAngle(angle);
+        feature_edges.Update()
+
+        boundary_edges = feature_edges.GetOutput()
+        clean_filter = vtk.vtkCleanPolyData()
+        boundary_edges_clean = clean_filter.SetInputData(boundary_edges)
+        clean_filter.Update();
+        cleaned_edges = clean_filter.GetOutput()
+
+        conn_filter = vtk.vtkPolyDataConnectivityFilter()
+        conn_filter.SetInputData(cleaned_edges)
+        conn_filter.SetExtractionModeToSpecifiedRegions()
+
+        self.boundary_face_components = {}
+        self.boundary_faces = {}
+
+        rid = 1
+        while True:
+            conn_filter.AddSpecifiedRegion(rid)
+            conn_filter.Update()
+            component = vtk.vtkPolyData()
+            component.DeepCopy(conn_filter.GetOutput())
+            if component.GetNumberOfCells() <= 0:
+                break
+            print("{0:d}: Number of boundary lines: {1:d}".format(rid, component.GetNumberOfCells()))
+            self.boundary_faces[rid] = Face(rid, component)
+            #self.boundary_face_components[rid] = component
+            conn_filter.DeleteSpecifiedRegion(rid)
+            rid += 1
+
+    #_extract_faces(self):
+
+    def get_surface_faces(self):
+        '''Get the faces from the surface mesh using the ModelFaceID data array.
+     
+           The faces are vtkPolyData objects with cell data arrays.
+        '''
+        self.logger.info("========== get_surface_faces ==========")
+        face_ids = self.surface.GetCellData().GetArray(VtkDataNames.ModelFaceID)
+        if face_ids == None:
+            self.logger.error("No ModelFaceID data.")
+            return;
+        face_ids_range = 2*[0]
+        face_ids.GetRange(face_ids_range, 0)
+        min_id = int(face_ids_range[0])
+        max_id = int(face_ids_range[1])
+        self.logger.info("Face IDs range: {0:d} {1:d}".format(min_id, max_id))
+
+        ## Extract face geometry.
+        #
+        mesh_faces = {}
+
+        for i in range(min_id, max_id+1):
+            #print("[Mesh.get_surface_faces] ---------- ID {0:d} ---------".format(i))
+            threshold = vtk.vtkThreshold()
+            threshold.SetInputData(self.surface)
+            threshold.SetInputArrayToProcess(0,0,0,1,VtkDataNames.ModelFaceID)
+            threshold.ThresholdBetween(i,i)
+            threshold.Update();
+
+            surfacer = vtk.vtkDataSetSurfaceFilter()
+            surfacer.SetInputData(threshold.GetOutput())
+            surfacer.Update()
+            mesh_faces[i] = Face(i, surfacer.GetOutput())
+            #print("Mesh.[get_surface_faces] Face number of points: %d" % mesh_faces[i].GetNumberOfPoints())
+            #print("Mesh.[get_surface_faces] Face number of cells: %d" % mesh_faces[i].GetNumberOfCells())
+            #write_surface_mesh("surface", mesh_faces[i], str(i))
+        #_for i in range(min_id, max_id+1)
+
+        self.boundary_faces = mesh_faces
+        for fid,face in self.boundary_faces.items():
+            npts = face.surface.GetNumberOfPoints()
+            ncells = face.surface.GetNumberOfCells()
+            self.logger.info("  id:{0:d} num cells: {1:d}".format(face.model_face_id, ncells))
+
+    def show_edges(self):
+        self.logger.info("========== show_edges ==========")
+        for rid,edge in self.boundary_edges.items():
+            self.graphics.add_graphics_geometry(edge, [1.0,1.0,1.0], line_width=4.0)
+
+    def show_faces(self):
+        self.logger.info("========== show_faces ==========")
+        self.logger.info("Number of faces: {0:d}".format(len(self.boundary_faces)))
+        num_faces = len(self.boundary_faces)
+        random.seed(1)
+
+        for fid,face in self.boundary_faces.items():
+            npts = face.surface.GetNumberOfPoints()
+            ncells = face.surface.GetNumberOfCells()
+            self.logger.info("  id:{0:d} num cells: {1:d}".format(face.model_face_id, ncells))
+            r = random.uniform(0, 1)
+            b = random.uniform(0, 1)
+            g = random.uniform(0, 1)
+            self.graphics.add_graphics_geometry(face.surface, [r,b,g])
+
+    def filter_faces(self, min_num_cells):
+        self.logger.info("========== filter_faces ==========")
+        self.logger.info("Number of faces: {0:d}".format(len(self.boundary_faces)))
+        self.logger.info("min_num_cells: {0:d}".format(min_num_cells))
+        for fid,face in self.boundary_faces.items():
+            npts = face.surface.GetNumberOfPoints()
+            ncells = face.surface.GetNumberOfCells()
+            if ncells > min_num_cells:
+                continue
+            self.logger.info("  id:{0:d} num cells: {1:d}".format(face.model_face_id, ncells))
+            self.graphics.add_graphics_geometry(face.surface, [1.0,0.0,0.0])
+            points = face.surface.GetPoints()
+            center = [0.0,0.0,0.0]
+            num_pts = face.surface.GetNumberOfPoints()
+            for i in range(0, num_pts):
+                point = face.surface.GetPoint(i)
+                center[0] += point[0]
+                center[1] += point[1]
+                center[2] += point[2]
+            center[0] /= num_pts 
+            center[1] /= num_pts
+            center[2] /= num_pts
+            dx = 0.0
+            dy = 0.0
+            dz = 0.0
+            max_r = 0.0
+            for i in range(0, num_pts):
+                point = face.surface.GetPoint(i)
+                dx = point[0] - center[0]
+                dy = point[1] - center[1]
+                dz = point[2] - center[2]
+                d = sqrt(dx*dx + dy*dy + dz*dz)
+                if d > max_r:
+                    max_r = d
+            self.logger.info("  max_r:{0:f} ".format(max_r))
+            self.graphics.add_sphere(center, [0.0, 1.0, 0.0], radius=max_r)
+
+
+    def extract_edges(self):
+        ''' Extract the surface boundary edges.
+        '''
+        self.logger.info("========== extract edges ========== ")
+        angle = 50.0
+        surface = self.surface
+        self.logger.info("Angle: {0:f}".format(angle))
+
+        feature_edges = vtk.vtkFeatureEdges()
+        feature_edges.SetInputData(surface)
+        feature_edges.BoundaryEdgesOff();
+        feature_edges.ManifoldEdgesOff();
+        feature_edges.NonManifoldEdgesOff();
+        feature_edges.FeatureEdgesOn();
+        feature_edges.SetFeatureAngle(angle);
+        feature_edges.Update()
+
+        boundary_edges = feature_edges.GetOutput()
+        clean_filter = vtk.vtkCleanPolyData()
+        boundary_edges_clean = clean_filter.SetInputData(boundary_edges)
+        clean_filter.Update();
+        cleaned_edges = clean_filter.GetOutput()
+
+        conn_filter = vtk.vtkPolyDataConnectivityFilter()
+        conn_filter.SetInputData(cleaned_edges)
+        conn_filter.SetExtractionModeToSpecifiedRegions()
+
+        self.boundary_edges = {}
+        rid = 1
+        while True:
+            conn_filter.AddSpecifiedRegion(rid)
+            conn_filter.Update()
+            component = vtk.vtkPolyData()
+            component.DeepCopy(conn_filter.GetOutput())
+            if component.GetNumberOfCells() <= 0:
+                break
+            print("{0:d}: Number of boundary lines: {1:d}".format(rid, component.GetNumberOfCells()))
+            self.boundary_edges[rid] = component
+            conn_filter.DeleteSpecifiedRegion(rid)
+            rid += 1
+
+    def read_mesh(self):
+        ''' Read in a surface mesh.
+        '''
+        filename, file_extension = path.splitext(self.params.model_file_name)
+        reader = None
+        if file_extension == ".vtp":
+            reader = vtk.vtkXMLPolyDataReader()
+            self.mesh_from_vtp = True
+        elif file_extension == ".stl":
+            reader = vtk.vtkSTLReader()
+            self.mesh_from_vtp = False 
+        reader.SetFileName(self.params.model_file_name)
+        reader.Update()
+        self.surface = reader.GetOutput()
+        num_points = self.surface.GetPoints().GetNumberOfPoints()
+        self.logger.info("Number of points: %d" % num_points)
+        num_polys = self.surface.GetPolys().GetNumberOfCells()
+        self.logger.info("Number of triangles: %d" % num_polys)
+
+        self.extract_edges()
+
+        if self.mesh_from_vtp:
+            self.get_surface_faces()
+        else:
+            self.extract_faces()
+
+

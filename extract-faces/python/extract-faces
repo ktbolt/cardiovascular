@@ -1,5 +1,5 @@
 [extract-faces] INFO - Parse arguments ...
-[extract-faces] INFO - Surface file: remove-faces.vtp
+[extract-faces] INFO - Surface file: coronarytree.stl
 [extract-faces] INFO - Number of points: 22057
-[extract-faces] INFO - Number of triangles: 43887
+[extract-faces] INFO - Number of triangles: 44110
 [extract-faces] INFO - ---------- extract edges ---------- 

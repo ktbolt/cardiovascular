@@ -1,14 +1,10 @@
 
-test_name="coronarytree.stl"
 test_name="remove-faces.vtp"
+test_name="coronarytree.stl"
 
 python=python
 python=python3
 
-## Write a 1D solver input file.
-#
-# Centerlines are read from a file.
-# 
 if [ $test_name  == "coronarytree.stl" ]; then
     surface_file=coronarytree.stl
     ${python} extract_faces.py \
