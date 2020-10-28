@@ -48,4 +48,6 @@ All options must be given.
 
 This is an example showing how to use the program to create the flow files for the **Cylinder Project**. It assumes that the simualtion results have already been converted in the **steady-converted-results** directory.
 
-create-flow-files **--mesh-directory** $HOME/SimVascular/CylinderProject/Simulations/steady/mesh-complete/mesh-surfaces     **--output-directory** $HOME/create-flow-files/test  **--results-directory** $HOME/SimVascular/CylinderProject/Simulations/steady/4-procs_case/steady-converted-results  **--single-file** no **--skip-walls** yes  **--units** cm
+```
+create-flow-files --mesh-directory $HOME/SimVascular/CylinderProject/Simulations/steady/mesh-complete/mesh-surfaces    --output-directory $HOME/create-flow-files/test  --results-directory $HOME/SimVascular/CylinderProject/Simulations/steady/4-procs_case/steady-converted-results  --single-file no --skip-walls yes  --units cm
+```
