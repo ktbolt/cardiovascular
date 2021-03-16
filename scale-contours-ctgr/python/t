@@ -1,0 +1,97 @@
+def read_ctgr_file(args, contour_scale, contour_ids, logger):
+    ''' Read a ctgr file. 
+    '''
+    file_name = args.contour_file
+
+    if file_name == None:
+        logger.error("No input contour file name given.")
+        sys.exit(1)
+    else:
+        logger.info("Input contour file name: %s" % file_name)
+
+    # Remove 'format' tag from xml file.
+    f = open(file_name, "r")
+    lines = f.readlines()
+    new_lines = []
+    for line in lines:
+      if '<format' not in line:
+        new_lines.append(line)
+
+    # Create string from xml file and parse it.
+    xml_string = "".join(new_lines)
+    tree = et.ElementTree(et.fromstring(xml_string))
+    #tree = et.parse(file_name)
+    root = tree.getroot()
+
+    ## Create contour groups.
+    #
+    contour_groups = []
+    scaled_contour_groups = []
+    for contour_group_t in root.iter('contourgroup'):
+        path_name = contour_group_t.attrib["path_name"]
+        logger.info("Contour group: %s" % path_name)
+        contour_group = ContourGroup(path_name)
+        scaled_contour_group = ContourGroup(path_name)
+
+        for contour_t in contour_group_t.iter('contour'):
+            cid = contour_t.attrib["id"]
+            #logger.info("   Contour id: %s" % cid)
+            contour = Contour(cid)
+            scaled_contour = Contour(cid)
+            if (len(contour_ids) != 0) and (cid not in contour_ids):
+                scale = 1.0 
+            else:
+                scale = contour_scale 
+            scale = contour_scale 
+
+            ## Iterate over control points. 
+            #
+            # The first control point is the contour center.
+            #
+            for control_pts in contour_t.iter('control_points'):
+                for i,point in enumerate(control_pts.iter('point')):
+                    x = float(point.attrib['x'])
+                    y = float(point.attrib['y'])
+                    z = float(point.attrib['z'])
+                    if i == 0:
+                        cx = x
+                        cy = y
+                        cz = z
+                        xs = x 
+                        ys = y 
+                        zs = z 
+                    else:
+                        xs = scale * (x - cx) + cx
+                        ys = scale * (y - cy) + cy
+                        zs = scale * (z - cz) + cz
+                    point.attrib['x'] = str(xs)
+                    point.attrib['y'] = str(ys)
+                    point.attrib['z'] = str(zs)
+                #_for i,point in enumerate(control_pts.iter('point'))
+            #_for control_pts in contour_t.iter('control_points')
+            
+            ## Iterate over contour points. 
+            #
+            for contour_pts in contour_t.iter('contour_points'):
+                #logger.info("      Contour points ")
+                for point in contour_pts.iter('point'):
+                    x = float(point.attrib['x'])
+                    y = float(point.attrib['y'])
+                    z = float(point.attrib['z'])
+                    xs = scale * (x - cx) + cx
+                    ys = scale * (y - cy) + cy
+                    zs = scale * (z - cz) + cz
+                    point.attrib['x'] = str(xs)
+                    point.attrib['y'] = str(ys)
+                    point.attrib['z'] = str(zs)
+                    contour.coordinates.append([x,y,z])
+                    scaled_contour.coordinates.append([xs,ys,zs])
+                #_for point in control_pts
+            #_for control_pts in contour_t
+            contour_group.contours.append(contour)
+            scaled_contour_group.contours.append(scaled_contour)
+        #_for contour_t in contour_group_t
+        logger.info("   Number of contours %d" % len(contour_group.contours))
+        contour_groups.append(contour_group)
+        scaled_contour_groups.append(scaled_contour_group)
+    #_for contour_group_t 

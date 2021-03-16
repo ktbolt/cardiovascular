@@ -160,15 +160,34 @@ class Graphics(object):
         sphere = vtk.vtkSphereSource()
         sphere.SetCenter(center[0], center[1], center[2])
         sphere.SetRadius(radius)
+        sphere.SetPhiResolution(16)
+        sphere.SetThetaResolution(16)
         sphere.Update()
+
         polydata = sphere.GetOutput()
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputData(polydata)
         mapper.ScalarVisibilityOff()
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
-        actor.GetProperty().SetRepresentationToWireframe()
-        actor.GetProperty().SetColor(0.0, 1.0, 0.0)
+        #actor.GetProperty().SetRepresentationToWireframe()
+        actor.GetProperty().SetColor(color)
+        actor.GetProperty().SetOpacity(0.5)
+        self.renderer.AddActor(actor)
+
+    def add_line(self, pt1, pt2, color=[1.0, 1.0, 1.0], width=2):
+        line = vtk.vtkLineSource()
+        line.SetPoint1(pt1);
+        line.SetPoint2(pt2)
+        line.Update()
+        polydata = line.GetOutput()
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputData(polydata)
+        mapper.ScalarVisibilityOff()
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(color[0], color[1], color[2])
+        actor.GetProperty().SetLineWidth(width)
         self.renderer.AddActor(actor)
 
     def add_graphics_geometry(self, poly_data, color, wire=False, edges=False, sphere=False, line_width=1.0):

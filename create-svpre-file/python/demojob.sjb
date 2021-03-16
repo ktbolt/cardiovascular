@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<format version="1.0" />
+<mitk_job model_name="demo" mesh_name="demo" status="Simulation done">
+    <job>
+        <basic_props>
+            <prop key="Fluid Density" value="1.06" />
+            <prop key="Fluid Viscosity" value="0.04" />
+            <prop key="IC File" value="" />
+            <prop key="Initial Pressure" value="0" />
+            <prop key="Initial Velocities" value="0.0001 0.0001 0.0001" />
+        </basic_props>
+        <cap_props>
+            <cap name="cap_aorta">
+                <prop key="Analytic Shape" value="parabolic" />
+                <prop key="BC Type" value="Prescribed Velocities" />
+                <prop key="Flip Normal" value="False" />
+                <prop key="Flow Rate" value="0.0 -100&#x0D;&#x0A;1.0 -100" />
+                <prop key="Fourier Modes" value="1" />
+                <prop key="Original File" value="steady.flow" />
+                <prop key="Period" value="1.0" />
+                <prop key="Point Number" value="2" />
+            </cap>
+            <cap name="cap_aorta_2">
+                <prop key="BC Type" value="Resistance" />
+                <prop key="Pressure" value="0" />
+                <prop key="Values" value="16000" />
+            </cap>
+            <cap name="cap_right_iliac">
+                <prop key="BC Type" value="Resistance" />
+                <prop key="Pressure" value="0" />
+                <prop key="Values" value="16000" />
+            </cap>
+        </cap_props>
+        <wall_props>
+            <prop key="Type" value="rigid" />
+        </wall_props>
+        <var_props />
+        <solver_props>
+            <prop key="Backflow Stabilization Coefficient" value="0.2" />
+            <prop key="Flow Advection Form" value="Convective" />
+            <prop key="Force Calculation Method" value="Velocity Based" />
+            <prop key="Maximum Number of Iterations for svLS Continuity Loop" value="400" />
+            <prop key="Maximum Number of Iterations for svLS Momentum Loop" value="2" />
+            <prop key="Maximum Number of Iterations for svLS NS Solver" value="1" />
+            <prop key="Minimum Required Iterations" value="3" />
+            <prop key="Number of Krylov Vectors per GMRES Sweep" value="100" />
+            <prop key="Number of Solves per Left-hand-side Formation" value="1" />
+            <prop key="Number of Timesteps" value="500" />
+            <prop key="Number of Timesteps between Restarts" value="10" />
+            <prop key="Output Surface Stress" value="True" />
+            <prop key="Pressure Coupling" value="Implicit" />
+            <prop key="Print Average Solution" value="True" />
+            <prop key="Print Error Indicators" value="False" />
+            <prop key="Quadrature Rule on Boundary" value="3" />
+            <prop key="Quadrature Rule on Interior" value="2" />
+            <prop key="Residual Control" value="True" />
+            <prop key="Residual Criteria" value="0.01" />
+            <prop key="Step Construction" value="2" />
+            <prop key="Time Integration Rho Infinity" value="0.5" />
+            <prop key="Time Integration Rule" value="Second Order" />
+            <prop key="Time Step Size" value="0.0004" />
+            <prop key="Tolerance on Continuity Equations" value="0.4" />
+            <prop key="Tolerance on Momentum Equations" value="0.05" />
+            <prop key="Tolerance on svLS NS Solver" value="0.4" />
+            <prop key="svLS Type" value="NS" />
+        </solver_props>
+        <run_props>
+            <prop key="Number of Processes" value="6" />
+        </run_props>
+    </job>
+</mitk_job>

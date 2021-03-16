@@ -1,7 +1,8 @@
 
 test_name="merged-vertices.stl"
-test_name="stl-model.vtp"
 test_name="Collateral.vtp"
+test_name="stl-model.vtp"
+test_name="mel-model.vtp"
 
 python=python
 python=python3
@@ -18,6 +19,13 @@ elif [ $test_name  == "Collateral.vtp" ]; then
     model_file=Collateral.vtp 
     ${python} model_explorer.py     \
         --model-file ${model_file}  \
+        --show-faces True 
+
+elif [ $test_name  == "mel-model.vtp" ]; then
+    model_file=mel-model.vtp 
+    ${python} model_explorer.py     \
+        --model-file ${model_file}  \
+        --filter-faces 2            \
         --show-faces True 
 
 elif [ $test_name  == "merged-vertices.stl" ]; then

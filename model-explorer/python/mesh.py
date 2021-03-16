@@ -26,6 +26,7 @@ class Mesh(object):
     def __init__(self, params):
         self.params = params
         self.surface = None
+        self.center = None
         self.mesh_from_vtp = None 
         self.graphics = None
         self.boundary_faces = None
@@ -120,10 +121,22 @@ class Mesh(object):
         #_for i in range(min_id, max_id+1)
 
         self.boundary_faces = mesh_faces
+        center = [0.0,0.0,0.0]
+        total_num_pts = 0
         for fid,face in self.boundary_faces.items():
             npts = face.surface.GetNumberOfPoints()
             ncells = face.surface.GetNumberOfCells()
             self.logger.info("  id:{0:d} num cells: {1:d}".format(face.model_face_id, ncells))
+            for i in range(0, npts):
+                point = face.surface.GetPoint(i)
+                center[0] += point[0]
+                center[1] += point[1]
+                center[2] += point[2]
+            total_num_pts += npts 
+        center[0] /= total_num_pts 
+        center[1] /= total_num_pts
+        center[2] /= total_num_pts
+        self.center = center
 
     def show_edges(self):
         self.logger.info("========== show_edges ==========")
@@ -190,8 +203,11 @@ class Mesh(object):
                     max_r = d
             self.logger.info("  max_r:{0:f} ".format(max_r))
             self.graphics.add_sphere(center, [0.0, 1.0, 0.0], radius=max_r)
-
-
+            self.graphics.add_sphere(center, [1.0, 0.0, 0.0], radius=1000.0*max_r)
+            self.graphics.add_line(self.center, center, color=[1.0, 0.0, 0.0], width=4)
+            pto = [2.0*center[i] - self.center[i] for i in range(3) ]
+            self.graphics.add_line(pto, center, color=[0.0, 1.0, 0.0], width=4)
+  
     def extract_edges(self):
         ''' Extract the surface boundary edges.
         '''

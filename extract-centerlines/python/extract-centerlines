@@ -1,75 +1,82 @@
 [extract-centerlines] INFO - Parse arguments ...
-[extract-centerlines] INFO - Surface file: Collateral.vtp
-[extract-centerlines] INFO - Source face ids: [4, 5]
-[extract-centerlines] INFO - Target face ids: [9, 2, 12, 8, 10, 3]
-[extract-centerlines] INFO - Number of points: 560737
-[extract-centerlines] INFO - Number of triangles: 1121486
+[extract-centerlines] INFO - Surface file: Kawasaki_Disease_Patient_2.vtp
+[extract-centerlines] INFO - Source face ids: [16]
+[extract-centerlines] INFO - Target face ids: [9, 10, 11, 12, 13, 14, 15, 17]
+[extract-centerlines] INFO - Number of points: 68988
+[extract-centerlines] INFO - Number of triangles: 137972
 [extract-centerlines] INFO - ---------- extract caps ---------- 
-[extract-centerlines] INFO - Face IDs: [4, 5, 9, 2, 12, 8, 10, 3]
+[extract-centerlines] INFO - Face IDs: [16, 9, 10, 11, 12, 13, 14, 15, 17]
 [extract-centerlines] INFO - Extract caps ...
-[extract-centerlines] INFO - Face ID: 4   number of cells: 1692   source: True
-[extract-centerlines] INFO - Face ID: 5   number of cells: 4366   source: True
-[extract-centerlines] INFO - Face ID: 9   number of cells: 159   source: False
-[extract-centerlines] INFO - Face ID: 2   number of cells: 172   source: False
-[extract-centerlines] INFO - Face ID: 12   number of cells: 124   source: False
-[extract-centerlines] INFO - Face ID: 8   number of cells: 91   source: False
-[extract-centerlines] INFO - Face ID: 10   number of cells: 220   source: False
-[extract-centerlines] INFO - Face ID: 3   number of cells: 184   source: False
+[extract-centerlines] INFO - Face ID: 16   number of cells: 1388   source: True
+[extract-centerlines] INFO - Face ID: 9   number of cells: 286   source: False
+[extract-centerlines] INFO - Face ID: 10   number of cells: 200   source: False
+[extract-centerlines] INFO - Face ID: 11   number of cells: 80   source: False
+[extract-centerlines] INFO - Face ID: 12   number of cells: 34   source: False
+[extract-centerlines] INFO - Face ID: 13   number of cells: 25   source: False
+[extract-centerlines] INFO - Face ID: 14   number of cells: 92   source: False
+[extract-centerlines] INFO - Face ID: 15   number of cells: 190   source: False
+[extract-centerlines] INFO - Face ID: 17   number of cells: 703   source: False
 [extract-centerlines] INFO - ---------- calculate centerlines ----------
 [extract-centerlines] INFO - ---------- Extract Centerlines ---------- 
 [extract-centerlines] INFO -  
-[extract-centerlines] INFO - -----  Face ID 2 ----- 
-[extract-centerlines] INFO - Target
-[extract-centerlines] INFO - Center ID: 197074
-[extract-centerlines] INFO - Center: [0.43365640397537353, -54.4913057726483, 104.68631349607955]
-[extract-centerlines] INFO - ID Center: [0.5126445293426514, -54.54298400878906, 104.59793853759766]
-[extract-centerlines] INFO -  
-[extract-centerlines] INFO - -----  Face ID 3 ----- 
-[extract-centerlines] INFO - Target
-[extract-centerlines] INFO - Center ID: 199777
-[extract-centerlines] INFO - Center: [26.83146916610607, -42.2296743116517, 70.83355946471725]
-[extract-centerlines] INFO - ID Center: [26.771587371826172, -42.29490661621094, 70.75089263916016]
-[extract-centerlines] INFO -  
-[extract-centerlines] INFO - -----  Face ID 4 ----- 
+[extract-centerlines] INFO - -----  Face ID 16 ----- 
 [extract-centerlines] INFO - Source
-[extract-centerlines] INFO - Center ID: 199069
-[extract-centerlines] INFO - Center: [39.07944116487195, 24.579262317119387, -260.0515097219048]
-[extract-centerlines] INFO - ID Center: [39.03042221069336, 24.791000366210938, -260.0343322753906]
+[extract-centerlines] INFO - Center ID: 30811
+[extract-centerlines] INFO - Center: [-0.7622463883756947, 0.6612136309402709, -16.054814069575695]
+[extract-centerlines] INFO - ID Center: [-0.7648677825927734, 0.6743815541267395, -16.04859161376953]
 [extract-centerlines] INFO -  
-[extract-centerlines] INFO - -----  Face ID 5 ----- 
-[extract-centerlines] INFO - Source
-[extract-centerlines] INFO - Center ID: 197777
-[extract-centerlines] INFO - Center: [-5.561288558220753, -14.759052489735092, -232.35753624834965]
-[extract-centerlines] INFO - ID Center: [-5.3894124031066895, -14.490829467773438, -232.22470092773438]
-[extract-centerlines] INFO -  
-[extract-centerlines] INFO - -----  Face ID 8 ----- 
+[extract-centerlines] INFO - -----  Face ID 17 ----- 
 [extract-centerlines] INFO - Target
-[extract-centerlines] INFO - Center ID: 407955
-[extract-centerlines] INFO - Center: [12.337257018456093, -0.5872562759395539, 64.52209602607475]
-[extract-centerlines] INFO - ID Center: [12.302358627319336, -0.4738265872001648, 64.4034194946289]
+[extract-centerlines] INFO - Center ID: 20260
+[extract-centerlines] INFO - Center: [-1.0204858269282797, -4.0498145104811165, -25.121435636590025]
+[extract-centerlines] INFO - ID Center: [-1.0534920692443848, -4.076021194458008, -25.13077735900879]
 [extract-centerlines] INFO -  
 [extract-centerlines] INFO - -----  Face ID 9 ----- 
 [extract-centerlines] INFO - Target
-[extract-centerlines] INFO - Center ID: 408005
-[extract-centerlines] INFO - Center: [-2.685575593192622, -59.04601081512259, 106.82798891847239]
-[extract-centerlines] INFO - ID Center: [-2.523077964782715, -59.014122009277344, 106.86486053466797]
+[extract-centerlines] INFO - Center ID: 37545
+[extract-centerlines] INFO - Center: [1.4008831645781066, -0.1773631062937913, -7.045956972317818]
+[extract-centerlines] INFO - ID Center: [1.4118210077285767, -0.1799483597278595, -7.051789283752441]
 [extract-centerlines] INFO -  
 [extract-centerlines] INFO - -----  Face ID 10 ----- 
 [extract-centerlines] INFO - Target
-[extract-centerlines] INFO - Center ID: 408066
-[extract-centerlines] INFO - Center: [-33.52745030143044, -49.50517334793553, 72.03345117279977]
-[extract-centerlines] INFO - ID Center: [-33.57720947265625, -49.49383544921875, 71.99661254882812]
+[extract-centerlines] INFO - Center ID: 33831
+[extract-centerlines] INFO - Center: [-0.9588529022534689, -0.6883950205395619, -7.047772050698598]
+[extract-centerlines] INFO - ID Center: [-0.98053377866745, -0.7232488393783569, -7.04907751083374]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 11 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 52101
+[extract-centerlines] INFO - Center: [-5.322215171655019, 6.265341087182363, -20.655529840787253]
+[extract-centerlines] INFO - ID Center: [-5.319162368774414, 6.283261299133301, -20.648324966430664]
 [extract-centerlines] INFO -  
 [extract-centerlines] INFO - -----  Face ID 12 ----- 
 [extract-centerlines] INFO - Target
-[extract-centerlines] INFO - Center ID: 434919
-[extract-centerlines] INFO - Center: [-13.288751371445194, 0.20879383432748977, 73.33608719610399]
-[extract-centerlines] INFO - ID Center: [-13.360783576965332, 0.2822408974170685, 73.30126953125]
+[extract-centerlines] INFO - Center ID: 44771
+[extract-centerlines] INFO - Center: [-3.827045522484125, -2.4042668038723516, -16.935607592264812]
+[extract-centerlines] INFO - ID Center: [-3.839897394180298, -2.4038755893707275, -16.936298370361328]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 13 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 67300
+[extract-centerlines] INFO - Center: [-5.397750441233317, -1.070969009399414, -17.224476470947266]
+[extract-centerlines] INFO - ID Center: [-5.3991923332214355, -1.072335124015808, -17.223379135131836]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 14 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 41663
+[extract-centerlines] INFO - Center: [-6.625510167384493, 4.951256537782973, -19.63243883934574]
+[extract-centerlines] INFO - ID Center: [-6.617040634155273, 4.947639465332031, -19.644792556762695]
+[extract-centerlines] INFO -  
+[extract-centerlines] INFO - -----  Face ID 15 ----- 
+[extract-centerlines] INFO - Target
+[extract-centerlines] INFO - Center ID: 14397
+[extract-centerlines] INFO - Center: [-1.5540512158159625, -1.9902902028016878, -7.0337395065709165]
+[extract-centerlines] INFO - ID Center: [-1.5784986019134521, -1.9631373882293701, -7.036950588226318]
 [extract-centerlines] INFO -  
 [extract-centerlines] INFO - Calculating surface centerlines ...
 [extract-centerlines] INFO - Use source and target IDs
-[extract-centerlines] INFO - Source IDs: [199069, 197777]
-[extract-centerlines] INFO - Target IDs: [197074, 199777, 407955, 408005, 408066, 434919]
+[extract-centerlines] INFO - Source IDs: [30811]
+[extract-centerlines] INFO - Target IDs: [20260, 37545, 33831, 52101, 44771, 67300, 41663, 14397]
 [extract-centerlines] INFO - The surface centerlines have been calculated.
 [extract-centerlines] INFO - Split and group centerlines along branches ...
 [extract-centerlines] INFO - The centerlines branches have been calculated.

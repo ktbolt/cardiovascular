@@ -1,0 +1,38 @@
+    for i in range(0,len(control_points)):
+        name = path_name + "_ct" + str(i)
+        print ("Create a circle Contour: " + name)
+        Contour.set_contour_kernel('Circle')
+        c = Contour.pyContour()
+        pt = control_points[i] 
+
+        ## Find index of the point in pos_pts[] corresponding
+        #  to the ith control point.
+        #
+        min_d = 1e9
+        min_i = -1
+        for j in range(0,len(pos_pts)):
+          pos = pos_pts[j]
+          d = sum([(pt[k]-pos[k])*(pt[k]-pos[k]) for k in range(3)])
+          if (d < min_d):
+            min_d = d
+            min_i = j
+            #__for j in range(0,len(pos_pts))
+        print(">>> min_d %g  min_id %d" % (min_d, min_i))
+
+        ## Create a contour at the min_i th pos_pts[]. 
+        c.new_object(name, path_name, min_i)
+
+        # Set control points.
+        center = control_points[i] 
+        c.SetCtrlPtsByRadius(center, radius)
+
+        # Creat contour.
+        c.Create()
+        print (">>> Contour center: " + str(c.Center()))
+
+        # Get countour PolyData
+        pname = name + 'p'
+        c.GetPolyData(pname)
+        #c.GetPolyData('ctp')
+        act = vis.pRepos(ren, pname)
+        #vis.polyDisplayWireframe(ren, name)

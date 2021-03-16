@@ -13,7 +13,7 @@ python=python3
 #  
 # Set SVPROJECT_DIR to the location of your SimVascular project GitHub clone.
 #
-SVPROJECT_DIR=/home/davep/software/ktbolt/SimVascular/
+SVPROJECT_DIR=/$HOME/software/ktbolt/
 export PYTHONPATH=$PYTHONPATH:$SVPROJECT_DIR/SimVascular/Python/site-packages
 #export PYTHONPATH=$PYTHONPATH:$SVPROJECT_DIR/SimVascular/Python/site-packages/sv_1d_simulation
 

@@ -103,11 +103,14 @@ if __name__ == '__main__':
 
     graphics.mesh = mesh
 
+    '''
     if params.show_faces:
         mesh.show_faces()
     else:
         #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=show_wire)
         graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
+    '''
+    graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
 
     graphics.mesh = mesh
     graphics.show()

@@ -2,7 +2,6 @@
 export PATH="/Users/parkerda/vmtk/bin:$PATH"
 
 test_name="Kawasaki_Disease_Patient_2"
-test_name="Collateral"
 
 python=python
 #python=python3

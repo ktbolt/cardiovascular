@@ -41,7 +41,7 @@ def print_data(mesh):
     for i in range(num_points):
         nid = node_ids.GetValue(i)
         points.GetPoint(i, pt)
-        print("i:{0:d} nodeID:{1:d}  point:{2:s}".format(i, nid, str(pt)))
+        #print("i:{0:d} nodeID:{1:d}  point:{2:s}".format(i, nid, str(pt)))
 
 if __name__ == '__main__':
 

@@ -92,6 +92,7 @@ def read_ctgr_file(args, contour_scale, contour_ids, logger):
                 scale = 1.0 
             else:
                 scale = contour_scale 
+            scale = contour_scale 
 
             ## Iterate over control points. 
             #
