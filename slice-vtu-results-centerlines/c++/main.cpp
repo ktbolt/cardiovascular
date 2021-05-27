@@ -47,15 +47,15 @@ int main(int argc, char* argv[])
   std::string cl_file_name = argv[2];
   auto centerlines = new Centerlines();
   centerlines->read_centerlines(cl_file_name);
-  centerlines->set_mesh(mesh);
+  centerlines->mesh_ = mesh;
 
   // Create graphics interface.
   auto graphics = new Graphics();
-  graphics->set_mesh(mesh);
+  graphics->mesh_ = mesh;
   graphics->set_centerlines(centerlines);
 
   // Add mesh and centerlines geometry to graphics.
-  mesh->set_graphics(graphics);
+  mesh->graphics_ = graphics;
   //mesh->add_geometry();
 
   centerlines->graphics_ = graphics;

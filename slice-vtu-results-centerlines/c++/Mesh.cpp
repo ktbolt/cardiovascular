@@ -38,12 +38,13 @@ void Mesh::read_mesh(const std::string& file_name)
   unstructured_mesh_->DeepCopy(reader->GetOutput());
   std::cout << "[read_mesh] Number of elements: " << unstructured_mesh_->GetNumberOfCells() << std::endl;
 
-  cell_locator_ = vtkSmartPointer<vtkCellLocator>::New();
-  cell_locator_->SetDataSet(unstructured_mesh_);
-  cell_locator_->BuildLocator();
+  // Remove data arrays we don't want to generate slice data for.
+  std::set<std::string> slice_data_names = { "pressure", "velocity" };
+  remove_data_arrays(slice_data_names);
 
   // Get some nodal data.
   pressure_data_ = vtkDoubleArray::SafeDownCast(unstructured_mesh_->GetPointData()->GetArray("pressure"));
+  velocity_data_ = vtkDoubleArray::SafeDownCast(unstructured_mesh_->GetPointData()->GetArray("velocity"));
 
   auto geometry_filter = vtkSmartPointer<vtkGeometryFilter>::New();
   geometry_filter->SetInputData(reader->GetOutput());
@@ -53,9 +54,9 @@ void Mesh::read_mesh(const std::string& file_name)
 
   // Create a cell locator used to interpolate data 
   // at slice points on the surface.
-  //m_CellLocator->SetDataSet(m_Polydata);
-  //m_CellLocator->BuildLocator();
-  std::cout << "[read_mesh] Done. " << std::endl;
+  cell_locator_ = vtkSmartPointer<vtkCellLocator>::New();
+  cell_locator_->SetDataSet(unstructured_mesh_);
+  cell_locator_->BuildLocator();
 
   // Add a point data array to store plane distance.
   int num_pts = unstructured_mesh_->GetNumberOfPoints();
@@ -67,18 +68,9 @@ void Mesh::read_mesh(const std::string& file_name)
     plane_dist_->SetValue(i,0.0);
   }
   unstructured_mesh_->GetPointData()->AddArray(plane_dist_);
-}
 
-//----------------
-// get_data_array 
-//----------------
-//
-/*
-vtkDoubleArray* Mesh::get_data_array(const std::string& name) 
-{
-  return vtkDoubleArray::SafeDownCast(unstructured_mesh_->GetPointData()->GetArray(name.c_str()));
+  std::cout << "[read_mesh] Done. " << std::endl;
 }
-*/
 
 //--------------
 // add_geometry 
@@ -97,11 +89,6 @@ void Mesh::add_geometry()
   //geom->GetProperty()->BackfaceCullingOn();
   geom->PickableOff();
   graphics_->add_geometry(geom);
-}
-
-void Mesh::set_graphics(Graphics* graphics) 
-{ 
-  graphics_ = graphics; 
 }
 
 //--------------------
@@ -142,8 +129,9 @@ void Mesh::extract_all_slices(vtkPolyData* centerlines)
     // Find the isosurface at the selected point.
     auto best_isosurface = find_best_slice(position, isosurface);
 
-    // Interploate pressure.
-    interpolate(best_isosurface);
+    // Interploate nodal date (e.g. pressure).
+    // Note: this is not needed because vtkContourGrid interpolates all data.
+    // interpolate(best_isosurface);
 
     /*
     auto geom = graphics_->create_geometry(best_isosurface);
@@ -156,6 +144,37 @@ void Mesh::extract_all_slices(vtkPolyData* centerlines)
   auto end_time = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end_time - start_time;
   std::cout << "[extract_all_slices] Elapsed time: " << elapsed_seconds.count() << "s\n";
+}
+
+//--------------------
+// remove_data_arrays
+//--------------------
+//
+void Mesh::remove_data_arrays(const std::set<std::string>& slice_data_names)
+{
+  std::cout << "[remove_data_arrays] " << std::endl;
+  std::cout << "[remove_data_arrays] ========== Mesh::remove_data_arrays ========== " << std::endl;
+
+  // Note: Can't remove arrays in this loop because it crashes vtk,
+  // changes unstructured_mesh_ data it seems.
+  //
+  vtkIdType num_point_arrays = unstructured_mesh_->GetPointData()->GetNumberOfArrays();
+  std::cout << "[remove_data_arrays] Number of node data arrays: " << num_point_arrays << std::endl;
+  std::vector<std::string> remove_data_names;
+
+  for (int i = 0; i < num_point_arrays; i++) {
+    int type = unstructured_mesh_->GetPointData()->GetArray(i)->GetDataType();
+    auto name = unstructured_mesh_->GetPointData()->GetArrayName(i);
+    int num_comp = unstructured_mesh_->GetPointData()->GetNumberOfComponents();
+    if (slice_data_names.count(name) == 0) {
+      std::cout << "[remove_data_arrays] Remove data array: " << name << std::endl;
+      remove_data_names.push_back(std::string(name));
+    }
+  }
+
+  for (auto const& name : remove_data_names) { 
+    unstructured_mesh_->GetPointData()->RemoveArray(name.c_str());
+  }
 }
 
 //--------------------
@@ -210,11 +229,17 @@ void Mesh::extract_slice(double position[3], double inscribedRadius, double norm
   // Find the isosurface at the selected point.
   auto best_isosurface = find_best_slice(position, isosurface);
 
-  interpolate(best_isosurface);
+  // Interploate nodal date (e.g. pressure).
+  // Note: this is not needed because vtkContourGrid interpolates all data.
+  // interpolate(best_isosurface);
+
+  // Write the slice to a .vtp file.
+  write_slice(best_isosurface, 1);
 
   // Show the isosurface.
-  auto geom = graphics_->create_geometry(best_isosurface);
-  geom->GetProperty()->SetColor(0.8, 0.0, 0.0);
+  bool scalar_visibility_on = true;
+  auto geom = graphics_->create_geometry(best_isosurface, scalar_visibility_on);
+  //geom->GetProperty()->SetColor(0.8, 0.0, 0.0);
   geom->PickableOff();
   graphics_->add_geometry(geom);
 }
@@ -285,58 +310,93 @@ Mesh::find_best_slice(double position[3], vtkPolyData* isosurface)
 //-------------
 // interpolate
 //-------------
+// Interploate mesh nodal date (e.g. pressure) to the slice geometry.
 //
-void Mesh::interpolate(vtkPolyData* isosurface)
+void Mesh::interpolate(vtkPolyData* slice)
 {
- std::cout << "[interpolate] " << std::endl;
-  auto points = isosurface->GetPoints();
   double tol2 = 1e-6;
-  double localCoords[2];
-  double weights[3];
+
+  auto slice_points = slice->GetPoints();
+  int num_slice_pts = slice_points->GetNumberOfPoints();
   vtkGenericCell* cell = vtkGenericCell::New();
-  auto data = pressure_data_;
 
-  int num_pts = points->GetNumberOfPoints();
+  auto slice_pressure_data = vtkDoubleArray::New();
+  slice_pressure_data->SetName("pressure");
+  slice_pressure_data->SetNumberOfComponents(1);
+  slice_pressure_data->SetNumberOfTuples(num_slice_pts);
+  for (int i = 0; i < num_slice_pts; i++) {
+    slice_pressure_data->SetValue(i,0.0);
+  }
+  //slice->GetPointData()->AddArray(slice_pressure_data);
 
-  for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++) {
+  auto slice_velocity_data = vtkDoubleArray::New();
+  slice_velocity_data->SetName("velocity");
+  slice_velocity_data->SetNumberOfComponents(3);
+  slice_velocity_data->SetNumberOfTuples(num_slice_pts);
+  for (int i = 0; i < num_slice_pts; i++) {
+    slice_velocity_data->SetComponent(i, 0, 0.0);
+    slice_velocity_data->SetComponent(i, 1, 0.0);
+    slice_velocity_data->SetComponent(i, 2, 0.0);
+  }
+  //slice->GetPointData()->AddArray(slice_velocity_data);
+
+
+  for (int i = 0; i < num_slice_pts; i++) {
     double pt[3];
-    points->GetPoint(i,pt);
+    slice_points->GetPoint(i,pt);
+
+    double localCoords[2];
+    double weights[3];
     auto cellID = cell_locator_->FindCell(pt, tol2, cell, localCoords, weights);
     auto numPts = cell->GetNumberOfPoints();
     //auto nodeIDs = vtkIntArray::SafeDownCast(m_Polydata->GetPointData()->GetArray("GlobalNodeID"));
     //auto elemIDs = vtkIntArray::SafeDownCast(m_Polydata->GetCellData()->GetArray("GlobalElementID"));
     //auto elemID = elemIDs->GetValue(cellID);
 
-    std::cout << "[interpolate] CellID: " << cellID << std::endl;
-    std::cout << "[interpolate]   localCoords: " << localCoords[0] << "  " << localCoords[1] << "  " << std::endl;
-    std::cout << "[interpolate]   weights: " << weights[0] << "  " << weights[1] << "  " << weights[2] << std::endl;
-    std::cout << "[interpolate]   Number of cell points: " << numPts << std::endl;
+    //std::cout << "[interpolate] CellID: " << cellID << std::endl;
+    //std::cout << "[interpolate]   localCoords: " << localCoords[0] << "  " << localCoords[1] << "  " << std::endl;
+    //std::cout << "[interpolate]   weights: " << weights[0] << "  " << weights[1] << "  " << weights[2] << std::endl;
+    //std::cout << "[interpolate]   Number of cell points: " << numPts << std::endl;
 
-    // Interpolate data at the slice sample points.
+    // Interpolate data at the slice points.
     //
-    auto numComp = data->GetNumberOfComponents();
-    double idata[3] = {0.0, 0.0, 0.0};
+    double pressure_sum = 0.0;
+    double velocity_sum[3] = {0.0, 0.0, 0.0};
 
-    for (vtkIdType pointInd = 0; pointInd < numPts; ++pointInd) {
-      auto id = cell->PointIds->GetId(pointInd);
-      //auto nodeID = nodeIDs->GetValue(id);
-      if (numComp == 1) {
-        double value = data->GetValue(id);
-        idata[0] += weights[pointInd]*value;
-        //std::cout << "Value: " << value << std::endl;
+    for (int j = 0; j < numPts; j++) {
+      auto id = cell->PointIds->GetId(j);
+
+      double value = pressure_data_->GetValue(id);
+      pressure_sum += weights[j]*value;
         
-      } else if (numComp == 3) {
-        auto v1 = data->GetComponent(id, 0);
-        auto v2 = data->GetComponent(id, 1);
-        auto v3 = data->GetComponent(id, 2);
-        idata[0] += weights[pointInd]*v1;
-        idata[1] += weights[pointInd]*v2;
-        idata[2] += weights[pointInd]*v3;
-      }
+      auto v1 = velocity_data_->GetComponent(id, 0);
+      auto v2 = velocity_data_->GetComponent(id, 1);
+      auto v3 = velocity_data_->GetComponent(id, 2);
+      velocity_sum[0] += weights[j]*v1;
+      velocity_sum[1] += weights[j]*v2;
+      velocity_sum[2] += weights[j]*v3;
     }
 
+    slice_pressure_data->SetValue(i, pressure_sum);
+
+    slice_velocity_data->SetComponent(i, 0, velocity_sum[0]);
+    slice_velocity_data->SetComponent(i, 1, velocity_sum[1]);
+    slice_velocity_data->SetComponent(i, 2, velocity_sum[2]);
   }
 
 }
 
-
+//-------------
+// write_slice
+//-------------
+//
+void Mesh::write_slice(vtkPolyData* slice, int id)
+{
+  std::stringstream file_name;
+  file_name << "slice-" << id << ".vtp";
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  writer->SetFileName(file_name.str().c_str());
+  writer->SetInputData(slice);
+  writer->Update();
+  writer->Write();
+}

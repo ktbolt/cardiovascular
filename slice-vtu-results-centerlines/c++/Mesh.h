@@ -26,7 +26,8 @@ class Mesh {
     vtkPolyData* find_best_slice(double position[3], vtkPolyData* isosurface);
     void interpolate(vtkPolyData* isosurface);
     void read_mesh(const std::string& fileName);
-    void set_graphics(Graphics* graphics);
+    void remove_data_arrays(const std::set<std::string>& slice_data_names);
+    void write_slice(vtkPolyData* slice, int id);
 
     Graphics* graphics_;
     std::string mesh_file_name_;
@@ -34,6 +35,7 @@ class Mesh {
     vtkDoubleArray* plane_dist_;
     vtkDoubleArray* pressure_data_;
     vtkUnstructuredGrid* unstructured_mesh_;
+    vtkDoubleArray* velocity_data_;
 
     vtkSmartPointer<vtkCellLocator> cell_locator_;
 };

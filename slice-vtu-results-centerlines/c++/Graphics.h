@@ -49,15 +49,9 @@ class Graphics {
   public:
     Graphics(); 
     void add_geometry(vtkActor* geom);
-    vtkActor* create_geometry(vtkPolyData* poly_data);
-    void set_mesh(Mesh* mesh); 
+    vtkActor* create_geometry(vtkPolyData* poly_data, bool scalar_visibility_on=false);
     void set_centerlines(Centerlines* centerlines);
-    Mesh* get_mesh(); 
     void start(); 
-    void set_data_name(const std::string& name); 
-    std::string get_data_name(); 
-    vtkActor* create_circle();
-    void refresh();
 
     vtkSmartPointer<vtkDataSetMapper> mapper_;
     vtkSmartPointer<vtkRenderer> renderer_;
@@ -83,7 +77,6 @@ class MouseMeshInteractorStyle : public vtkInteractorStyleTrackballCamera
     static MouseMeshInteractorStyle* New();
     vtkTypeMacro(MouseMeshInteractorStyle, vtkInteractorStyleTrackballCamera);
     MouseMeshInteractorStyle();
-    void set_graphics(Graphics* graphics);
     void select_mesh(int cellID);
 
     // Need to declare this to prevent Vtk from interpreting pre-defined
@@ -148,8 +141,6 @@ class MouseCenterlineInteractorStyle : public vtkInteractorStyleTrackballCamera
     static MouseCenterlineInteractorStyle* New();
     vtkTypeMacro(MouseCenterlineInteractorStyle, vtkInteractorStyleTrackballCamera);
 
-    void set_centerlines(Centerlines* centerlines);
-    void set_graphics(Graphics* graphics);
     void select_centerline();
     void slice_mesh();
 

@@ -46,25 +46,16 @@ Graphics::Graphics()
   interaction_style_ = vtkSmartPointer<MouseCenterlineInteractorStyle>::New();
   //interaction_style_ = vtkSmartPointer<MouseMeshInteractorStyle>::New();
 
-  interaction_style_->set_graphics(this);
+  interaction_style_->graphics_ = this;
   render_window_interactor_->SetInteractorStyle(interaction_style_);
   interaction_style_->SetDefaultRenderer(renderer_);
   render_window_interactor_->SetInteractorStyle(interaction_style_);
 }
 
-Mesh* Graphics::get_mesh()
-{
-  return mesh_;
-}
-void Graphics::set_mesh(Mesh* mesh)
-{
-  mesh_ = mesh;
-}
-
 void Graphics::set_centerlines(Centerlines* centerlines)
 {
   centerlines_ = centerlines;
-  interaction_style_->set_centerlines(centerlines);
+  interaction_style_->centerlines_ = centerlines;
 }
 
 void Graphics::start()
@@ -77,11 +68,11 @@ void Graphics::start()
 // CreateGeometry 
 //----------------
 //
-vtkActor* Graphics::create_geometry(vtkPolyData* polyData)
+vtkActor* Graphics::create_geometry(vtkPolyData* polyData, bool scalar_visibility_on)
 {
   auto mapper = vtkDataSetMapper::New();
   mapper->SetInputData(polyData);
-  mapper->ScalarVisibilityOff();
+  mapper->SetScalarVisibility(scalar_visibility_on);
   auto actor = vtkActor::New();
   actor->SetMapper(mapper);
   return actor; 
@@ -96,47 +87,6 @@ void Graphics::add_geometry(vtkActor* geom)
   renderer_->AddActor(geom);
 }
 
-std::string Graphics::get_data_name() 
-{
-  return data_name_;
-}
-
-void Graphics::set_data_name(const std::string& name) 
-{
-/*
-  if (mesh_ != nullptr) {
-    if (mesh_->HasData(name)) {
-      data_name_ = name;
-    } else {
-      std::cout << "WARNING: The mesh does not have data named '" << name << "'" << std::endl;
-    }
-  } else {
-      std::cout << "WARNING: The mesh is not set for graphics." << "'" << std::endl;
-  }
-*/
-}
-
-// Create a circle
-vtkActor* Graphics::create_circle()
-{
-  vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
-  polygonSource->SetNumberOfSides(50);
-  polygonSource->SetRadius(5);
-  polygonSource->SetCenter(0, 0, 0);
-
-  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputConnection(polygonSource->GetOutputPort());;
-      
-  auto actor = vtkActor::New();
-  actor->SetMapper(mapper);
-  return actor;
-}   
-
-void Graphics::refresh()
-{
-  render_window_->Render();
-}
-
 /////////////////////////////////////////////////////////////////////////
 //            M o u s e M e s h I n t e r a c t o r S t y l e          //
 /////////////////////////////////////////////////////////////////////////
@@ -149,11 +99,6 @@ MouseMeshInteractorStyle::MouseMeshInteractorStyle()
   selected_mapper_ = vtkSmartPointer<vtkDataSetMapper>::New();
   selected_actor_ = vtkSmartPointer<vtkActor>::New();
   colors_ = vtkSmartPointer<vtkNamedColors>::New();
-}
-
-void MouseMeshInteractorStyle::set_graphics(Graphics* graphics)
-{
-  graphics_ = graphics;
 }
 
 // Process a keyboard press event.
@@ -330,16 +275,6 @@ vtkStandardNewMacro(MouseMeshInteractorStyle);
 MouseCenterlineInteractorStyle::MouseCenterlineInteractorStyle()
 {
   startSelected = false;
-}
-
-void MouseCenterlineInteractorStyle::set_centerlines(Centerlines* centerlines)
-{
-  centerlines_ = centerlines;
-}
-
-void MouseCenterlineInteractorStyle::set_graphics(Graphics* graphics)
-{
-  graphics_ = graphics;
 }
 
 //------------
