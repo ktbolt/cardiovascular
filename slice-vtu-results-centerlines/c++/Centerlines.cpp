@@ -16,6 +16,8 @@
 //
 Centerlines::Centerlines()
 {
+  normal_data_ = nullptr;
+  radius_data_ = nullptr;
 }
 
 Centerlines::~Centerlines()
@@ -42,11 +44,19 @@ void Centerlines::read_centerlines(const std::string& file_name)
   // Create a picking locator.
   create_cell_locator();
 
+  // Get data arrays.
+  //
   normal_data_ = vtkDoubleArray::SafeDownCast(polydata_->GetPointData()->GetArray("CenterlineSectionNormal"));
   std::cout << "[read_centerlines] normal_data_: " << normal_data_ << std::endl;
   if (normal_data_ == nullptr) { 
     std::cout << "[read_centerlines] WARNING: No CenterlineSectionNormal data. " << std::endl;
   }
+
+  radius_data_ = vtkDoubleArray::SafeDownCast(polydata_->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
+  if (radius_data_ == nullptr) { 
+    std::cout << "[read_centerlines] WARNING: No MaximumInscribedSphereRadius data. " << std::endl;
+  }
+
   std::cout << "[read_centerlines] Done. " << std::endl;
 }
 
@@ -124,12 +134,14 @@ void Centerlines::locate_cell(double point[3], int& index, int& cellID, double& 
   std::cout << "[locate_cell] CellId: " << cellId << std::endl;
   std::cout << "[locate_cell] Index: " << index << std::endl;
 
-  index = 0;
-  std::cout << "[locate_cell] normal_data_: " << normal_data_ << std::endl;
-
   if (normal_data_ != nullptr) {
     normal_data_->GetTuple(index, normal);
     std::cout << "[locate_cell] Normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+  }
+
+  if (radius_data_ != nullptr) {
+    radius = radius_data_->GetValue(index);
+    std::cout << "[locate_cell] Radius: " << radius << std::endl;
   }
 
   cellID = cellId;

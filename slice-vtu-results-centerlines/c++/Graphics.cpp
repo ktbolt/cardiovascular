@@ -8,6 +8,7 @@
 #include <vtkExtractSelection.h>
 //
 #include <vtkGenericCell.h>
+#include <vtkLineSource.h>
 //
 #include <vtkNamedColors.h>
 #include <vtkPointData.h>
@@ -162,7 +163,7 @@ void MouseMeshInteractorStyle::OnKeyPress()
   // Get the keypress.
   vtkRenderWindowInteractor *rwi = this->Interactor;
   std::string key = rwi->GetKeySym();
-  std::cout << "Pressed key: " << key << std::endl;
+  std::cout << "[MouseMeshInteractorStyle::OnKeyPress] Pressed key: " << key << std::endl;
 
   if ((key == "Escape") || (key == "q")) {
     exit(0);
@@ -173,7 +174,6 @@ void MouseMeshInteractorStyle::OnKeyPress()
 
   // Forward events
   //vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-
 }
 
 //-------------
@@ -353,29 +353,31 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
   std::string key = rwi->GetKeySym();
 
   // Output the key that was pressed.
-  //std::cout << "Pressed " << key << std::endl;
+  std::cout << "[MouseCenterlineInteractorStyle::OnKeyPress] Pressed " << key << std::endl;
 
   // Undo. Removes the last slice.
-  if (key == "u") {
-    auto mesh = graphics_->get_mesh();
-    //mesh->UndoSlice();
+  if (key == "s") {
+    slice_mesh();
+
+  } else if (key == "a") {
+    graphics_->mesh_->extract_all_slices(graphics_->centerlines_->polydata_);
 
   // Quit.
   } else if ((key == "Escape") || (key == "q")) {
     exit(0);
   }
 
-  vtkInteractorStyleTrackballCamera::OnKeyPress();
+  // Forward event to catch VTK trackball keys (e.g. 'f').
+  vtkInteractorStyleTrackballCamera::OnChar();
 }
 
-//------------------
-// SelectCenterline
-//------------------
+//-------------
+// slice_mesh 
+//-------------
 //
-void MouseCenterlineInteractorStyle::OnLeftButtonDown() 
-//void MouseCenterlineInteractorStyle::SelectCenterline() 
+void MouseCenterlineInteractorStyle::slice_mesh() 
 {
-  std::cout << "[OnLeftButtonDown] " << std::endl;
+  std::cout << "[slice_mesh] " << std::endl;
 
   // Get current screen location.
   int* clickPos = this->GetInteractor()->GetEventPosition();
@@ -384,7 +386,7 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
 
   // Get selected actor and world point.
   if (picker->GetActor() == nullptr) {
-    vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+    //vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
     return;
   }
   double* pos = picker->GetPickPosition();
@@ -393,61 +395,51 @@ void MouseCenterlineInteractorStyle::OnLeftButtonDown()
   // Create a sphere at the picked point.
   if (startSphere == nullptr) {
     startSphere = vtkSmartPointer<vtkSphereSource>::New();
+    startSphere->SetThetaResolution(32);
+    startSphere->SetPhiResolution(32);
     auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputConnection(startSphere->GetOutputPort());
     auto actor = vtkSmartPointer<vtkActor>::New();
+    actor->GetProperty()->SetRepresentationToWireframe();
+    actor->GetProperty()->SetRepresentationToPoints();
     actor->SetMapper(mapper);
-    actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
+    actor->GetProperty()->SetColor(0.0, 0.5, 0.5);
+    actor->GetProperty()->SetOpacity(0.2);
     this->GetDefaultRenderer()->AddActor(actor);
   }
 
-  startSphere->SetCenter(pos[0], pos[1], pos[2]);
-  startSphere->SetRadius(0.1);
-
-  double radius = 0.1;
-  double inscribedRadius;
-  double normal[3], tangent[3], binormal[3], p1[3];
-  double planeWidth, origin[3], point1[3], point2[3], vec1[3], vec2[3];
-  int index;
-  int cellID;
-
   // Get centerline data at the picked point.
+  int index;
+  double inscribedRadius;
+  double normal[3]; 
+  int cellID;
   centerlines_->locate_cell(pos, index, cellID, inscribedRadius, normal);
 
-/*
   startSphere->SetCenter(pos[0], pos[1], pos[2]);
-  startSphere->SetRadius(radius);
-  //startSphere->SetRadius(radius);
-  //
-  planeWidth = 4.0*inscribedRadius;
-  //planeWidth = 2.0*inscribedRadius;
-  vtkMath::Cross(normal, tangent, binormal);
-  vtkMath::Normalize(binormal);
-  vtkMath::Normalize(tangent);
-  //vtkMath::Perpendiculars(normal, vec1, vec2, vtkMath::Pi()/2.0);
-  vtkMath::Perpendiculars(normal, vec1, vec2, 0.0);
+  startSphere->SetRadius(inscribedRadius);
 
-  for (int i = 0; i < 3; i++) {
-    origin[i] = pos[i] - planeWidth/2.0*tangent[i] - planeWidth/2.0*normal[i];
-    point1[i] = origin[i] + planeWidth*tangent[i];
-    point2[i] = origin[i] + planeWidth*normal[i];
-    p1[i] = pos[i] + 0.5*normal[i];
-    p1[i] = pos[i] + 0.5*tangent[i];
-  }
-  startPlane->SetCenter(pos[0], pos[1], pos[2]);
-  startPlane->SetNormal(tangent[0], tangent[1], tangent[2]);
+  double s = 0.5;
+  double lpt[3] = { pos[0]+s*normal[0], pos[1]+s*normal[1], pos[2]+s*normal[2]};
 
-  auto mesh = graphics_->get_mesh();
-  auto dataName = graphics_->get_data_name();
+  auto line = vtkLineSource::New();
+  line->SetPoint1(pos);
+  line->SetPoint2(lpt);
+  line->Update();
+  auto line_polydata = line->GetOutput();
+  auto line_mapper = vtkPolyDataMapper::New();
+  line_mapper->SetInputData(line_polydata);
+  line_mapper->ScalarVisibilityOff();
+  auto line_actor = vtkActor::New();
+  line_actor->SetMapper(line_mapper);
+  line_actor->GetProperty()->SetColor(1.0, 0.0, 1.0);
+  line_actor->GetProperty()->SetLineWidth(4);
+  this->GetDefaultRenderer()->AddActor(line_actor);
 
-  // Extract a slice from the mesh.
-  //mesh->slice_plane(index, inscribedRadius, cellID, dataName, pos, tangent);
+  // Slice the mesh.
+  graphics_->mesh_->extract_slice(pos, inscribedRadius, normal);
 
-*/
   this->Interactor->GetRenderWindow()->Render();
 
-  // Forward events
-  vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
 }
 
 vtkStandardNewMacro(MouseCenterlineInteractorStyle);

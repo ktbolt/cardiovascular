@@ -151,13 +151,14 @@ class MouseCenterlineInteractorStyle : public vtkInteractorStyleTrackballCamera
     void set_centerlines(Centerlines* centerlines);
     void set_graphics(Graphics* graphics);
     void select_centerline();
+    void slice_mesh();
 
     // Need to declare this to prevent Vtk from interpreting pre-defined
     // shortcut keys (e.g. 'e' to exit).
     virtual void OnChar() override { }
 
     virtual void OnKeyPress() override;
-    virtual void OnLeftButtonDown() override;
+    //virtual void OnLeftButtonDown() override;
 
     double startPoint[3], endPoint[3];
     bool startSelected;

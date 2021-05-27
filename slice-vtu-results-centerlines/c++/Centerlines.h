@@ -32,6 +32,7 @@ class Centerlines {
     Graphics* graphics_;
     vtkPointSet* point_set_;
     vtkDoubleArray* normal_data_;
+    vtkDoubleArray* radius_data_;
 };
 
 #endif
