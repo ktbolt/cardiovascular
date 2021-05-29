@@ -303,7 +303,9 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
   }
 
   // Forward event to catch VTK trackball keys (e.g. 'f').
-  vtkInteractorStyleTrackballCamera::OnChar();
+  if (key != "s") {
+    vtkInteractorStyleTrackballCamera::OnChar();
+  }
 }
 
 //-------------
@@ -335,11 +337,11 @@ void MouseCenterlineInteractorStyle::slice_mesh()
     auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputConnection(startSphere->GetOutputPort());
     auto actor = vtkSmartPointer<vtkActor>::New();
-    actor->GetProperty()->SetRepresentationToWireframe();
-    actor->GetProperty()->SetRepresentationToPoints();
+    //actor->GetProperty()->SetRepresentationToWireframe();
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(0.0, 0.5, 0.5);
     actor->GetProperty()->SetOpacity(0.2);
+    actor->PickableOff();
     this->GetDefaultRenderer()->AddActor(actor);
   }
 
@@ -368,6 +370,7 @@ void MouseCenterlineInteractorStyle::slice_mesh()
   line_actor->SetMapper(line_mapper);
   line_actor->GetProperty()->SetColor(1.0, 0.0, 1.0);
   line_actor->GetProperty()->SetLineWidth(4);
+  line_actor->PickableOff();
   this->GetDefaultRenderer()->AddActor(line_actor);
 
   // Slice the mesh.

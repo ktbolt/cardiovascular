@@ -3,11 +3,15 @@
 #include "Mesh.h"
 
 #include <vtkCleanPolyData.h>
+#include <vtkClipPolyData.h>
 #include <vtkContourGrid.h>
 #include <vtkDoubleArray.h>
+#include <vtkExtractGeometry.h>
 #include <vtkGeometryFilter.h>
 #include <vtkGenericCell.h>
 #include <vtkPolyDataConnectivityFilter.h>
+#include <vtkSelectEnclosedPoints.h>
+#include <vtkSphere.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
 #include <iostream>
@@ -107,38 +111,39 @@ void Mesh::extract_all_slices(vtkPolyData* centerlines)
   int num_points = centerlines->GetNumberOfPoints();
   auto points = centerlines->GetPoints();
   auto normal_data = vtkDoubleArray::SafeDownCast(centerlines->GetPointData()->GetArray("CenterlineSectionNormal"));
+  auto radius_data = vtkDoubleArray::SafeDownCast(centerlines->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
 
   for (int i = 0; i < num_points; i++) { 
     double position[3];
     double normal[3];
     points->GetPoint(i, position);
     normal_data->GetTuple(i, normal);
+    double radius = radius_data->GetValue(i);
 
     // Compute the distance of each mesh node to the plane.
     compute_plane_dist(position, normal);
 
-    // Extract the isosurface.
+    // Extract the slice.
     auto contour = vtkSmartPointer<vtkContourGrid>::New();
     contour->SetInputData(unstructured_mesh_);
     contour->SetValue(0, 0.0);
     contour->ComputeNormalsOff();
     contour->Update();
-    auto isosurface = contour->GetOutput();
-    //std::cout << "[extract_all_slices] Number of isosurface points: " << isosurface->GetNumberOfPoints() << std::endl;
+    auto slice = contour->GetOutput();
 
     // Find the isosurface at the selected point.
-    auto best_isosurface = find_best_slice(position, isosurface);
+    // auto best_slice = find_best_slice(position, slice);
 
-    // Interploate nodal date (e.g. pressure).
-    // Note: this is not needed because vtkContourGrid interpolates all data.
-    // interpolate(best_isosurface);
+    // Trim the slice using the incribed sphere radius.
+    auto trimmed_slice = trim_slice(slice, position, radius);
+    //auto trimmed_slice = trim_slice(best_slice, position, radius);
 
     /*
-    auto geom = graphics_->create_geometry(best_isosurface);
+    auto geom = graphics_->create_geometry(trimmed_slice);
     geom->GetProperty()->SetColor(0.8, 0.0, 0.0);
     geom->PickableOff();
     graphics_->add_geometry(geom);
-    */
+   */
   }
 
   auto end_time = std::chrono::steady_clock::now();
@@ -222,37 +227,121 @@ void Mesh::extract_slice(double position[3], double inscribedRadius, double norm
   contour->SetValue(0, 0.0);
   contour->ComputeScalarsOn();
   contour->Update();
-  auto isosurface = contour->GetOutput();
-  int num_iso_pts = isosurface->GetNumberOfPoints();
-  std::cout << "[extract_slice] num_iso_pts: " << num_iso_pts << std::endl;
+  auto slice = contour->GetOutput();
+  int num_slice_pts = slice ->GetNumberOfPoints();
+  std::cout << "[extract_slice] num_slice_pts: " << num_slice_pts << std::endl;
 
-  // Find the isosurface at the selected point.
-  auto best_isosurface = find_best_slice(position, isosurface);
+  // Show the slice.
+  /*
+  auto slice_geom = graphics_->create_geometry(slice);
+  slice_geom->GetProperty()->SetRepresentationToWireframe();
+  slice_geom->GetProperty()->SetColor(0.0, 0.5, 0.0);
+  slice_geom->GetProperty()->SetLineWidth(1);
+  slice_geom->PickableOff();
+  graphics_->add_geometry(slice_geom);
+  */
 
-  // Interploate nodal date (e.g. pressure).
-  // Note: this is not needed because vtkContourGrid interpolates all data.
-  // interpolate(best_isosurface);
+  // For multipled disjoint slice geometry find the geometry
+  // with center closest to the selected point.
+/*
+  auto best_slice = find_best_slice(position, slice);
+
+  // Show the best slice.
+  auto best_slice_geom = graphics_->create_geometry(best_slice);
+  best_slice_geom->GetProperty()->SetRepresentationToWireframe();
+  best_slice_geom->GetProperty()->SetColor(1.0, 0.0, 0.0);
+  best_slice_geom->GetProperty()->SetLineWidth(4);
+  best_slice_geom->PickableOff();
+  graphics_->add_geometry(best_slice_geom);
+*/
+
+  // Trim the slice using the incribed sphere radius.
+  auto trimmed_slice = trim_slice(slice, position, inscribedRadius);
+  //auto trimmed_slice = trim_slice(best_slice, position, inscribedRadius);
+  std::cout << "[extract_slice] num trim pts: " << trimmed_slice->GetNumberOfPoints() << std::endl;
 
   // Write the slice to a .vtp file.
-  write_slice(best_isosurface, 1);
+  //write_slice(best_slice, 1);
 
-  // Show the isosurface.
-  bool scalar_visibility_on = true;
-  auto geom = graphics_->create_geometry(best_isosurface, scalar_visibility_on);
-  //geom->GetProperty()->SetColor(0.8, 0.0, 0.0);
-  geom->PickableOff();
-  graphics_->add_geometry(geom);
+  // Show the trimmed slice.
+  auto trim_geom = graphics_->create_geometry(trimmed_slice);
+  //trim_geom->GetProperty()->SetRepresentationToWireframe();
+  trim_geom->GetProperty()->SetColor(1.0, 0.0, 0.0);
+  trim_geom->GetProperty()->EdgeVisibilityOn();
+  //trim_geom->GetProperty()->SetLineWidth(1);
+  trim_geom->PickableOff();
+  graphics_->add_geometry(trim_geom);
+
+}
+
+//------------
+// trim_slice
+//------------
+//
+vtkPolyData*
+Mesh::trim_slice(vtkPolyData* slice, double position[3], double radius)
+{
+  auto points = slice->GetPoints();
+  int num_points = slice->GetNumberOfPoints();
+  int num_cells = slice->GetNumberOfCells();
+  double center[3] = {0.0, 0.0, 0.0};
+  for (int i = 0; i < num_points; i++) {
+    double pt[3];
+    points->GetPoint(i, pt);
+    center[0] += pt[0];
+    center[1] += pt[1];
+    center[2] += pt[2];
+  }
+
+  center[0] /= num_points;
+  center[1] /= num_points;
+  center[2] /= num_points;
+
+  // Creae a sphere implicit function.
+  auto sphere = vtkSphere::New();
+  sphere->SetCenter(position);
+  sphere->SetRadius(radius);
+
+  // Extract geometry within the sphere implicit function.
+  /*
+  auto extract = vtkExtractGeometry::New();
+  extract->SetInputData(slice);
+  extract->SetImplicitFunction(sphere);
+  extract->ExtractInsideOn();
+  extract->ExtractBoundaryCellsOn();
+  extract->Update();
+  auto extract_grid = extract->GetOutput();
+
+  auto geometry_filter = vtkSmartPointer<vtkGeometryFilter>::New();
+  geometry_filter->SetInputData(extract_grid);
+  geometry_filter->Update();
+  trimmed_slice->DeepCopy(geometry_filter->GetOutput());
+  */
+
+  // Clip geometry to the sphere implicit function.
+  auto clip = vtkClipPolyData::New();
+  clip->SetInputData(slice);
+  clip->SetClipFunction(sphere);
+  clip->InsideOutOn();
+  clip->Update();
+
+  auto trimmed_slice = vtkPolyData::New();
+  trimmed_slice->DeepCopy(clip->GetOutput());
+
+  return trimmed_slice;
 }
 
 //-----------------
 // find_best_slice
 //-----------------
+// For multipled disjoint slice geometry find the geometry
+// with center closest to the selected point.
 //
 vtkPolyData* 
-Mesh::find_best_slice(double position[3], vtkPolyData* isosurface)
+Mesh::find_best_slice(double position[3], vtkPolyData* slice)
 {
   auto conn_filter = vtkPolyDataConnectivityFilter::New();
-  conn_filter->SetInputData(isosurface);
+  conn_filter->SetInputData(slice);
   conn_filter->SetExtractionModeToSpecifiedRegions();
 
   double min_d = 1e6;
