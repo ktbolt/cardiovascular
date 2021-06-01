@@ -111,6 +111,7 @@ def extract_slice(**kwargs):
     #print('[extract_slice] ')
     node_id = kwargs['node_id']
     #print('[extract_slice] node_id: {0:s}'.format(str(node_id)))
+    node_id = 75 
 
     centerlines = kwargs['pick_geometry']
     points = centerlines.GetPoints()
@@ -118,7 +119,7 @@ def extract_slice(**kwargs):
     print('[extract_slice] point: {0:s}'.format(str(node_pt)))
     normal_data = centerlines.GetPointData().GetArray("CenterlineSectionNormal")
     normal = [normal_data.GetComponent(node_id,i) for i in range(3)]
-    #print('[extract_slice] normal: {0:s}'.format(str(normal)))
+    print('[extract_slice] normal: {0:s}'.format(str(normal)))
 
     graphics = kwargs['graphics']
     s = 2.0
