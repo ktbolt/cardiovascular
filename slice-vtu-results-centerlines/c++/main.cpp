@@ -1,12 +1,11 @@
 
-// This C++ program ia used to interactively extract simulation results at slice planes along vessel centerlines.
-// Simulation results are read from VTK format (.vtp and .vtu) files created by the SimVascular svSolver and svPost programs.
-// A file is read in and the data names for the simulation results data values contained in the file are printed. The finite element
-// mesh is displyed and slices along a centerline can be selected using the mouse and keyboard.
+// This is a C++ program used to interactively extract simulation results at slice planes along vessel centerlines.
+// Simulation results are read from VTK format (.vtu) files created by the SimVascular svSolver and svPost programs.
+// The finite element mesh is displayed and slices along a centerline can be selected using the mouse.
 //
 // Usage:
 //
-//     slice-results <FileName>(.vtu | .vtp) <DataName>
+//     slice-results results.vtu centerlines.vtp
 //
 #include <iostream>
 #include <string>
