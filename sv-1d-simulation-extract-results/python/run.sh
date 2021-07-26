@@ -20,6 +20,7 @@ out_file=1dsolver
 out_format=csv
 
 disp_geom="off"
+disp_geom="on"
 radius="0.1"
 
 plot="off"

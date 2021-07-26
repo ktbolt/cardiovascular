@@ -84,10 +84,9 @@ if __name__ == '__main__':
     mesh.read_mesh()
     graphics.mesh = mesh
     graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8])
-    graphics.add_graphics_edge_components(mesh.boundary_edge_components, [0.8, 0.0, 0.0])
-    graphics.add_graphics_face_components(mesh.boundary_face_components, [0.8, 0.0, 0.0])
+    graphics.add_graphics_face_components(mesh.boundary_edge_components, [1.0, 0.0, 0.0])
 
     graphics.mesh = mesh
-    graphics.show()
+    #graphics.show()
 
 

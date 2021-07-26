@@ -1,18 +1,9 @@
 [explore-model] INFO - Parse arguments ...
 [explore-model] INFO - Model file: mel-model.vtp
-[explore-model] INFO - Number of points: 1247
-[explore-model] INFO - Number of triangles: 2490
+[explore-model] INFO - Number of points: 14526
+[explore-model] INFO - Number of triangles: 5362
 [explore-model] INFO - ========== extract edges ========== 
 [explore-model] INFO - Angle: 50.000000
 [explore-model] INFO - ========== get_surface_faces ==========
-[explore-model] INFO - Face IDs range: 1 5
-[explore-model] INFO -   id:1 num cells: 2105
-[explore-model] INFO -   id:2 num cells: 1
-[explore-model] INFO -   id:3 num cells: 175
-[explore-model] INFO -   id:4 num cells: 124
-[explore-model] INFO -   id:5 num cells: 85
+[explore-model] ERROR - No ModelFaceID data.
 [explore-model] INFO - ========== filter_faces ==========
-[explore-model] INFO - Number of faces: 5
-[explore-model] INFO - min_num_cells: 2
-[explore-model] INFO -   id:2 num cells: 1
-[explore-model] INFO -   max_r:0.000164 

@@ -1,0 +1,42 @@
+//-----------------
+// GetvtkTransform
+//-----------------
+// Compute the transformation used to translate and rotate a plane with 
+// origin = [0,0,0] and normal = [0,0,1] to the 'pathPoint' point and normal.
+//
+vtkSmartPointer<vtkTransform> 
+sv4guiSegmentationUtils::GetvtkTransform_old(sv4guiPathElement::sv4guiPathPoint pathPoint)
+{
+    std::cout << "####### start #######" << std::endl;
+
+    double pos[3], tangent[3], normal[3], binormal[3];
+
+    for (int i = 0; i < 3; i++) {
+        pos[i] = pathPoint.pos[i];
+        tangent[i] = pathPoint.tangent[i];
+        normal[i] = pathPoint.rotation[i];
+    }
+
+    binormal[0] = tangent[1]*normal[2] - tangent[2]*normal[1];
+    binormal[1] = tangent[2]*normal[0] - tangent[0]*normal[2];
+    binormal[2] = tangent[0]*normal[1] - tangent[1]*normal[0];
+
+    auto matrix = vtkSmartPointer<vtkMatrix4x4>::New();
+    matrix->Identity();
+    int a0 = 2, a1 = 0, a2 = 1;
+
+    for (int i = 0; i < 3; i++) {
+        matrix->SetElement(i, a0, tangent[i]);
+        matrix->SetElement(i, a1, normal[i]);
+        matrix->SetElement(i, a2, binormal[i]);
+    }
+
+    auto transform = vtkSmartPointer<vtkTransform>::New();
+    transform->Identity();
+    transform->Translate(pos[0], pos[1], pos[2]);
+    transform->Concatenate(matrix);
+
+    std::cout << "####### end #######" << std::endl;
+
+    return transform;
+}

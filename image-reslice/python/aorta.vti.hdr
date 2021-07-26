@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ImageHeaderInformation creation_time="1626138183" version="1.0" modification_time="1626138183">
+    <created_with_simvascular_version>2021.06</created_with_simvascular_version>
+    <modality>unknown</modality>
+    <age>0</age>
+    <gender>unknown</gender>
+    <ethnicity>unknown</ethnicity>
+    <image_is_scaled>true</image_is_scaled>
+    <scale_factor>0.100000</scale_factor>
+    <original_units>mm</original_units>
+    <current_units>cm</current_units>
+    <transform_lps t12="0.2" t00="0.078125" t20="0" t22="0" t21="-0.078125" t10="0" t01="0" t11="0" t02="0"/>
+</ImageHeaderInformation>
+

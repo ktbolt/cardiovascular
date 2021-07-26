@@ -10,6 +10,7 @@ import os
 import logging
 
 from manage import get_logger_name, init_logging, get_log_file_name
+import numpy as np
 from parameters import Parameters
 from image import Image
 from graphics import Graphics
@@ -97,6 +98,11 @@ if __name__ == '__main__':
 
     graphics.image = image
     graphics.paths = paths 
+
+    #path_data = paths[0].get_data(0, 149)
+    #binormal = np.cross(path_data.tangent, path_data.rotation)
+    #graphics.image.extract_slice(path_data.point, path_data.tangent, path_data.rotation, binormal)
+
     graphics.show()
 
 

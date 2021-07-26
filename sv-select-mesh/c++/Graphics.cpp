@@ -163,6 +163,7 @@ void MouseInteractorStyle::OnKeyPress()
   } else {
     // Forward events
     //vtkInteractorStyleTrackballCamera::OnKeyPress();
+    vtkInteractorStyleTrackballCamera::OnChar();
   }
 
 }

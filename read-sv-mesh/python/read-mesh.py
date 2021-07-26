@@ -1,47 +1,45 @@
+'''This script prints out information for a SimVascular mesh stored in a .vtu file.
+'''
 import os
 import sys
 import vtk
 
-file_name = "cylinder.vtu"
-file_name = "mesh-complete.mesh.vtu"
-file_name = "mesh.vtu"
-reader = vtk.vtkXMLUnstructuredGridReader()
-reader.SetFileName(file_name)
-reader.Update()
-mesh = reader.GetOutput()
+if __name__ == '__main__':
 
-num_points = mesh.GetNumberOfPoints()
-points = mesh.GetPoints()
-point_ids = mesh.GetPointData().GetArray("GlobalNodeID")
-print("Number of points: {0:d}".format(num_points))
+    # Read the mesh .vtu file.
+    file_name = sys.argv[1]
+    reader = vtk.vtkXMLUnstructuredGridReader()
+    reader.SetFileName(file_name)
+    reader.Update()
+    mesh = reader.GetOutput()
 
-num_cells = mesh.GetNumberOfCells()
-print("Number of cells: {0:d}".format(num_cells))
-cells = mesh.GetCells()
+    # Print mesh nodal coordinates.
+    num_points = mesh.GetNumberOfPoints()
+    points = mesh.GetPoints()
+    point_ids = mesh.GetPointData().GetArray("GlobalNodeID")
+    print("Number of coordinates: {0:d}".format(num_points))
 
-'''
-for i in range(num_cells): 
-    cell = mesh.GetCell(i)
-    s = " "
-    for j in range(4): 
-        k = cell.GetPointId(j)
-        nid = point_ids.GetValue(k)
-        s += str(nid) + " "
-    print("Cell {0:d} {1:s}".format(i, s))
-'''
+    print("Coordinates:  'Node ID' 'Node coordinates'")
+    pt = 3*[0.0]
+    for i in range(num_points): 
+        point = points.GetPoint(i, pt)
+        pid = point_ids.GetValue(i)
+        print("{0:d} {1:s}".format(pid, str(pt)))
 
-qualityFilter = vtk.vtkMeshQuality()
-qualityFilter.SetInputData(mesh)
-qualityFilter.SetTetQualityMeasureToVolume()
-qualityFilter.Update()
+    num_cells = mesh.GetNumberOfCells()
+    print("Number of elements: {0:d}".format(num_cells))
+    cells = mesh.GetCells()
+    element_ids = mesh.GetCellData().GetArray("GlobalElementID")
 
-qualityMesh = qualityFilter.GetOutput()
-qualityArray = qualityMesh.GetCellData().GetArray("Quality")
-
-for i in range(num_cells): 
-    val = qualityArray.GetValue(i)
-    print("Cell {0:d} {1:f}".format(i, val))
-
-
+    print("Elements: 'Element ID'  'Element connectivity'")
+    for i in range(num_cells): 
+        cell = mesh.GetCell(i)
+        elem_id = element_ids.GetValue(i)
+        s = " "
+        for j in range(4): 
+            k = cell.GetPointId(j)
+            nid = point_ids.GetValue(k)
+            s += str(nid) + " "
+        print("{0:d} {1:s}".format(elem_id, s))
 
 

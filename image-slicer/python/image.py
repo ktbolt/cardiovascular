@@ -4,6 +4,7 @@ from os import path
 import logging
 from manage import get_logger_name
 
+import math
 import vtk
 print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
 
@@ -281,7 +282,7 @@ class Image(object):
         This works but can't clip slice.
         '''
         print(" ")
-        print("---------- Image Extract Slice ----------") 
+        print("---------- Image Extract Slice gut ----------") 
         print("origin: " + str(origin))
         print("tangent: " + str(tangent))
         print("normal: " + str(normal))
@@ -334,6 +335,93 @@ class Image(object):
         planeBorder.GetProperty().SetLineWidth(4)
         planeBorder.SetMapper(cutterMapper)
         self.graphics.add_actor(planeBorder)
+
+    ################# duplicate sv code #######################
+
+    def math_cross(self, cross, vecA, vecB):
+        cross[0] = vecA[1]*vecB[2]-vecA[2]*vecB[1]
+        cross[1] = vecA[2]*vecB[0]-vecA[0]*vecB[2]
+        cross[2] = vecA[0]*vecB[1]-vecA[1]*vecB[0]
+
+    def math_magnitude(self, vecA):
+        return math.sqrt(self.math_dot(vecA,vecA))
+
+    def math_dot(self, vecA, vecB):
+        return vecA[0]*vecB[0]+vecA[1]*vecB[1]+vecA[2]*vecB[2]
+
+    def math_radToDeg(self, rad):
+        return rad*180.0/math.pi
+
+    def math_angleBtw3DVectors(self, vecA, vecB):
+        dot = self.math_dot(vecA, vecB)
+        magA = self.math_magnitude(vecA)
+        magB = self.math_magnitude(vecB)
+        cosTheta = dot / (magA * magB)
+        if cosTheta >= 1: 
+            cosTheta = 1
+        return math.acos(cosTheta)
+
+    def GetvtkTransform(self, pos, nrm, xhat):
+        zhat = [0,0,1]
+        theta = self.math_radToDeg(self.math_angleBtw3DVectors(zhat,nrm));
+        axis = 3*[0.0]
+        self.math_cross(axis, zhat, nrm)
+
+        tmpTr = vtk.vtkTransform()
+        tmpTr.Identity()
+        tmpTr.RotateWXYZ(theta,axis)
+
+        tmpPt = vtk.vtkPoints()
+        tmpPt.InsertNextPoint(1, 0, 0)
+
+        tmpPd = vtk.vtkPolyData()
+        tmpPd.SetPoints(tmpPt)
+
+        tmpTf = vtk.vtkTransformPolyDataFilter()
+        tmpTf.SetInputDataObject(tmpPd)
+        tmpTf.SetTransform(tmpTr)
+        tmpTf.Update()
+        pt = 3*[0.0]
+        tmpTf.GetOutput().GetPoint(0,pt)
+
+        rot = self.math_radToDeg(self.math_angleBtw3DVectors(pt,xhat))
+        x = 3*[0.0]
+        self.math_cross(x, pt, xhat)
+        d = self.math_dot(x,nrm)
+        if d < 0.0:
+            rot = -rot
+
+        tr = vtk.vtkTransform()
+        tr.Identity()
+        tr.Translate(pos)
+        tr.RotateWXYZ(rot,nrm)
+        tr.RotateWXYZ(theta,axis)
+
+        return tr
+
+    def simple_transform(self, origin, tangent, normal, binormal):
+
+        a0 = 0; a1 = 1; a2 = 2
+        a0 = 1; a1 = 2; a2 = 0
+        a0 = 2; a1 = 0; a2 = 1
+
+        matrix = vtk.vtkMatrix4x4()
+        matrix.Identity()
+        for i in range(3):
+           #matrix.SetElement(a0, i, tangent[i])
+           #matrix.SetElement(a1, i, normal[i])
+           #matrix.SetElement(a2, i, binormal[i])
+           matrix.SetElement(i, a0, tangent[i])
+           matrix.SetElement(i, a1, normal[i])
+           matrix.SetElement(i, a2, binormal[i])
+
+        transform = vtk.vtkTransform()
+        transform.Translate(origin[0], origin[1], origin[2])
+        transform.Concatenate(matrix)
+        #transform.Translate(-origin[0], -origin[1], -origin[2])
+
+        return transform
+
 
     def extract_slice(self, origin, tangent, normal, binormal):
         print(" ")
@@ -441,6 +529,32 @@ class Image(object):
         actor.SetMapper(mapper)
         actor.GetProperty().SetPointSize(2)
         #actor.GetProperty().SetColor(1.0, 1.0, 0.0)
+        self.graphics.add_actor(actor)
+        
+        ## Duplicate SV code.
+        #
+        tr = self.GetvtkTransform(origin, tangent, normal)
+        tr = self.simple_transform(origin, tangent, normal, binormal)
+
+        plane_source = vtk.vtkPlaneSource()
+        plane_source.SetCenter([0,0,0])
+        plane_source.SetNormal([0,0,1])
+        plane_source.Update()
+        plane_pd = plane_source.GetOutput()
+
+        xform_filter = vtk.vtkTransformPolyDataFilter()
+        xform_filter.SetInputDataObject(plane_pd)
+        xform_filter.SetTransform(tr)
+        xform_filter.Update()
+
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputData(xform_filter.GetOutput())
+        #mapper.SetInputData(plane_pd)
+        mapper.SetScalarVisibility(False)
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetPointSize(2)
+        actor.GetProperty().SetColor(1.0, 0.0, 0.0)
         self.graphics.add_actor(actor)
 
 

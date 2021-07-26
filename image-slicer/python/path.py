@@ -41,7 +41,7 @@ class Path(object):
         min_dist = 1e9
         min_pt = None
         min_i = None
-        for element in self.elements:
+        for elem_i, element in enumerate(self.elements):
             pts = element.points
             for i in range(0, len(pts)):
                 pt = pts[i]
@@ -50,14 +50,26 @@ class Path(object):
                     min_dist = dist
                     min_element = element
                     min_i = i
+                    min_element_i = elem_i
             #_for i in range(0, len(pts)-1)
         #_for element in self.elements
         
+        print("[Path.select] index: {0:d}".format(min_i))
+        print("[Path.select] min_element_i: {0:d}".format(min_element_i))
         pid = min_element.ids[min_i]
         index = min_i
         point = min_element.points[min_i]
         tangent = min_element.tangents[min_i]
         rotation = min_element.rotations[min_i]
+        return PathData(pid, index, point, tangent, rotation)
+
+    def get_data(self, element_num, index):
+        element = self.elements[element_num]
+        path_data = {}
+        pid = element.ids[index]
+        point = element.points[index]
+        tangent = element.tangents[index]
+        rotation = element.rotations[index]
         return PathData(pid, index, point, tangent, rotation)
 
     @classmethod

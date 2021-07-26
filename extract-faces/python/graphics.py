@@ -216,6 +216,8 @@ class Graphics(object):
             mapper.ScalarVisibilityOff()
             mapper.SetInputData(component)
             actor = vtk.vtkActor()
+            width = 4
+            '''
             if component.GetNumberOfCells() == 16:
                 width = 3.0
                 color[0] = 0.0
@@ -231,6 +233,7 @@ class Graphics(object):
                 color[0] = 0.0
                 color[1] = 0.0
                 color[2] = 0.8
+            '''
             actor.GetProperty().SetLineWidth(width)
             actor.GetProperty().SetColor(color[0], color[1], color[2])
             actor.SetMapper(mapper)
@@ -244,21 +247,24 @@ class Graphics(object):
             mapper.ScalarVisibilityOff()
             mapper.SetInputData(component)
             actor = vtk.vtkActor()
+            width = 4
+            '''
             if component.GetNumberOfCells() == 16: 
                 width = 3.0
-                color[0] = 0.0
-                color[1] = 1.0
-                color[2] = 0.0
+                #color[0] = 0.0
+                #color[1] = 1.0
+                #color[2] = 0.0
             elif component.GetNumberOfCells() == 3: 
                 width = 5.0
-                color[0] = 1.0
-                color[1] = 0.0
-                color[2] = 0.0
+                #color[0] = 1.0
+                #color[1] = 0.0
+                #color[2] = 0.0
             else:
                 width = 3.0
-                color[0] = 0.0
-                color[1] = 1.0
-                color[2] = 0.8
+                #color[0] = 0.0
+                #color[1] = 1.0
+                #color[2] = 0.8
+            '''
             actor.GetProperty().SetLineWidth(width)
             actor.GetProperty().SetColor(color[0], color[1], color[2])
             actor.SetMapper(mapper)

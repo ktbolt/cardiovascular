@@ -1,5 +1,6 @@
 [extract-faces] INFO - Parse arguments ...
-[extract-faces] INFO - Surface file: coronarytree.stl
-[extract-faces] INFO - Number of points: 22057
-[extract-faces] INFO - Number of triangles: 44110
-[extract-faces] INFO - ---------- extract edges ---------- 
+[extract-faces] INFO - Surface file: Cylinder_HDF5-sv-mesh.vtp
+[extract-faces] INFO - Number of points: 12857
+[extract-faces] INFO - Number of triangles: 9042
+[extract-faces] INFO - ---------- extract faces ---------- 
+[extract-faces] INFO - Number of edges: 2
