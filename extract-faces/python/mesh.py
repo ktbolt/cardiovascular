@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-
+'''The Mesh class is used to represent a polygonal surface mesh.
+'''
 from collections import defaultdict
 from collections import deque 
 import logging
@@ -11,17 +12,13 @@ import sys
 import vtk
 print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
 
-try:
-    from vmtk import vtkvmtk,vmtkscripts
-except ImportError:
-    print("vmtk not found.")
-
 from face import Face
 
 class Mesh(object):
 
     def __init__(self, params):
         self.params = params
+        self.file_base_name = None
         self.surface = None
         self.surface_caps = None
         self.graphics = None
@@ -75,7 +72,7 @@ class Mesh(object):
 
         self.logger.info("Number of edges: {0:d}".format(edge_id))
 
-        ## Identify the cells incident on the feature edges.
+        ## Identify the cells incident to the feature edges.
         #
         self.logger.info("Identify edge cells ...")
 
@@ -92,15 +89,6 @@ class Mesh(object):
         surf_points = surface.GetPoints()
         num_cells = surface.GetNumberOfCells()
         surf_node_ids = surface.GetPointData().GetArray('GlobalNodeID')
-
-        ''' 
-        cell_mask = vtk.vtkIntArray()
-        cell_mask.SetNumberOfValues(num_cells)
-        cell_mask.SetName("CellMask")
-        for i in range(num_cells):
-            cell_mask.SetValue(i,0);
-        surface.GetCellData().AddArray(cell_mask)
-        '''
         edge_cell_ids = set()
 
         for i in range(num_cells):
@@ -110,39 +98,10 @@ class Mesh(object):
             node_ids = [ surf_node_ids.GetValue(cell_pids.GetId(j)) for j in range(num_ids) ]
             for pid in node_ids:
                 if pid in edge_nodes: 
-                    #cell_mask.SetValue(i,1);
                     edge_cell_ids.add(i)
                     break
 
-        '''
-        thresh = vtk.vtkThreshold()
-        thresh.SetInputData(surface)
-        thresh.ThresholdBetween(1, 1)
-        thresh.SetInputArrayToProcess(0, 0, 0, "vtkDataObject::FIELD_ASSOCIATION_CELLS", "CellMask")
-        thresh.Update()
-
-        surfacefilter = vtk.vtkDataSetSurfaceFilter()
-        surfacefilter.SetInputData(thresh.GetOutput())
-        surfacefilter.Update()
-        edge_cells = surfacefilter.GetOutput()
-
-        writer = vtk.vtkXMLPolyDataWriter()
-        writer.SetFileName("edge_cells.vtp");
-        writer.SetInputData(edge_cells)
-        writer.Write()
-
-        append_filter = vtk.vtkAppendPolyData()
-        for i,edge in enumerate(self.boundary_edge_components):
-            append_filter.AddInputData(edge)
-        append_filter.Update()
-
-        writer = vtk.vtkXMLPolyDataWriter()
-        writer.SetFileName("edges.vtp");
-        writer.SetInputData(append_filter.GetOutput())
-        writer.Write()
-        '''
-
-        ## Traverse edge cells.
+        ## Identify boundary faces using edge cells.
         #
         cell_visited = set()
         cell_normals = surface.GetCellData().GetArray('Normals')
@@ -159,16 +118,18 @@ class Mesh(object):
             if cell_id in cell_visited:
                 continue
             #self.logger.info("----- Edge cell ID: {0:d} -----".format(cell_id))
-            self.add_new_cell(surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces[face_id])
+            self.add_new_cells(surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces[face_id])
             faces[face_id].append(cell_id)
             while len(new_cells) != 0:
-              #self.logger.info("  new_cells: {0:s}".format(str(new_cells)))
-              new_cell_id = new_cells.pop()
-              if new_cell_id not in cell_visited:
-                  faces[face_id].append(new_cell_id)
-              self.add_new_cell(surface, cell_normals, edge_cell_ids, cell_visited, new_cell_id, new_cells, feature_angle, faces[face_id])
+                #self.logger.info("  new_cells: {0:s}".format(str(new_cells)))
+                new_cell_id = new_cells.pop()
+                if new_cell_id not in cell_visited:
+                    faces[face_id].append(new_cell_id)
+                self.add_new_cells(surface, cell_normals, edge_cell_ids, cell_visited, new_cell_id, new_cells, feature_angle, faces[face_id])
+
             face_id += 1
 
+        ## Check that we got all of the cells.
         self.logger.info("Number of cells visited: {0:d}".format(len(cell_visited)))
         self.logger.info("Number of faces: {0:d}".format(face_id))
         self.logger.info("Faces: ")
@@ -178,34 +139,35 @@ class Mesh(object):
             #self.logger.info("  Face ID: {0:d}  num cells: {1:d}".format(face_id, len(cell_list)))
             faces_size += len(cell_list)
         self.logger.info("Number of faces cells: {0:d}".format(faces_size))
-        '''
 
+        ## Add the 'ModelFaceID' cell data array identifying each cell with a face ID.
+        #
+        face_ids_data = vtk.vtkIntArray()
+        face_ids_data.SetNumberOfValues(num_cells)
+        face_ids_data.SetName("ModelFaceID")
         for face_id in faces:
-            if face_id > 5:
-                break;
-            for i in range(num_cells):
-                cell_mask.SetValue(i,0);
             cell_list = faces[face_id]
-            for cell_id in cell_list: 
-                cell_mask.SetValue(cell_id,1);
-            thresh = vtk.vtkThreshold()
-            thresh.SetInputData(surface)
-            thresh.ThresholdBetween(1, 1)
-            thresh.SetInputArrayToProcess(0, 0, 0, "vtkDataObject::FIELD_ASSOCIATION_CELLS", "CellMask")
-            thresh.Update()
+            for cell_id in cell_list:
+                face_ids_data.SetValue(cell_id, face_id+1);
+        surface.GetCellData().AddArray(face_ids_data)
 
-            surfacefilter = vtk.vtkDataSetSurfaceFilter()
-            surfacefilter.SetInputData(thresh.GetOutput())
-            surfacefilter.Update()
-            edge_cells = surfacefilter.GetOutput()
+        # Write the surface with the 'ModelFaceID' cell data array.
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName(self.file_base_name + "-boundary.vtp");
+        writer.SetInputData(surface)
+        writer.Write()
 
-            writer = vtk.vtkXMLPolyDataWriter()
-            writer.SetFileName("face_" + str(face_id) + ".vtp");
-            writer.SetInputData(edge_cells)
-            writer.Write()
+        # Write the surface without any data arrays.
+        ''' for debugging
+        surface.GetCellData().RemoveArray('ModelFaceID')
+        surface.GetCellData().RemoveArray('GlobalElementID')
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName(self.file_base_name + "-no-faceIDs.vtp")
+        writer.SetInputData(surface)
+        writer.Write()
         '''
 
-    def add_new_cell(self, surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces):
+    def add_new_cells(self, surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces):
         #self.logger.info("  add new cell: {0:d}".format(cell_id))
         #faces.append(cell_id)
         cell = surface.GetCell(cell_id)
@@ -240,10 +202,55 @@ class Mesh(object):
         #for cell_id in new_cells:
         #    self.add_new_cell(surface, cell_visited, cell_id)
 
+    def write_boundary_edges(self):
+        '''Write a lines representing boundary edges.
+
+           This is for debugging.
+        '''
+        append_filter = vtk.vtkAppendPolyData()
+        for i,edge in enumerate(self.boundary_edge_components):
+            append_filter.AddInputData(edge)
+        append_filter.Update()
+
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName("boundary_edges.vtp");
+        writer.SetInputData(append_filter.GetOutput())
+        writer.Write()
+
+    def write_boundary_edge_cells(self, edge_cell_ids):
+        '''Write a PolyData surface containing the cells incident to boundary edges.
+
+           This is for debugging.
+        '''
+        cell_mask = vtk.vtkIntArray()
+        cell_mask.SetNumberOfValues(num_cells)
+        cell_mask.SetName("CellMask")
+        for i in range(num_cells):
+            cell_mask.SetValue(i,0);
+        surface.GetCellData().AddArray(cell_mask)
+
+        for cell_id in edge_cell_ids:
+            cell_mask.SetValue(cell_id,1);
+
+        thresh = vtk.vtkThreshold()
+        thresh.SetInputData(surface)
+        thresh.ThresholdBetween(1, 1)
+        thresh.SetInputArrayToProcess(0, 0, 0, "vtkDataObject::FIELD_ASSOCIATION_CELLS", "CellMask")
+        thresh.Update()
+
+        surfacefilter = vtk.vtkDataSetSurfaceFilter()
+        surfacefilter.SetInputData(thresh.GetOutput())
+        surfacefilter.Update()
+        edge_cells = surfacefilter.GetOutput()
+
+        writer = vtk.vtkXMLPolyDataWriter()
+        writer.SetFileName("boundary_edge_cells.vtp");
+        writer.SetInputData(edge_cells)
+        writer.Write()
 
     def extract_edges(self):
-        """ Extract the surface boundary edges.
-        """
+        '''Extract the surface boundary edges.
+        '''
         self.logger.info("---------- extract edges ---------- ")
         surface = self.surface
         feature_edges = vtk.vtkFeatureEdges()
@@ -286,9 +293,9 @@ class Mesh(object):
 
  
     def read_mesh(self):
-        """ Read in a surface mesh.
-        """
-        filename, file_extension = path.splitext(self.params.surface_file_name)
+        '''Read in a surface mesh.
+        '''
+        self.file_base_name, file_extension = path.splitext(self.params.surface_file_name)
         reader = None
         if file_extension == ".vtp":
             reader = vtk.vtkXMLPolyDataReader()
@@ -296,13 +303,25 @@ class Mesh(object):
             reader = vtk.vtkSTLReader()
         reader.SetFileName(self.params.surface_file_name)
         reader.Update()
-        self.surface = reader.GetOutput()
+        geometry = reader.GetOutput()
+
+        pd_normals = vtk.vtkPolyDataNormals()
+        pd_normals.SetInputData(geometry)
+        pd_normals.SplittingOff()
+        pd_normals.ComputeCellNormalsOn()
+        pd_normals.ComputePointNormalsOn()
+        pd_normals.ConsistencyOn()
+        pd_normals.AutoOrientNormalsOn()
+        pd_normals.Update()
+        self.surface = pd_normals.GetOutput()
+        self.surface.BuildLinks()
+
         num_points = self.surface.GetPoints().GetNumberOfPoints()
         self.logger.info("Number of points: %d" % num_points)
         num_polys = self.surface.GetPolys().GetNumberOfCells()
         self.logger.info("Number of triangles: %d" % num_polys)
 
-        self.surface.BuildLinks()
+        # Extract boundary faces.
         self.extract_faces()
 
         #if self.params.use_feature_angle and self.params.angle != None:

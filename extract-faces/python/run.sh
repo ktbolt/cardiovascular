@@ -1,8 +1,7 @@
 
-test_name="remove-faces.vtp"
 test_name="coronarytree.stl"
-test_name="demo.vtp"
 test_name="Cylinder_HDF5-sv-mesh.vtp"
+test_name="demo.vtp"
 test_name="harfdmeshbetter_HDF5-sv-mesh.vtp"
 
 python=python

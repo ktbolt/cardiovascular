@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-""" 
-This script extracts faces from a surface geometry. 
-
-"""
+'''This script extracts boundary faces from a surface geometry. 
+'''
 import argparse
 import sys
 import os
@@ -17,20 +15,21 @@ from graphics import Graphics
 logger = logging.getLogger(get_logger_name())
 
 class Args(object):
-    """ This class defines the command line arguments to the generate-1d-mesh script.
-    """
+    '''This class defines the command line arguments to the generate-1d-mesh script.
+    '''
     PREFIX = "--"
     SURFACE_FILE = "surface_file_name"
     ANGLE = "angle" 
     USE_FEATURE_ANGLE = "use-feature-angle" 
 
 def cmd(name):
-    """ Create an argparse command argument.
-    """
+    '''Create an argparse command argument.
+    '''
     return Args.PREFIX + name.replace("_", "-")
 
 def parse_args():
-    """ Parse command-line arguments."""
+    '''Parse command-line arguments.
+    '''
     parser = argparse.ArgumentParser()
 
     parser.add_argument(cmd(Args.SURFACE_FILE),
@@ -45,8 +44,8 @@ def parse_args():
     return parser.parse_args(), parser.print_help
 
 def set_parameters(**kwargs):
-    """ Set the values of parameters input from the command line.
-    """
+    '''Set the values of parameters input from the command line.
+    '''
     print(kwargs)
     logger.info("Parse arguments ...")
 
