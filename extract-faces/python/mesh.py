@@ -12,20 +12,14 @@ import sys
 import vtk
 print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
 
-from face import Face
-
 class Mesh(object):
 
     def __init__(self, params):
         self.params = params
         self.file_base_name = None
         self.surface = None
-        self.surface_caps = None
         self.graphics = None
-        self.boundary_faces = None
-        self.boundary_edges = None
         self.boundary_edge_components = None
-        self.boundary_face_components = None
         self.logger = logging.getLogger(get_logger_name())
 
     def extract_faces(self):
@@ -81,10 +75,8 @@ class Mesh(object):
         for edge in self.boundary_edge_components:
             edge_num_points = edge.GetNumberOfPoints()
             edge_node_ids = edge.GetPointData().GetArray('GlobalNodeID')
-            #self.logger.info("edge nodes: ")
             for i in range(edge_num_points):
                 nid = edge_node_ids.GetValue(i)
-                #self.logger.info(" {0:d}".format(nid))
                 edge_nodes.add(nid)
 
         # Create a set of cell IDs incident to the edge nodes.
@@ -97,12 +89,10 @@ class Mesh(object):
             cell = surface.GetCell(i)
             cell_pids = cell.GetPointIds()
             num_ids = cell_pids.GetNumberOfIds()
-            node_ids = [ surf_node_ids.GetValue(cell_pids.GetId(j)) for j in range(num_ids) ]
-            #self.logger.info("Cell {0:d}  ids: {1:s}".format(i, str(node_ids)))
-            for pid in node_ids:
+            for j in range(num_ids):
+                pid = surf_node_ids.GetValue(cell_pids.GetId(j))
                 if pid in edge_nodes: 
                     edge_cell_ids.add(i)
-                    #self.logger.info("add Cell {0:d}".format(i))
                     break
 
         self.logger.info("Number of edge cell IDs {0:d}".format(len(edge_cell_ids)))
@@ -120,12 +110,7 @@ class Mesh(object):
         face_id = 0
         self.logger.info("Traverse edge cells ...")
 
-        sorted_edge_cell_ids = sorted(edge_cell_ids)
-        #print("#### " + str(sorted_edge_cell_ids))
-        num_steps = 0
-
-        for cell_id in sorted_edge_cell_ids:
-        #for cell_id in edge_cell_ids:
+        for cell_id in edge_cell_ids:
             if cell_id in cell_visited:
                 continue
             self.logger.info("----- Face ID: {0:d} -----".format(face_id))
@@ -133,31 +118,18 @@ class Mesh(object):
 
             self.add_new_cells(surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces[face_id])
 
-            #self.logger.info("new_cells size: {0:d}".format(len(new_cells)))
-            #self.logger.info("new_cells: {0:s}".format(str(new_cells)))
-            #self.logger.info("new_cells: {0:s}".format(str(new_cells)))
-            #break
-
             faces[face_id].append(cell_id)
             while len(new_cells) != 0:
-                #self.logger.info("  new_cells: {0:s}".format(str(new_cells)))
                 new_cell_id = new_cells.pop()
                 if new_cell_id not in cell_visited:
                     faces[face_id].append(new_cell_id)
                 self.add_new_cells(surface, cell_normals, edge_cell_ids, cell_visited, new_cell_id, new_cells, feature_angle, faces[face_id])
-                '''
-                self.logger.info("*** new_cells size: {0:d}".format(len(new_cells)))
-                if num_steps == 3:
-                    sys.exit(1)
-                num_steps += 1
-                '''
             face_id += 1
 
         ## Check that we got all of the cells.
         self.logger.info("----------------------------")
         self.logger.info("Number of cells visited: {0:d}".format(len(cell_visited)))
         self.logger.info("Number of faces: {0:d}".format(face_id))
-        self.logger.info("Faces: ")
         faces_size = 0
         for face_id in faces:
             cell_list = faces[face_id]
@@ -192,51 +164,33 @@ class Mesh(object):
         '''
 
     def add_new_cells(self, surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces):
-        #self.logger.info(" ")
-        #self.logger.info("---------- add_new_cells ----------")
-        #self.logger.info("cell id: {0:d}".format(cell_id))
-        #self.logger.info("new_cells: {0:s}".format(str(new_cells)))
-
+        '''Add new cells adjacent to the input cell edges.
+        '''
         cell = surface.GetCell(cell_id)
         cell_visited.add(cell_id)
         num_edges = cell.GetNumberOfEdges()
-        #self.logger.info("  num edges {0:d}".format(num_edges))
         cell_normal = [ cell_normals.GetComponent(cell_id,j) for j in range(3)]
-        #self.logger.info("cell normal: {0:s}".format(str(cell_normal)))
 
         for i in range(num_edges):
             edge = cell.GetEdge(i)
             edge_ids = edge.GetPointIds()
             pid1 = edge_ids.GetId(0)
             pid2 = edge_ids.GetId(1)
-            #self.logger.info("  ")
-            #self.logger.info("  pid1: {0:d}   pid2: {1:d}".format(pid1, pid2))
             adj_cell_ids = vtk.vtkIdList()
             surface.GetCellEdgeNeighbors(cell_id, pid1, pid2, adj_cell_ids)
-            #self.logger.info("  adj_cell_ids->GetNumberOfIds(): {0:d}".format(adj_cell_ids.GetNumberOfIds()))
 
             for j in range(adj_cell_ids.GetNumberOfIds()):
                 adj_cell_id = adj_cell_ids.GetId(j)
-                #self.logger.info("    adj_cell_id: {0:d}".format(adj_cell_id))
                 if adj_cell_id not in cell_visited:
                     add_cell = True
                     if adj_cell_id in edge_cell_ids:
-                        #self.logger.info("    *** adj_cell_id in edge_cell_ids ")
                         adj_cell_normal = [ cell_normals.GetComponent(adj_cell_id,k) for k in range(3)]
-                        #self.logger.info("adj cell normal: {0:s}".format(str(adj_cell_normal)))
                         dp = sum([ cell_normal[k] * cell_normals.GetComponent(adj_cell_id,k) for k in range(3)] )
-                        #self.logger.info("    dp: {0:g}".format(dp))
                         if dp < feature_angle:
-                            #self.logger.info("   dp < feature_angle: don't add new cell") 
                             add_cell = False
                     if add_cell: 
-                        #self.logger.info("    ++++ add new cell: {0:d}".format(adj_cell_id))
                         new_cells.append(adj_cell_id)
                         cell_visited.add(cell_id)
-
-        #self.logger.info("  new cells {0:s}".format(str(new_cells)))
-        #for cell_id in new_cells:
-        #    self.add_new_cell(surface, cell_visited, cell_id)
 
     def write_boundary_edges(self):
         '''Write a lines representing boundary edges.
@@ -284,50 +238,6 @@ class Mesh(object):
         writer.SetInputData(edge_cells)
         writer.Write()
 
-    def extract_edges(self):
-        '''Extract the surface boundary edges.
-        '''
-        self.logger.info("---------- extract edges ---------- ")
-        surface = self.surface
-        feature_edges = vtk.vtkFeatureEdges()
-        feature_edges.SetInputData(surface)
-        feature_edges.BoundaryEdgesOn()
-        feature_edges.FeatureEdgesOff()
-        feature_edges.ManifoldEdgesOff()
-        feature_edges.NonManifoldEdgesOff()
-        feature_edges.ColoringOn()
-        feature_edges.Update()
-
-        boundary_edges = feature_edges.GetOutput()
-        clean_filter = vtk.vtkCleanPolyData() 
-        boundary_edges_clean = clean_filter.SetInputData(boundary_edges)
-        clean_filter.Update(); 
-        cleaned_edges = clean_filter.GetOutput()
-
-        conn_filter = vtk.vtkPolyDataConnectivityFilter()
-        conn_filter.SetInputData(cleaned_edges)
-        conn_filter.SetExtractionModeToSpecifiedRegions()
-        self.boundary_edge_components = list()
-        id = 0
-
-        while True:
-            conn_filter.AddSpecifiedRegion(id)
-            conn_filter.Update()
-            component = vtk.vtkPolyData()
-            component.DeepCopy(conn_filter.GetOutput())
-            if component.GetNumberOfCells() <= 0:
-                break
-            print("{0:d}: Number of boundary lines: {1:d}".format(id, component.GetNumberOfCells()))
-            self.boundary_edge_components.append(component)
-            conn_filter.DeleteSpecifiedRegion(id)
-            id += 1
-
-        self.boundary_edges = cleaned_edges
-        #self.boundary_edges = feature_edges.GetOutput()
-        self.boundary_edges.BuildLinks()
-        #print(str(self.boundary_edges))
-
- 
     def read_mesh(self):
         '''Read in a surface mesh.
         '''
@@ -341,6 +251,7 @@ class Mesh(object):
         reader.Update()
         geometry = reader.GetOutput()
 
+        # Add normals to the surface.
         pd_normals = vtk.vtkPolyDataNormals()
         pd_normals.SetInputData(geometry)
         pd_normals.SplittingOff()
@@ -357,11 +268,15 @@ class Mesh(object):
         num_polys = self.surface.GetPolys().GetNumberOfCells()
         self.logger.info("Number of triangles: %d" % num_polys)
 
+        # Add a GlobalNodeID data array to the surface needed to associate
+        # feature edge nodes with surface cell nodes.
+        node_ids_data = vtk.vtkIntArray()
+        node_ids_data.SetNumberOfValues(num_points)
+        node_ids_data.SetName("GlobalNodeID")
+        for i in range(num_points):
+            node_ids_data.SetValue(i, i+1);
+        self.surface.GetPointData().AddArray(node_ids_data)
+
         # Extract boundary faces.
         self.extract_faces()
-
-        #if self.params.use_feature_angle and self.params.angle != None:
-        #    self.extract_faces()
-        #else:
-        #    self.extract_edges()
 
