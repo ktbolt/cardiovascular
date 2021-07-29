@@ -5,16 +5,27 @@
 
    A SimVascular Simulations tool needs both model and a mesh files to execute. 
 
+   Usage:
+
+      python create-sv-mesh.py FILE_NAME.vtu
+
    The following files are created for an input VTK VTU named FILE_NAME.vtu 
 
      Models files:
-       FILE_NAME-model.vtp - A surface with interger data arrays identifying the boundary faces
+       FILE_NAME-model.vtp - A surface with integer data arrays identifying the boundary faces
        FILE_NAME-model.mdl - An XML file defining face integer IDs with names and type (wall or cap)
 
      Meshes files:
        FILE_NAME-mesh.vtp - A surface mesh with interger data arrays identifying the boundary faces
        FILE_NAME-mesh.vtu - A volume mesh with node and element IDs 
        FILE_NAME-mesh.mdl - An XML file defining meshing parameters 
+
+   Create a SimVascular project and then copy these files into the project's Models and Meshes directories. 
+
+   All faces have their tttype set to 'wall'.
+
+   Note that the mesh scale needs to match the units used in a simulation. A mesh defined too small may not display
+   correctly in SimVascular. A scale factor can be set to scale the mesh; see the call to the 'read_mesh' function.
 '''
 
 from collections import defaultdict
@@ -403,11 +414,12 @@ def read_mesh(file_name, scale):
     return mesh
 
 if __name__ == '__main__':
-    #file_name = sys.argv[1]
-    file_name = 'Cylinder_HDF5.vtu'
-    file_name = 'harfdmeshbetter_HDF5.vtu'
+    file_name = sys.argv[1]
+    #file_name = 'Cylinder_HDF5.vtu'
+    #file_name = 'harfdmeshbetter_HDF5.vtu'
     file_base_name, ext = os.path.splitext(file_name)
 
+    # The mesh scale may be too small to be viewed in SV.
     scale = 100.0
     mesh = read_mesh(file_name, scale)
 
@@ -431,12 +443,9 @@ if __name__ == '__main__':
     # Write the surface mesh.
     file_name = file_base_name + "-mesh.vtp"
     write_surface_mesh(file_name, surface)
-    #model_surface = model.get_polydata()
-    #write_surface_mesh(file_base_name, model_surface)
 
     # Write the model and .mdl file.
     model_name = write_model(file_base_name, surface, face_ids)
-    #model_name = write_model(file_base_name, model)
 
     # Write the volume mesh and .msh file.
     write_volume_mesh(file_base_name, mesh, model_name)
