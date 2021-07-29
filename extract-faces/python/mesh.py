@@ -81,8 +81,10 @@ class Mesh(object):
         for edge in self.boundary_edge_components:
             edge_num_points = edge.GetNumberOfPoints()
             edge_node_ids = edge.GetPointData().GetArray('GlobalNodeID')
+            #self.logger.info("edge nodes: ")
             for i in range(edge_num_points):
                 nid = edge_node_ids.GetValue(i)
+                #self.logger.info(" {0:d}".format(nid))
                 edge_nodes.add(nid)
 
         # Create a set of cell IDs incident to the edge nodes.
@@ -96,10 +98,14 @@ class Mesh(object):
             cell_pids = cell.GetPointIds()
             num_ids = cell_pids.GetNumberOfIds()
             node_ids = [ surf_node_ids.GetValue(cell_pids.GetId(j)) for j in range(num_ids) ]
+            #self.logger.info("Cell {0:d}  ids: {1:s}".format(i, str(node_ids)))
             for pid in node_ids:
                 if pid in edge_nodes: 
                     edge_cell_ids.add(i)
+                    #self.logger.info("add Cell {0:d}".format(i))
                     break
+
+        self.logger.info("Number of edge cell IDs {0:d}".format(len(edge_cell_ids)))
 
         ## Identify boundary faces using edge cells.
         #
@@ -114,11 +120,24 @@ class Mesh(object):
         face_id = 0
         self.logger.info("Traverse edge cells ...")
 
-        for cell_id in edge_cell_ids:
+        sorted_edge_cell_ids = sorted(edge_cell_ids)
+        #print("#### " + str(sorted_edge_cell_ids))
+        num_steps = 0
+
+        for cell_id in sorted_edge_cell_ids:
+        #for cell_id in edge_cell_ids:
             if cell_id in cell_visited:
                 continue
-            #self.logger.info("----- Edge cell ID: {0:d} -----".format(cell_id))
+            self.logger.info("----- Face ID: {0:d} -----".format(face_id))
+            self.logger.info("Cell ID: {0:d} -----".format(cell_id))
+
             self.add_new_cells(surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces[face_id])
+
+            #self.logger.info("new_cells size: {0:d}".format(len(new_cells)))
+            #self.logger.info("new_cells: {0:s}".format(str(new_cells)))
+            #self.logger.info("new_cells: {0:s}".format(str(new_cells)))
+            #break
+
             faces[face_id].append(cell_id)
             while len(new_cells) != 0:
                 #self.logger.info("  new_cells: {0:s}".format(str(new_cells)))
@@ -126,10 +145,16 @@ class Mesh(object):
                 if new_cell_id not in cell_visited:
                     faces[face_id].append(new_cell_id)
                 self.add_new_cells(surface, cell_normals, edge_cell_ids, cell_visited, new_cell_id, new_cells, feature_angle, faces[face_id])
-
+                '''
+                self.logger.info("*** new_cells size: {0:d}".format(len(new_cells)))
+                if num_steps == 3:
+                    sys.exit(1)
+                num_steps += 1
+                '''
             face_id += 1
 
         ## Check that we got all of the cells.
+        self.logger.info("----------------------------")
         self.logger.info("Number of cells visited: {0:d}".format(len(cell_visited)))
         self.logger.info("Number of faces: {0:d}".format(face_id))
         self.logger.info("Faces: ")
@@ -141,7 +166,6 @@ class Mesh(object):
         self.logger.info("Number of faces cells: {0:d}".format(faces_size))
 
         ## Add the 'ModelFaceID' cell data array identifying each cell with a face ID.
-        #
         face_ids_data = vtk.vtkIntArray()
         face_ids_data.SetNumberOfValues(num_cells)
         face_ids_data.SetName("ModelFaceID")
@@ -168,33 +192,45 @@ class Mesh(object):
         '''
 
     def add_new_cells(self, surface, cell_normals, edge_cell_ids, cell_visited, cell_id, new_cells, feature_angle, faces):
-        #self.logger.info("  add new cell: {0:d}".format(cell_id))
-        #faces.append(cell_id)
+        #self.logger.info(" ")
+        #self.logger.info("---------- add_new_cells ----------")
+        #self.logger.info("cell id: {0:d}".format(cell_id))
+        #self.logger.info("new_cells: {0:s}".format(str(new_cells)))
+
         cell = surface.GetCell(cell_id)
         cell_visited.add(cell_id)
         num_edges = cell.GetNumberOfEdges()
         #self.logger.info("  num edges {0:d}".format(num_edges))
         cell_normal = [ cell_normals.GetComponent(cell_id,j) for j in range(3)]
+        #self.logger.info("cell normal: {0:s}".format(str(cell_normal)))
 
         for i in range(num_edges):
             edge = cell.GetEdge(i)
             edge_ids = edge.GetPointIds()
             pid1 = edge_ids.GetId(0)
             pid2 = edge_ids.GetId(1)
-            #self.logger.info("  edge {0:d} {1:d}".format(pid1, pid2))
+            #self.logger.info("  ")
+            #self.logger.info("  pid1: {0:d}   pid2: {1:d}".format(pid1, pid2))
             adj_cell_ids = vtk.vtkIdList()
             surface.GetCellEdgeNeighbors(cell_id, pid1, pid2, adj_cell_ids)
+            #self.logger.info("  adj_cell_ids->GetNumberOfIds(): {0:d}".format(adj_cell_ids.GetNumberOfIds()))
 
             for j in range(adj_cell_ids.GetNumberOfIds()):
                 adj_cell_id = adj_cell_ids.GetId(j)
+                #self.logger.info("    adj_cell_id: {0:d}".format(adj_cell_id))
                 if adj_cell_id not in cell_visited:
                     add_cell = True
                     if adj_cell_id in edge_cell_ids:
+                        #self.logger.info("    *** adj_cell_id in edge_cell_ids ")
+                        adj_cell_normal = [ cell_normals.GetComponent(adj_cell_id,k) for k in range(3)]
+                        #self.logger.info("adj cell normal: {0:s}".format(str(adj_cell_normal)))
                         dp = sum([ cell_normal[k] * cell_normals.GetComponent(adj_cell_id,k) for k in range(3)] )
+                        #self.logger.info("    dp: {0:g}".format(dp))
                         if dp < feature_angle:
-                            #self.logger.info("  adj cell {0:d} is in separate face cell dp {1:g}".format(adj_cell_id, dp))
+                            #self.logger.info("   dp < feature_angle: don't add new cell") 
                             add_cell = False
                     if add_cell: 
+                        #self.logger.info("    ++++ add new cell: {0:d}".format(adj_cell_id))
                         new_cells.append(adj_cell_id)
                         cell_visited.add(cell_id)
 
