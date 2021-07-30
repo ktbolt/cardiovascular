@@ -63,46 +63,81 @@ def get_mesh_coordinates(mesh_file):
 
     return coordinates 
 
-def get_mesh_element_connectivity(mesh_file):
+def get_mesh_element_connectivity(mesh_file, tetrahedra=True):
     '''Get the mesh element connectivity from the cgns file .
     '''
     print("\nGet mesh element connectivity")
-    conn_size_path = get_path(mesh_file, 'ElementRange')
+    if tetrahedra:
+        elem_type = 'Elem_Tetras'
+    else:
+        elem_type = 'Elem_Wedges'
+    print("Element type: " + elem_type)
+
+    conn_size_path = get_path(mesh_file, elem_type+'/ElementRange')
     print("Conn size path: " + conn_size_path)
     idx_min, idx_max = mesh_file[conn_size_path]
     print("idx_min: {0:d}".format(idx_min))
     print("idx_max: {0:d}".format(idx_max))
 
-    conn_path = get_path(mesh_file, 'ElementConnectivity')
+    num_elems = idx_max - idx_min + 1
+    idx_min = 1
+    idx_max = num_elems
+    print("Number of elements: {0:d}".format(num_elems))
+
+    conn_path = get_path(mesh_file, elem_type+'/ElementConnectivity')
     print("Conn path: " + conn_path)
     conn_data = mesh_file[conn_path]
     connectivity = np.array(conn_data).reshape(idx_max, -1) - 1
 
     return connectivity 
 
-def write_vtu(file_base_name, coordinates, connectivity):
-    '''Write the mesh as a .vtu file.
+def create_unstructured_grid(coordinates, elem_conn, elem_type):
+    '''Create a vtkUnstructuredGrid for the given element type.
     '''
-
-    ## Create the vtkUnstructuredGrid data.
-    #
     ugrid = vtk.vtkUnstructuredGrid()
 
     points = vtk.vtkPoints()
     for pt in coordinates:
         points.InsertNextPoint(pt[0], pt[1], pt[2])
-    
     ugrid.SetPoints(points)
+
+    if elem_type == vtk.VTK_TETRA:
+        ElemClass = vtk.vtkTetra
+        num_elem_nodes = 4
+    elif elem_type == vtk.VTK_WEDGE:
+        ElemClass = vtk.vtkWedge
+        num_elem_nodes = 6
+
     cell_array = vtk.vtkCellArray()
+    for cell in elem_conn:
+        elem = ElemClass()
+        for i in range(num_elem_nodes):
+            elem.GetPointIds().SetId(i, cell[i])
+        cell_array.InsertNextCell(elem)
 
-    for cell in connectivity:
-        tet = vtk.vtkTetra()
-        for i in range(4):
-            tet.GetPointIds().SetId(i, cell[i])
-        cell_array.InsertNextCell(tet)
+    ugrid.SetCells(elem_type, cell_array)
 
-    ugrid.SetCells(vtk.VTK_TETRA, cell_array)
+    return ugrid
 
+def write_vtu(file_base_name, coordinates, tets_conn, wedges_conn):
+    '''Write the mesh as a .vtu file.
+
+       The vtk.vtkUnstructuredGrid.SetCells() method did not work for multiple cell types
+       so create a separate vtkUnstructuredGrid for each cell type and append them.
+    '''
+    append_filter = vtk.vtkAppendFilter()
+
+    if len(tets_conn) != 0:
+        tets_ugrid = create_unstructured_grid(coordinates, tets_conn, vtk.VTK_TETRA)
+        append_filter.AddInputData(tets_ugrid)
+
+    if len(wedges_conn) != 0:
+        wedges_ugrid = create_unstructured_grid(coordinates, wedges_conn, vtk.VTK_WEDGE)
+        append_filter.AddInputData(wedges_ugrid)
+    
+    append_filter.Update()
+    ugrid = append_filter.GetOutput()
+    
     # Write the VTU file.
     writer = vtk.vtkXMLUnstructuredGridWriter()
     writer.SetInputData(ugrid)
@@ -123,8 +158,9 @@ if __name__ == '__main__':
     coordinates = get_mesh_coordinates(mesh_file)
 
     # Get the mesh element connectivity.
-    connectivity = get_mesh_element_connectivity(mesh_file)
+    tets_conn = get_mesh_element_connectivity(mesh_file, tetrahedra=True)
+    wedges_conn = get_mesh_element_connectivity(mesh_file, tetrahedra=False)
 
     # Write the mesh as a .vtu file.
-    write_vtu(file_base_name, coordinates, connectivity)
+    write_vtu(file_base_name, coordinates, tets_conn, wedges_conn)
 
