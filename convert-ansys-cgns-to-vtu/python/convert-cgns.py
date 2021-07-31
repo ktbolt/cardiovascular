@@ -2,6 +2,9 @@
 
    The cgns file is assumed to have been created by Ansys.
 
+   The element connectivity may have different paths. This was written using two
+   example .cgns files so it may not work in general.
+
    Usage:
 
       python convert-cgns.py FILE_NAME [paths]
@@ -65,6 +68,9 @@ def get_mesh_coordinates(mesh_file):
 
 def get_mesh_element_connectivity(mesh_file, tetrahedra=True):
     '''Get the mesh element connectivity from the cgns file .
+
+       This will first try to get element connectiviy using an element type (.e.g. Elem_Tetras).
+       If that fails then try to get it without a type.
     '''
     print("\nGet mesh element connectivity")
     if tetrahedra:
@@ -73,7 +79,17 @@ def get_mesh_element_connectivity(mesh_file, tetrahedra=True):
         elem_type = 'Elem_Wedges'
     print("Element type: " + elem_type)
 
+    # Try to get connectiviy using an element type.
     conn_size_path = get_path(mesh_file, elem_type+'/ElementRange')
+
+    #  Failed getting connectiviy with a type, try to get it without a type.
+    if tetrahedra and conn_size_path == None:
+        conn_size_path = get_path(mesh_file, 'ElementRange')
+        elem_type = ''
+
+    if conn_size_path == None:
+        return np.array([])
+
     print("Conn size path: " + conn_size_path)
     idx_min, idx_max = mesh_file[conn_size_path]
     print("idx_min: {0:d}".format(idx_min))
