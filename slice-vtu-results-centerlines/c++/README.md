@@ -8,7 +8,7 @@ The finite element mesh is displayed and slices along a centerline can be select
 The centerline geometry is displayed as a green line. 
 
 A slice is extracted on a plane defined by a centerline point and normal data. A distance scalar field is created 
-for the FE mesh that containing the distance from that point to the plane. The vtkContourGrid method is then
+for the FE mesh containing the distance from that point to the plane. The vtkContourGrid method is then
 used to extract a zero-level isosurface from the distance scalar field. Pressure and velocity data from the FE mesh 
 is also interpolated to the isosurface geometry vertices.
 
