@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
   // Add mesh and centerlines geometry to graphics.
   mesh->graphics_ = graphics;
-  //mesh->add_geometry();
+  mesh->add_geometry();
 
   centerlines->graphics_ = graphics;
   centerlines->add_geometry();

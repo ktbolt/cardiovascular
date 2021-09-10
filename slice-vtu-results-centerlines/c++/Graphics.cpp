@@ -290,12 +290,19 @@ void MouseCenterlineInteractorStyle::OnKeyPress()
   // Output the key that was pressed.
   std::cout << "[MouseCenterlineInteractorStyle::OnKeyPress] Pressed " << key << std::endl;
 
-  // Undo. Removes the last slice.
-  if (key == "s") {
+  // Slice all centerline points.
+  if (key == "a") {
+    graphics_->mesh_->extract_all_slices(graphics_->centerlines_->polydata_);
+
+  // Slice at selected centerline point.
+  } else if (key == "s") {
     slice_mesh();
 
-  } else if (key == "a") {
-    graphics_->mesh_->extract_all_slices(graphics_->centerlines_->polydata_);
+  // Toggle trimming a slice using an incribed sphere.
+  } else if (key == "t") {
+    graphics_->mesh_->trim_slice_using_incribed_sphere_ = 
+      !graphics_->mesh_->trim_slice_using_incribed_sphere_; 
+    std::cout << "Trimming a slice using an incribed sphere: " << graphics_->mesh_->trim_slice_using_incribed_sphere_ << std::endl; 
 
   // Quit.
   } else if ((key == "Escape") || (key == "q")) {
