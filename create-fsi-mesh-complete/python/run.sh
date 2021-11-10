@@ -1,11 +1,22 @@
 
+
+mesh=demo-bl
+model=demo.mdl
+
+mesh=aortofemoral
+model=aortofemoral.mdl
+
+mesh=cylinder
+model=cylinder.mdl
+
+mesh=cylinder-bl
+model=cylinder.mdl
+
 ./create-fsi-mesh-complete.py  \
-  --volume-mesh=cyl-fsi.vtu    \
-  --surface-mesh=cyl-fsi.vtp   \
+  --volume-mesh=${mesh}.vtu    \
+  --surface-mesh=${mesh}.vtp   \
   --fluid-region-id=1          \
   --solid-region-id=2          \
-  --inlet-faces=3              \
-  --outlet-faces=2             \
-  --wall-faces=1
+  --mdl-file=${model} 
 
 
