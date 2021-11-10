@@ -1,0 +1,21 @@
+[extract-faces] INFO - Parse arguments ...
+[extract-faces] INFO - Surface file: mesh_stl.stl
+[extract-faces] INFO - Number of points: 3117
+[extract-faces] INFO - Number of triangles: 6230
+[extract-faces] INFO - ---------- extract faces ---------- 
+[extract-faces] INFO - Compute feature edges ...
+[extract-faces] INFO - Number of edges: 2
+[extract-faces] INFO - Identify edge cells ...
+[extract-faces] INFO - Number of edge cell IDs 324
+[extract-faces] INFO - feature_angle: 0.866025
+[extract-faces] INFO - Traverse edge cells ...
+[extract-faces] INFO - ----- Face ID: 0 -----
+[extract-faces] INFO - Cell ID: 2 -----
+[extract-faces] INFO - ----- Face ID: 1 -----
+[extract-faces] INFO - Cell ID: 4176 -----
+[extract-faces] INFO - ----- Face ID: 2 -----
+[extract-faces] INFO - Cell ID: 2423 -----
+[extract-faces] INFO - ----------------------------
+[extract-faces] INFO - Number of cells visited: 6230
+[extract-faces] INFO - Number of faces: 3
+[extract-faces] INFO - Number of faces cells: 6230

@@ -1,0 +1,142 @@
+class VolumeMesh(object):
+    def __init__(self, file_name):
+      self.mesh = self.read_mesh(file_name)
+
+      geom_filter = vtk.vtkGeometryFilter()
+      geom_filter.SetInputData(self.mesh)
+      geom_filter.Update()
+      self.polydata = geom_filter.GetOutput()
+
+      num_points = self.mesh.GetNumberOfPoints()
+      points = self.mesh.GetPoints()
+      point_ids = self.mesh.GetPointData().GetArray("GlobalNodeID")
+      self.num_points = num_points 
+      self.points = points 
+      self.point_ids = point_ids 
+      print("[VolumeMesh] num_points: {0:d}".format(num_points))
+
+      pt = 3*[0.0]
+      max_x = -1e9
+      max_y = -1e9
+      max_z = -1e9
+      min_x = 1e9
+      min_y = 1e9
+      min_z = 1e9
+
+      for i in range(num_points):
+          point = points.GetPoint(i, pt)
+          x = pt[0]
+          y = pt[1]
+          z = pt[2]
+          if x < min_x:
+              min_x = x
+          elif x > max_x:
+              max_x = x
+          if y < min_y:
+              min_y = y
+          elif y > max_y:
+              max_y = y
+          if z < min_z:
+              min_z = z
+          elif z > max_z:
+              max_z = z
+
+      self.nodal_coords = {}
+      point_hash = defaultdict(list)
+      num_dupe_points = 0
+
+      for i in range(num_points):
+          point = points.GetPoint(i, pt)
+          pid = point_ids.GetValue(i)
+          x = pt[0]
+          y = pt[1]
+          z = pt[2]
+          #print("{0:d} {1:s}".format(pid, str(pt)))
+          self.nodal_coords[pid] = [x, y, z]
+
+          xs = (x - min_x) / (max_x - min_x)
+          ys = (y - min_y) / (max_y - min_y)
+          zs = (z - min_z) / (max_z - min_z)
+          ih = xs * num_points
+          jh = ys * num_points
+          kh = zs * num_points
+          index = int(ih + jh + kh) % self.num_points
+          pts = point_hash[index]
+          if len(pts) == 0:
+              point_hash[index].append([x, y, z, pid])
+          else:
+              found_pt = False
+              for hpt in pts:
+                  dx = hpt[0] - pt[0]
+                  dy = hpt[1] - pt[1]
+                  dz = hpt[2] - pt[2]
+                  d = dx*dx + dy*dy + dz*dz
+                  if d == 0.0:
+                      found_pt = True
+                      num_dupe_points += 1
+                      break
+              #_for hpt in pts
+              if not found_pt:
+                  point_hash[index].append([x, y, z, pid])
+      #_for i in range(num_points)
+      print("[VolumeMesh] num_hash_points: {0:d}".format(len(point_hash)))
+      print("[VolumeMesh] num_dupe_points: {0:d}".format(num_dupe_points))
+
+      self.point_hash = point_hash 
+      self.max_x = max_x 
+      self.max_y = max_y 
+      self.max_z = max_z 
+      self.min_x = min_x 
+      self.min_y = min_y 
+      self.min_z = min_z
+
+    def check_points(self, num_points, points, point_ids, renderer):
+        print("[check_points] ")
+        print("[check_points] num_points: {0:d}".format(num_points))
+        pt = 3*[0.0]
+        num_matched_points = 0
+
+        for i in range(num_points):
+            pid = point_ids.GetValue(i)
+            points.GetPoint(i, pt)
+            x = pt[0]
+            y = pt[1]
+            z = pt[2]
+            xs = (x - self.min_x) / (self.max_x - self.min_x)
+            ys = (y - self.min_y) / (self.max_y - self.min_y)
+            zs = (z - self.min_z) / (self.max_z - self.min_z)
+            ih = xs * self.num_points
+            jh = ys * self.num_points
+            kh = zs * self.num_points
+            index = int(ih + jh + kh) % self.num_points
+            pts = self.point_hash[index]
+            if len(pts) == 0:
+                actor = add_sphere(pt, renderer)
+                continue
+            else:
+                found_pt = False
+                for hpt in pts:
+                    dx = hpt[0] - pt[0]
+                    dy = hpt[1] - pt[1]
+                    dz = hpt[2] - pt[2]
+                    d = dx*dx + dy*dy + dz*dz
+                    if d == 0.0:
+                        found_pt = True
+                        found_id = hpt[3]
+                        num_matched_points += 1
+                        break
+                #_for hpt in pts
+                if found_pt:
+                    if (pid != found_id): 
+                      print("[check_points] IDs don't match: {0:d} != {1:d}".format(pid, found_id))
+        #_for i in range(num_points):
+  
+        print("[check_points] num_matched_points: {0:d} ".format(num_matched_points))
+    
+    def read_mesh(self, file_name):
+        print("[read_volume_mesh] file_name: " + file_name)
+        file_base_name, ext = os.path.splitext(file_name)
+        reader = vtk.vtkXMLUnstructuredGridReader()
+        reader.SetFileName(file_name)
+        reader.Update()
+        return reader.GetOutput()

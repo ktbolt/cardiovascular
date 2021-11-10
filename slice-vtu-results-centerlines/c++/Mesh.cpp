@@ -135,10 +135,12 @@ void Mesh::extract_all_slices(vtkPolyData* centerlines)
     // Extract the slice.
     auto contour = vtkSmartPointer<vtkContourGrid>::New();
     contour->SetInputData(unstructured_mesh_);
-    contour->SetValue(0, 0.0);
     contour->ComputeNormalsOff();
+    //contour->UseScalarTreeOn();
+    contour->SetValue(0, 0.0);
     contour->Update();
-    auto slice = contour->GetOutput();
+    vtkSmartPointer<vtkPolyData> slice = contour->GetOutput();
+    //auto slice = contour->GetOutput();
 
     // Trim the slice using the incribed sphere radius.
     if (trim_slice_using_incribed_sphere_) { 

@@ -41,8 +41,11 @@ class Mesh(object):
         feature_edges.Update()
 
         boundary_edges = feature_edges.GetOutput()
+        if boundary_edges.GetNumberOfPoints() == 0: 
+            raise RuntimeError('No boundary edges.')
+
         clean_filter = vtk.vtkCleanPolyData()
-        boundary_edges_clean = clean_filter.SetInputData(boundary_edges)
+        clean_filter.SetInputData(boundary_edges)
         clean_filter.Update();
         cleaned_edges = clean_filter.GetOutput()
 
@@ -251,15 +254,29 @@ class Mesh(object):
         reader.Update()
         geometry = reader.GetOutput()
 
+        clean_filter = vtk.vtkCleanPolyData()
+        clean_filter.SetPointMerging(True)
+        clean_filter.SetInputData(geometry)
+        clean_filter.Update();
+        cleaned_geometry = clean_filter.GetOutput()
+
+        dupe_filter = vtk.vtkRemoveDuplicatePolys()
+        dupe_filter.SetInputData(cleaned_geometry)
+        dupe_filter.Update();
+        cleaned_geometry = dupe_filter.GetOutput()
+
         # Add normals to the surface.
         pd_normals = vtk.vtkPolyDataNormals()
-        pd_normals.SetInputData(geometry)
-        pd_normals.SplittingOff()
+        pd_normals.SetInputData(cleaned_geometry)
         pd_normals.ComputeCellNormalsOn()
         pd_normals.ComputePointNormalsOn()
         pd_normals.ConsistencyOn()
         pd_normals.AutoOrientNormalsOn()
+        pd_normals.SplittingOff()
+        #pd_normals.SplittingOn()
+        #pd_normals.SetFeatureAngle(self.params.angle);
         pd_normals.Update()
+
         self.surface = pd_normals.GetOutput()
         self.surface.BuildLinks()
 
