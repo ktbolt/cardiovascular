@@ -70,113 +70,20 @@ class MeshPhysics(object):
 
 class FaceTypes(object):
     Cap = "cap"
-    Inlet = "inlet"
-    Outlet = "outlet"
     Wall = "wall"
 
 class VtkDataNames(object):
+    '''This class stores the names of VTK data arrays.
+    '''
     GlobalElementID = "GlobalElementID"
     GlobalNodeID = "GlobalNodeID"
     ModelRegionID = "ModelRegionID"
     ModelFaceID = "ModelFaceID"
 
-class BcFace(object):
-    ''' This class stores BC face data for a mesh. 
+class Extent(object):
+    '''This class stores a coordinate extent.
     '''
-    def __init__(self, face_name, face_id, face_type, mesh=None): 
-        self.name = face_name
-        self.id = face_id
-        self.type = face_type
-        self.mesh = None 
-        self.node_ids = None 
-
-        if mesh != None:
-            self.set_mesh( mesh) 
-
-    def set_mesh(self, mesh): 
-        self.mesh = mesh
-        self.node_ids = get_node_ids(mesh)
-
-class Mesh(object):
-    ''' This class stores volume and surface mesh data for a given region ID. 
-
-        The mesh is assumed to be a subset of 'sv_volume_mesh' determined by its region ID.
-    '''
-    def __init__(self, sv_volume_mesh, region_id, physics):
-        self.file_name = None 
-        self.region_id = region_id
-        self.physics = physics
-        self.surface_mesh = None 
-        self.bc_faces = None 
-        self.nodal_coords = None
-
-        # Extract the volume mesh for the given region ID.
-        self.volume_mesh = get_region_mesh(sv_volume_mesh, region_id)
-
-        # Create a nodal coordinate map and coordinate hash table.
-        self.set_node_coords()
-
-    def set_node_coords(self):
-        ''' Create a nodal coordinate map and coordinate hash table.
-        '''
-        pt = 3*[0.0]
-        self.nodal_coords = {}
-        node_ids = self.volume_mesh.GetPointData().GetArray(VtkDataNames.GlobalNodeID)
-        num_points = self.volume_mesh.GetNumberOfPoints()
-        points = self.volume_mesh.GetPoints()
-
-        # Create nodal IDs to coordinates map.
-        #
-        max_x = -1e9
-        max_y = -1e9
-        max_z = -1e9
-        min_x = 1e9
-        min_y = 1e9
-        min_z = 1e9
-
-        for i in range(num_points):
-            nid = node_ids.GetValue(i)
-            points.GetPoint(i, pt)
-            x = pt[0]
-            y = pt[1]
-            z = pt[2]
-
-            self.nodal_coords[nid] = [x, y, z] 
-
-            if x < min_x:
-                min_x = x
-            elif x > max_x:
-                max_x = x
-
-            if y < min_y:
-                min_y = y
-            elif y > max_y:
-                max_y = y
-
-            if z < min_z:
-                min_z = z
-            elif z > max_z:
-                max_z = z
-        #_for i in range(volume_mesh.GetNumberOfPoints())
-
-        dx = (max_x - min_x)
-        if dx != 0.0:
-            self.dx = dx
-        else:
-            self.dx = 1.0
-  
-        dy = (max_y - min_y)
-        if dy != 0.0:
-            self.dy = dy
-        else:
-            self.dy = 1.0
-  
-        dz = (max_z - min_z)
-        if dz != 0.0:
-            self.dz = dz
-        else:
-            self.dz = 1.0
-  
+    def __init__(self, max_x, min_x, max_y, min_y, max_z, min_z):
         self.max_x = max_x
         self.max_y = max_y
         self.max_z = max_z
@@ -184,78 +91,150 @@ class Mesh(object):
         self.min_y = min_y
         self.min_z = min_z
 
-        # Create nodal coordinates hash table.
+        dx = (max_x - min_x)
+        if dx == 0.0:
+            dx = 1.0
+ 
+        dy = (max_y - min_y)
+        if dy == 0.0:
+            dy = 1.0
+ 
+        dz = (max_z - min_z)
+        if dz == 0.0:
+            dz = 1.0
+
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz
+
+class BcFace(object):
+    '''This class stores BC face data for a mesh. 
+    '''
+    def __init__(self, face_name, face_id, face_type, mesh=None): 
+        self.name = face_name
+        self.id = face_id
+        self.type = face_type
+        self.mesh = None 
+        self.num_points = None 
+        self.nodal_coords = None
+        self.extent = None
+
+        if mesh != None:
+            self.set_mesh(mesh) 
+
+    def set_mesh(self, mesh): 
+        '''Set mesh data.
+        '''
+        self.mesh = mesh
+
+        node_ids = self.mesh.GetPointData().GetArray(VtkDataNames.GlobalNodeID)
+        num_points = self.mesh.GetNumberOfPoints()
+        self.num_points = num_points 
+        points = self.mesh.GetPoints()
+
+        # Create node ID to node coord map.
+        nodal_coords, extent = create_node_coord_map(num_points, node_ids, points)
+        self.nodal_coords = nodal_coords
+        self.extent = extent
+
+        # Create a map hashing node coords to IDs..
         #
-        point_hash = defaultdict(list)
-
-        for i in range(num_points):
-            point = points.GetPoint(i, pt)
-            pid = node_ids.GetValue(i)
-            x = pt[0]
-            y = pt[1]
-            z = pt[2]
-
-            xs = (x - min_x) / self.dx
-            ys = (y - min_y) / self.dy
-            zs = (z - min_z) / self.dz
-            ih = xs * num_points
-            jh = ys * num_points
-            kh = zs * num_points
-            index = int(ih + jh + kh) 
-            pts = point_hash[index]
-
-            if len(pts) == 0:
-                point_hash[index].append([x, y, z, pid])
-            else:
-                found_pt = False
-                for hpt in pts:
-                    ddx = hpt[0] - pt[0]
-                    ddy = hpt[1] - pt[1]
-                    ddz = hpt[2] - pt[2]
-                    d = ddx*ddx + ddy*ddy + ddz*ddz
-                    if d == 0.0:
-                        found_pt = True
-                        num_dupe_points += 1
-                        break
-                #_for hpt in pts
-                if not found_pt:
-                    point_hash[index].append([x, y, z, pid])
-        #_for i in range(num_points)
-
+        point_hash = create_node_coord_hash(nodal_coords, extent)
         self.point_hash = point_hash
 
-    def get_node_id(self, point):
-        ''' Get the node ID for the given point.
+class Mesh(object):
+    '''This class stores volume and surface (facee) mesh data for a given region ID. 
+
+       The mesh is assumed to be a subset of 'sv_volume_mesh' determined by its region ID.
+    '''
+    def __init__(self, sv_volume_mesh, region_id, physics):
+        self.file_name = None 
+        self.volume_mesh = None 
+        self.sv_volume_mesh = sv_volume_mesh 
+        self.region_id = region_id
+        self.physics = physics
+        self.surface_mesh = None 
+        self.bc_faces = None 
+        self.points = None
+        self.num_points = None
+        self.node_ids = None
+        self.extent = None 
+        self.point_hash = None 
+        self.nodal_coords = None 
+        self.elem_map = None 
+
+        # Extract the volume mesh for the given region ID.
+        self.volume_mesh = get_region_mesh(sv_volume_mesh.mesh, region_id)
+
+        # Create a nodal coordinate map and coordinate hash table.
+        self.set_node_coords()
+
+    def set_node_coords(self):
+        '''Create a nodal coordinate map and coordinate hash table.
         '''
-        node_id = -1
-        num_points = self.volume_mesh.GetNumberOfPoints()
-        x = point[0]
-        y = point[1]
-        z = point[2]
-        xs = (x - self.min_x) / self.dx
-        ys = (y - self.min_y) / self.dy
-        zs = (z - self.min_z) / self.dz
-        ih = xs * num_points
-        jh = ys * num_points
-        kh = zs * num_points
-        index = int(ih + jh + kh) 
+        print("\n========== Mesh.set_node_coords: {0:s} ==========".format(self.physics))
+        print("[Mesh.set_node_coords] Region ID: {0:d}".format(self.region_id))
+        self.node_ids = self.volume_mesh.GetPointData().GetArray(VtkDataNames.GlobalNodeID)
+        self.num_points = self.volume_mesh.GetNumberOfPoints()
+        self.points = self.volume_mesh.GetPoints()
 
-        pts = self.point_hash[index]
-        found_pt = False
-        for hpt in pts:
-            dx = hpt[0] - x
-            dy = hpt[1] - y
-            dz = hpt[2] - z
-            d = dx*dx + dy*dy + dz*dz
-            if d == 0.0:
-                node_id = hpt[3]
-                break
-        #_for hpt in pts
+        # Create nodal IDs to coordinates map.
+        #
+        print("[Mesh.set_node_coords] Create nodal IDs to coordinates map ...")
+        nodal_coords, extent = create_node_coord_map(self.num_points, self.node_ids, self.points)
+        self.nodal_coords = nodal_coords
+        self.extent = extent 
+        '''
+        print("[Mesh.set_node_coords] Number of nodes: {0:d}".format(len(nodal_coords)))
+        for nid, point in nodal_coords.items():
+          print("[Mesh.set_node_coords] {0:d}] {1:s}".format(nid, str(point)))
+        '''
 
-        return node_id 
+        # Create nodal coordinates hash table.
+        point_hash = create_node_coord_hash(nodal_coords, extent)
+        self.point_hash = point_hash
+
+        # Create map from element ID to index into GlobalElementID array. 
+        num_cells = self.volume_mesh.GetNumberOfCells()
+        elem_ids = self.volume_mesh.GetCellData().GetArray(VtkDataNames.GlobalElementID)
+        self.elem_map = {}
+        for i in range(num_cells):
+            elem_id = elem_ids.GetValue(i)
+            self.elem_map[elem_id] = i
+
+        # Reset mesh node IDs.
+        #
+        # GlobalNodeID are not used in svFSI.
+        #
+        print("[Mesh.set_node_coords] Reset mesh node IDs ...")
+        print("[Mesh.set_node_coords] num_points: {0:d}] ".format(self.num_points))
+        node_ids_data = vtk.vtkIntArray()
+        node_ids_data.SetNumberOfValues(self.num_points)
+        node_ids_data.SetName(VtkDataNames.GlobalNodeID)
+        n = 0
+        for nid, point in self.nodal_coords.items():
+            #print("[Mesh.set_node_coords] n: {0:d} nid: {1:d}]".format(n, nid))
+            node_ids_data.SetValue(n, n+1)
+            n += 1
+        self.volume_mesh.GetPointData().RemoveArray(VtkDataNames.GlobalNodeID)
+        self.volume_mesh.GetPointData().AddArray(node_ids_data)
+
+        # Reset mesh element IDs.
+        #
+        # GlobalElementID are not used in svFSI.
+        #
+        num_cells = self.volume_mesh.GetNumberOfCells()
+        elemn_ids_data = vtk.vtkIntArray()
+        elemn_ids_data.SetNumberOfValues(num_cells)
+        elemn_ids_data.SetName(VtkDataNames.GlobalElementID)
+        for i in range(num_cells):
+            #print("[Mesh.set_node_coords] self.nodal_coords[{0:d}]: {1:s}".format(nid, str(point)))
+            elemn_ids_data.SetValue(i, i+1)
+        self.volume_mesh.GetCellData().RemoveArray(VtkDataNames.GlobalElementID)
+        self.volume_mesh.GetCellData().AddArray(elemn_ids_data)
 
     def extract_faces(self, bc_faces):
-        ''' Extract face surface geometry for this object's region ID.
+        '''Extract face surface geometry for this object's region ID.
         '''
         print("\n========== Mesh.extract_faces {0:s} ==========".format(self.physics))
         print("[Mesh.extract_faces] Region ID: {0:d}".format(self.region_id))
@@ -265,7 +244,7 @@ class Mesh(object):
             face_type = bc_face.type
             face_name = bc_face.name
             mesh = bc_face.mesh 
-            print("[Mesh.extract_faces] ---------- Face ID {0:s} {1:d}: {2:s} ---------".format(face_name, face_id, face_type))
+            print("[Mesh.extract_faces] ----- Face ID {0:s} {1:d}: {2:s} -----".format(face_name, face_id, face_type))
             threshold = vtk.vtkThreshold()
             threshold.SetInputData(mesh)
             threshold.SetInputArrayToProcess(0,0,0,1,VtkDataNames.ModelRegionID)
@@ -296,13 +275,28 @@ class Mesh(object):
             node_ids_data.SetName(VtkDataNames.GlobalNodeID)
             pt = 3*[0.0]
 
+            print("[Mesh.extract_faces] Nodes and coordinates ...")
             for i in range(num_points):
                 points.GetPoint(i, pt)
-                nid = self.get_node_id(pt)
-                node_ids_data.SetValue(i, nid)
-
+                nid, index = find_node_id(self.point_hash, self.num_points, self.extent, pt)
+                node_ids_data.SetValue(i, index+1)
             surface.GetPointData().RemoveArray(VtkDataNames.GlobalNodeID)
             surface.GetPointData().AddArray(node_ids_data)
+
+            # Create a new GlobalElementID data array for the face that matches
+            # the volume mesh element IDs. 
+            #
+            num_cells = surface.GetNumberOfCells()
+            elemn_ids_data = vtk.vtkIntArray()
+            elemn_ids_data.SetNumberOfValues(num_cells)
+            elemn_ids_data.SetName(VtkDataNames.GlobalElementID)
+            elem_ids = surface.GetCellData().GetArray(VtkDataNames.GlobalElementID)
+            for i in range(num_cells):
+                elem_id = elem_ids.GetValue(i)
+                vol_elem_id = self.elem_map[elem_id]
+                elemn_ids_data.SetValue(i, vol_elem_id+1)
+            surface.GetCellData().RemoveArray(VtkDataNames.GlobalElementID)
+            surface.GetCellData().AddArray(elemn_ids_data)
 
             # Extract solid wall faces that have disjoint inner and outer parts. 
             #
@@ -314,7 +308,6 @@ class Mesh(object):
                 conn_filter.SetExtractionModeToSpecifiedRegions()
 
                 wall_num = 0
-                #boundary_faces = []
                 while True:
                     conn_filter.AddSpecifiedRegion(wall_num)
                     conn_filter.Update()
@@ -353,15 +346,16 @@ class Mesh(object):
         return wall_faces 
 
     def is_inner_solid_face(self, bc_face, fluid_wall_faces):
-        ''' Check is a face is an inner solid wall faces.
+        '''Check is a face is an inner solid wall faces.
         '''
         for wall_face in fluid_wall_faces:
-            if len(wall_face.node_ids.intersection(bc_face.node_ids)) != 0:
-                return True
+            for nid, point in wall_face.nodal_coords.items():
+                if find_node_id(self.point_hash, self.num_points, self.extent, point)[0] == -1:
+                    return True
         return False
 
     def write_faces(self, fluid_wall_faces=None):
-        ''' Write BC faces to VTK .vtp files.
+        '''Write BC faces to VTK .vtp files.
         '''
         print('========== write_faces ==========')
         for fid, bc_faces in self.bc_faces.items():
@@ -386,8 +380,73 @@ class Mesh(object):
         file_base_name = self.physics
         write_volume_mesh(file_base_name, self.volume_mesh)
 
+class VolumeMesh(object):
+    '''This class stores data for the complete volume mesh.
+    '''
+    def __init__(self, file_name):
+        self.mesh = self.read_mesh(file_name)
+
+        geom_filter = vtk.vtkGeometryFilter()
+        geom_filter.SetInputData(self.mesh)
+        geom_filter.Update()
+        self.polydata = geom_filter.GetOutput()
+
+        num_points = self.mesh.GetNumberOfPoints()
+        points = self.mesh.GetPoints()
+        node_ids = self.mesh.GetPointData().GetArray(VtkDataNames.GlobalNodeID)
+        self.num_points = num_points 
+        self.points = points 
+        self.node_ids = node_ids 
+        print("[VolumeMesh] num_points: {0:d}".format(num_points))
+
+        # Create nodal IDs to coordinates map.
+        #
+        nodal_coords, extent  = create_node_coord_map(num_points, node_ids, points)
+        self.nodal_coords = nodal_coords
+        self.extent = extent
+
+        # Create nodal coordinates hash table.
+        point_hash = create_node_coord_hash(nodal_coords, extent) 
+        self.point_hash = point_hash
+
+    def get_node_id(self, point):
+        node_id = -1
+        num_points = self.mesh.GetNumberOfPoints()
+        x = point[0]
+        y = point[1]
+        z = point[2]
+        xs = (x - self.extent.min_x) / self.extent.dx
+        ys = (y - self.extent.min_y) / self.extent.dy
+        zs = (z - self.extent.min_z) / self.extent.dz
+        ih = xs * num_points
+        jh = ys * num_points
+        kh = zs * num_points
+        index = int(ih + jh + kh)
+
+        pts = self.point_hash[index]
+        found_pt = False
+        for hpt in pts:
+            dx = hpt[0] - x
+            dy = hpt[1] - y
+            dz = hpt[2] - z
+            d = dx*dx + dy*dy + dz*dz
+            if d == 0.0:
+                node_id = hpt[3]
+                break
+        #_for hpt in pts
+
+        return node_id
+
+    def read_mesh(self, file_name):
+        print("[Volume.read_mesh] file_name: " + file_name)
+        file_base_name, ext = os.path.splitext(file_name)
+        reader = vtk.vtkXMLUnstructuredGridReader()
+        reader.SetFileName(file_name)
+        reader.Update()
+        return reader.GetOutput()
+
 class Args(object):
-    ''' This class defines the command line arguments to the script.
+    '''This class defines the command line arguments to the script.
     '''
     PREFIX = "--"
     FLUID_REGION_ID = "fluid_region_id"
@@ -400,23 +459,20 @@ class Args(object):
     WALL_FACES = "wall_faces"
 
 def cmd(name):
-    ''' Create an argparse command argument.
+    '''Create an argparse command argument.
     '''
     return Args.PREFIX + name.replace("_", "-")
 
 def parse_args():
-    ''' Parse command-line arguments.
+    '''Parse command-line arguments.
     '''
     parser = argparse.ArgumentParser()
 
     parser.add_argument(cmd(Args.FLUID_REGION_ID), help="The fluid region ID.", type=int, required=True)
-    #parser.add_argument(cmd(Args.INLET_FACES),     help="The inlet face IDs.", required=True)
     parser.add_argument(cmd(Args.MDL_FILE),        help="The SV modeling .mdl file.", required=True)
-    #parser.add_argument(cmd(Args.OUTLET_FACES),    help="The outlet face IDs.", required=True)
     parser.add_argument(cmd(Args.SOLID_REGION_ID), help="The solid region ID.", type=int, required=True)
     parser.add_argument(cmd(Args.SURFACE_MESH),    help="The surface mesh (.vtp) file.", required=True)
     parser.add_argument(cmd(Args.VOLUME_MESH),     help="The volume mesh (.vtu) file.", required=True)
-    #parser.add_argument(cmd(Args.WALL_FACES),      help="The walls face IDs.", required=True)
 
     return parser.parse_args(), parser.print_help
 
@@ -449,9 +505,9 @@ def add_sphere(center, renderer):
     return add_geom(poly_data, renderer)
 
 def get_surface_faces(surface_mesh, bc_faces):
-    ''' Get the faces from the surface mesh.
+    '''Get the faces from the surface mesh.
  
-        The faces are vtkPolyData objects with cell data arrays.
+       The faces are vtkPolyData objects with cell data arrays.
     '''
     print("\n========== get_surface_faces ==========")
     face_ids = surface_mesh.GetCellData().GetArray(VtkDataNames.ModelFaceID)
@@ -483,7 +539,7 @@ def get_surface_faces(surface_mesh, bc_faces):
     #_for i in range(min_id, max_id+1)
 
 def add_mesh_geom(mesh, renderer, color=[1,1,1]):
-    ''' Add mesh to renderer.
+    '''Add mesh to renderer.
     '''
     print("")
     print("Add mesh geometry ...")
@@ -513,7 +569,7 @@ def add_mesh_geom(mesh, renderer, color=[1,1,1]):
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     #actor.GetProperty().SetRepresentationToPoints()
-    #actor.GetProperty().SetRepresentationToWireframe()
+    actor.GetProperty().SetRepresentationToWireframe()
     #actor.GetProperty().EdgeVisibilityOn()
     actor.GetProperty().BackfaceCullingOn()   
     #actor.GetProperty().SetDiffuseColor(0, 0.5, 0) 
@@ -525,7 +581,7 @@ def add_mesh_geom(mesh, renderer, color=[1,1,1]):
     renderer.AddActor(actor)
 
 def get_region_mesh(mesh, region_id): 
-    ''' Extract a mesh region from a mesh using a region ID.
+    '''Extract a mesh region from a mesh using a region ID.
     '''
     thresholder = vtk.vtkThreshold()
     thresholder.SetInputData(mesh);
@@ -536,7 +592,7 @@ def get_region_mesh(mesh, region_id):
 #_get_region_mesh(mesh, region_id)
 
 def read_mdl_file(file_name):
-    ''' Read an SV modeling .mdl file.
+    '''Read an SV modeling .mdl file.
     '''
     print("\n========== read_mdl_file ==========")
     # Remove 'format' tag from xml file.
@@ -562,6 +618,113 @@ def read_mdl_file(file_name):
         bc_faces[face_id] = BcFace(name, face_id, face_type)
 
     return bc_faces 
+
+def create_node_coord_map(num_points, node_ids, points):
+    '''Create nodal IDs to coordinates map.
+    '''
+    max_x = -1e9
+    max_y = -1e9
+    max_z = -1e9
+    min_x = 1e9
+    min_y = 1e9
+    min_z = 1e9
+    pt = 3*[0.0]
+    nodal_coords = {}
+
+    #nid = 1
+    for i in range(num_points):
+        nid = node_ids.GetValue(i)
+        points.GetPoint(i, pt)
+        x = pt[0]
+        y = pt[1]
+        z = pt[2]
+        nodal_coords[nid] = [x, y, z, i]
+
+        if x < min_x:
+          min_x = x
+        elif x > max_x:
+          max_x = x
+
+        if y < min_y:
+          min_y = y
+        elif y > max_y:
+          max_y = y
+
+        if z < min_z:
+          min_z = z
+        elif z > max_z:
+          max_z = z
+
+        #nid += 1
+
+    return nodal_coords, Extent(max_x, min_x, max_y, min_y, max_z, min_z)
+
+def create_node_coord_hash(nodal_coords, extent):
+    ''' Create nodal coordinates hash table.
+    '''
+    point_hash = defaultdict(list)
+    num_points = len(nodal_coords)
+    #print("[create_node_coord_hash] num_points: {0:d}".format(num_points)
+
+    n = 0
+    for nid, point in nodal_coords.items():
+        x = point[0]
+        y = point[1]
+        z = point[2]
+
+        xs = (x - extent.min_x) / extent.dx
+        ys = (y - extent.min_y) / extent.dy
+        zs = (z - extent.min_z) / extent.dz
+        ih = xs * num_points
+        jh = ys * num_points
+        kh = zs * num_points
+        index = int(ih + jh + kh) 
+        pts = point_hash[index]
+
+        if len(pts) == 0:
+            point_hash[index].append([x, y, z, nid, n])
+        else:
+            found_pt = False
+            for hpt in pts:
+                ddx = hpt[0] - x
+                ddy = hpt[1] - y 
+                ddz = hpt[2] - z
+                d = ddx*ddx + ddy*ddy + ddz*ddz
+                if d == 0.0:
+                    found_pt = True
+                    break
+            if not found_pt:
+                point_hash[index].append([x, y, z, nid, n])
+        n += 1
+
+    return point_hash
+
+def find_node_id(point_hash, num_points, extent, point):
+    node_id = -1
+    x = point[0]
+    y = point[1]
+    z = point[2]
+    xs = (x - extent.min_x) / extent.dx
+    ys = (y - extent.min_y) / extent.dy
+    zs = (z - extent.min_z) / extent.dz
+    ih = xs * num_points
+    jh = ys * num_points
+    kh = zs * num_points
+    index = int(ih + jh + kh)
+
+    pts = point_hash[index]
+    found_pt = False
+    for hpt in pts:
+      dx = hpt[0] - x
+      dy = hpt[1] - y
+      dz = hpt[2] - z
+      d = dx*dx + dy*dy + dz*dz
+      if d == 0.0:
+          node_id = hpt[3]
+          index = hpt[4]
+          break
+
+    return node_id, index
 
 def write_volume_mesh(file_base_name, mesh): 
     file_name = file_base_name + "-mesh.vtu"
@@ -596,11 +759,7 @@ if __name__ == '__main__':
   
     ## Read SV volume mesh.
     file_name = args.volume_mesh
-    file_base_name, ext = os.path.splitext(file_name)
-    reader = vtk.vtkXMLUnstructuredGridReader()
-    reader.SetFileName(file_name)
-    reader.Update()
-    volume_mesh = reader.GetOutput()
+    volume_mesh = VolumeMesh(file_name)
 
     ## Read SV surface mesh.
     file_name = args.surface_mesh
@@ -626,6 +785,9 @@ if __name__ == '__main__':
     solid.write_faces(fluid_walls)
     solid.write_volume()
 
+    ## Check node ids.
+    # volume_mesh.check_points("fluid", fluid.num_points, fluid.points, fluid.node_ids, renderer)
+
     # Show the meshes.
     add_mesh_geom(fluid.volume_mesh, renderer, color=[0,0,1])
     add_mesh_geom(solid.volume_mesh, renderer, color=[1,0,0])
@@ -634,6 +796,6 @@ if __name__ == '__main__':
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
     interactor.SetRenderWindow(renderer_win)
-    interactor.Start()
+    #interactor.Start()
 
 
