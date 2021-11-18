@@ -12,8 +12,8 @@ identifies elements.
 The solid mesh will have both inner and outer components. The inner solid mesh face interfaces 
 to the fluid wall face(s). These are the files given in the svFSI `Add projection` option.
 
-Files are written for each fluid and solid volume mesh, and the faces for each used to specify boundary
-conditions. The file naming convention is
+Files are written for each fluid and solid volume mesh, and the surface meshes for cap and wall faces used to specify boundary
+conditions for solid and fluid regions. The file naming convention is
 
 ```
   solid-mesh.vtu                
