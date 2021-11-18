@@ -1,11 +1,11 @@
 # create-fsi-mesh-complete.py
 
-The **create-fsi-mesh-complete.py** script is used to create the mesh-complete files needed to run svFSI simulations from the .vtu and .vtp files 
+The **create-fsi-mesh-complete.py** script is used to create the mesh-complete files needed to run svFSI simulations from the `.vtu` and `.vtp` files 
 created by the SV Meshing tool. A boundary layer mesh is required with region IDs; this is enabled by checking the SV 
-**Convert Boundary Layer to New Region/Domain** option. Fluid elements are identified using region ID 1, solid elements region ID 2.
+**Convert Boundary Layer to New Region/Domain** option. Fluid elements are identified using region ID 1, solid elements using region ID 2.
 
-A model .mdl file is used to identify each face with its ID, name, and type (wall or cap). 
-This is the model referenced in the SV Meshing tool. The mesh surface .vtp file contains 
+A model `.mdl` file is used to identify each face with its ID, name, and type (wall or cap). 
+This is the model referenced in the SV Meshing tool. The mesh surface `.vtp` file contains 
 `ModelFaceID` CellData that identifies the mesh faces and `GlobalElementID` CellData that 
 identifies elements.
 
@@ -52,6 +52,7 @@ Usage:
 
       VOLUME_MESH - The volume mesh (.vtu) file.
 ```
+
 
 Example
 ```
