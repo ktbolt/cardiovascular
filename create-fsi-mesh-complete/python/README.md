@@ -56,7 +56,7 @@ Usage:
 Example
 ```
 
-./create-fsi-mesh-complete.py   \ 
+create-fsi-mesh-complete.py     \ 
   --volume-mesh=cylinder.vtu    \
   --surface-mesh=cylinder.vtp   \
   --fluid-region-id=1           \
