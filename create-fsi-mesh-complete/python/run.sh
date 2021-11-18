@@ -15,7 +15,7 @@ model=Coronary.mdl
 mesh=cylinder-bl
 model=cylinder.mdl
 
-./create-fsi-mesh-complete.py  \
+create-fsi-mesh-complete.py  \
   --volume-mesh=${mesh}.vtu    \
   --surface-mesh=${mesh}.vtp   \
   --fluid-region-id=1          \
