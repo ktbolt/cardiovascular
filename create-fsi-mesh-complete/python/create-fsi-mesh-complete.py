@@ -327,13 +327,15 @@ class Mesh(object):
                     print("[Mesh.extract_faces]   Number of points: %d" % component.GetNumberOfPoints())
                     print("[Mesh.extract_faces]   Number of cells: %d" % component.GetNumberOfCells())
                     wall_num += 1
-                    self.bc_faces[face_id].append( BcFace(face_name, face_id, face_type, component) )
+                    wall_face_name = face_name 
+                    #wall_face_name = face_name + "_" + str(wall_num)
+                    self.bc_faces[face_id].append( BcFace(wall_face_name, face_id, face_type, component) )
             else:
                 self.bc_faces[face_id].append( BcFace(face_name, face_id, face_type, surface) )
         #_for fid, face in surface_faces.items()
 
     def get_wall_faces(self):
-        ''' Get BC faces of type Wall.
+        '''Get BC faces of type Wall.
         '''
         print('========== get_wall_faces ==========')
         print('[get_wall_faces] Physics: {0:s}'.format(self.physics))
@@ -350,27 +352,35 @@ class Mesh(object):
         '''
         for wall_face in fluid_wall_faces:
             for nid, point in wall_face.nodal_coords.items():
-                if find_node_id(self.point_hash, self.num_points, self.extent, point)[0] == -1:
+                node_id, index = find_node_id(bc_face.point_hash, bc_face.num_points, bc_face.extent, point)
+                if node_id != -1:
+                    #print("[is_inner_solid_face] ")
+                    #print("[is_inner_solid_face] Found: node_id: {0:d},  point: {1:s}".format(node_id, str(point)))
                     return True
         return False
 
-    def write_faces(self, fluid_wall_faces=None):
+    def write_faces(self, fluid_wall_faces=[]):
         '''Write BC faces to VTK .vtp files.
         '''
         print('========== write_faces ==========')
         for fid, bc_faces in self.bc_faces.items():
             print("[write_faces] ")
             print("[write_faces] Number of {0:s} bc_faces: {1:d}".format(self.physics, len(bc_faces)))
+            print("[write_faces] Number of fluid_wall_faces: {0:d}".format(len(fluid_wall_faces)))
+            num_inner = ""
+            num_outer = ""
             for bc_face in bc_faces:
                 face_type = bc_face.type
                 face_name = bc_face.name
                 base_name = self.physics
                 print("[write_faces] Face name: {0:s}  type: {1:s}".format(face_name, face_type))
-                if ((fluid_wall_faces != None) and (face_type == FaceTypes.Wall)):
+                if ((len(fluid_wall_faces) != 0) and (face_type == FaceTypes.Wall)):
                     if self.is_inner_solid_face(bc_face, fluid_wall_faces):
-                        write_surface_mesh(base_name, face_name+'-inner', bc_face.mesh)
+                        write_surface_mesh(base_name, face_name+'-inner'+num_inner, bc_face.mesh)
+                        #num_inner = "-1"
                     else:
-                        write_surface_mesh(base_name, face_name+'-outer', bc_face.mesh)
+                        write_surface_mesh(base_name, face_name+'-outer'+num_outer, bc_face.mesh)
+                        #num_outer = "-1"
                 else:
                     write_surface_mesh(base_name, face_name, bc_face.mesh)
 
@@ -700,7 +710,10 @@ def create_node_coord_hash(nodal_coords, extent):
     return point_hash
 
 def find_node_id(point_hash, num_points, extent, point):
+    '''Find the given point in a hash table.
+    '''
     node_id = -1
+    index = -1
     x = point[0]
     y = point[1]
     z = point[2]
