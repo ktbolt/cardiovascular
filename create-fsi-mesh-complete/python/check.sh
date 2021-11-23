@@ -1,15 +1,25 @@
 
-dir=/Users/parkerda/software/ktbolt/svFSI-Tests/07-fsi/ale/03-pipe_3D/
-file1=mesh/wall/mesh-surfaces/wall_inner.vtp
-file2=mesh/lumen/mesh-surfaces/lumen_wall.vtp
-
-dir=/Users/parkerda/SimVascular/CylinderProject/Meshes/
-file1=solid-mesh-complete/mesh-surfaces/interface.vtp
-file2=fluid-mesh-complete/mesh-surfaces/lumen_wall.vtp
-
 dir=./
-file1=solid-wall-inner.vtp
-file2=fluid-wall.vtp
+
+model=aortofemoral
+model=demo
+model=cylinder-bl
+
+if [ $model == "aortofemoral" ]; then
+  file1=solid-mesh.vtu 
+  file2=solid-Aorta_Smoothed.vtp 
+
+elif [ $model == "demo" ]; then
+  file1=solid-mesh.vtu 
+  file2=solid-aorta_inlet.vtp 
+
+elif [ $model == "cylinder-bl" ]; then
+  file1=solid-mesh.vtu 
+  #file2=solid-wall-inner.vtp
+  #file2=solid-wall-outer.vtp
+  file2=solid-outlet.vtp 
+
+fi
 
 check-mesh.py ${dir}/${file1} ${dir}/${file2}
 
