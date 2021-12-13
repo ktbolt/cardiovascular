@@ -3,7 +3,11 @@ test_name="merged-vertices.stl"
 test_name="Collateral.vtp"
 test_name="stl-model.vtp"
 test_name="mel-model.vtp"
+<<<<<<< HEAD
 test_name="BTreeMM4.vtp"
+=======
+test_name="BTreeMM4.vt"
+>>>>>>> 52a2499cf7451c384e7393c62aa774ab9a4d2d93
 
 python=python
 python=python3
@@ -32,6 +36,13 @@ elif [ $test_name  == "mel-model.vtp" ]; then
 elif [ $test_name  == "merged-vertices.stl" ]; then
     model_file=demo.stl
     model_file=merged-vertices.stl
+    ${python} model_explorer.py     \
+        --model-file ${model_file} \
+        --use-feature-angle true \
+        --angle 40.0              \
+        --show-faces 2 
+else
+    model_file=BTreeMM4.vtp 
     ${python} model_explorer.py     \
         --model-file ${model_file} \
         --use-feature-angle true \

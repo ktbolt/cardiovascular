@@ -59,6 +59,12 @@ pt2 = [-0.241842, 1.740550, -1.930475]
 
 cylinder = create_cylinder( pt1, pt2, radius)
 
+writer = vtk.vtkXMLPolyDataWriter()
+writer.SetInputData(cylinder)
+writer.SetFileName("cylinder.vtp")
+writer.Write()
+
+
 cylinderMapper = vtk.vtkPolyDataMapper()
 cylinderMapper.SetInputData(cylinder)
 
