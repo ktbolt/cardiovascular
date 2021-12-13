@@ -3,6 +3,7 @@ test_name="merged-vertices.stl"
 test_name="Collateral.vtp"
 test_name="stl-model.vtp"
 test_name="mel-model.vtp"
+test_name="BTreeMM4.vtp"
 
 python=python
 python=python3
@@ -36,6 +37,13 @@ elif [ $test_name  == "merged-vertices.stl" ]; then
         --use-feature-angle true \
         --angle 40.0              \
         --show-faces 2 
+
+else
+    model_file=BTreeMM4.vtp
+    ${python} model_explorer.py     \
+        --model-file ${model_file} \
+        --filter-faces 2            \
+        --show-edges True  
 
 fi
 
