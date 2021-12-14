@@ -40,7 +40,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(cmd(Args.CHECK_AREA), type=bool, help="Check the area of surface triangles.") 
-    parser.add_argument(cmd(Args.AREA_TOLERANCE), type=float, help="The tolerance for checking for the area of surface triangles.") 
+    parser.add_argument(cmd(Args.AREA_TOLERANCE), help="The tolerance for checking for the area of surface triangles.") 
 
     parser.add_argument(cmd(Args.ANGLE), type=float, help="The face angle.") 
     parser.add_argument(cmd(Args.FILTER_FACES), help="Filter faces with the number of cells. ")
