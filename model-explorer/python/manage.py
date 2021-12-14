@@ -7,7 +7,7 @@ def get_logger_name():
     return 'explore-model'
 
 def get_log_file_name():
-    return 'explore-model'
+    return 'explore-model.log'
 
 def init_logging(outputDir="./"):
     import logging

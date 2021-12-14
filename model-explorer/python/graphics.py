@@ -172,7 +172,8 @@ class Graphics(object):
         actor.SetMapper(mapper)
         #actor.GetProperty().SetRepresentationToWireframe()
         actor.GetProperty().SetColor(color)
-        actor.GetProperty().SetOpacity(0.5)
+        #actor.GetProperty().SetOpacity(0.5)
+        actor.GetProperty().SetRepresentationToWireframe()
         self.renderer.AddActor(actor)
 
     def add_line(self, pt1, pt2, color=[1.0, 1.0, 1.0], width=2):
