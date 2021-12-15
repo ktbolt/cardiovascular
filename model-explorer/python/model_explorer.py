@@ -120,13 +120,16 @@ if __name__ == '__main__':
       actor.GetProperty().EdgeVisibilityOn();
       graphics.renderer.AddActor(actor)
       '''
-      graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=True)
+      #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=True)
+      graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=False, edges=True)
       graphics.add_graphics_geometry(mesh.area_surface, [1.0, 0.0, 0.0])
 
       color = [1.0, 0.0, 0.0]
       radius = 1.0
+      size = 10
       for pt in mesh.failed_area_check_list:
-        graphics.add_sphere(pt, color, radius)
+        #graphics.add_sphere(pt, color, radius)
+        graphics.add_markers([pt], color, size)
 
     ## Show faces with the number of cells.
     '''
@@ -147,6 +150,15 @@ if __name__ == '__main__':
         graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
     '''
     #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
+
+    #mesh.show_edges()
+
+    color = [0.0, 1.0, 0.0]
+    pt = [ -56.4576,-0.248084,1734.31]
+    radius = 2.0
+    size = 20
+    #graphics.add_sphere(pt, color, radius)
+    #graphics.add_markers([pt], color, size)
 
     graphics.mesh = mesh
     graphics.show()
