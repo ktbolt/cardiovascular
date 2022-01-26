@@ -13,8 +13,8 @@ class Mesh(object):
 
     def __init__(self, params):
         self.params = params
-        self.nodes = None
-        self.segments = None
+        self.nodes = {}
+        self.segments = {}
         self.graphics = None
         self.logger = logging.getLogger(get_logger_name())
 
@@ -28,8 +28,6 @@ class Mesh(object):
         """
         self.logger.info("---------- Read solver file ----------")
         #self.logger.info("Number of points: %d" % num_points)
-        self.nodes = []
-        self.segments = []
 
         with open(self.params.solver_file_name) as fp:
             line = fp.readline()
@@ -56,7 +54,7 @@ class Mesh(object):
         self.lines_polydata = vtk.vtkPolyData()
         self.lines_polydata.SetPoints(self.points)
         lines = vtk.vtkCellArray()
-        for segment in self.segments:
+        for sid, segment in self.segments.items():
             line = vtk.vtkLine()
             line.GetPointIds().SetId(0, segment.node1)
             line.GetPointIds().SetId(1, segment.node2)
@@ -66,23 +64,36 @@ class Mesh(object):
     def add_node(self, tokens):
         """ Add a node..
         """
-        id = tokens[1]
+        nid = int(tokens[1])
         x = float(tokens[2])
         y = float(tokens[3])
         z = float(tokens[4])
-        id = self.points.InsertNextPoint([x, y, z])
+        pid = self.points.InsertNextPoint([x, y, z])
         self.vertices.InsertNextCell(1)
-        self.vertices.InsertCellPoint(id)
- 
-        self.nodes.append(Node(id,x,y,z))
+        self.vertices.InsertCellPoint(pid)
+        self.nodes[nid] = Node(nid,x,y,z)
 
     def add_segment(self, tokens):
         """ Add a segment.
         """
-        id = tokens[1]
+        sid = tokens[1]
         node1 = int(tokens[5])
         node2 = int(tokens[6])
-        self.segments.append(Segment(id,node1,node2))
+        self.segments[sid] = Segment(sid,node1,node2)
 
+    def show_nodes(self):
+        radius = self.params.radius
+        for nid,node in self.nodes.items():
+            center = [node.x, node.y, node.z]
+            self.graphics.node_actors[node.id] = (self.graphics.add_sphere(radius, center, [0.0, 1.0, 0.0]),node)
+
+    def show_segments(self):
+        radius = self.params.radius
+        for sid, segment in self.segments.items():
+            node1 = self.nodes[segment.node1]
+            pt1 = [node1.x, node1.y, node1.z]
+            node2 = self.nodes[segment.node2]
+            pt2= [node2.x, node2.y, node2.z]
+            self.graphics.segment_actors[sid] = (self.graphics.add_cyl( pt1, pt2, radius), segment)
 
 
