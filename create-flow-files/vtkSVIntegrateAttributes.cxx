@@ -69,7 +69,7 @@ class vtkSVIntegrateAttributes::vtkFieldList :
 public:
   vtkFieldList(int numInputs) : vtkDataSetAttributes::FieldList(numInputs) { }
   void SetFieldIndex(int i, int index)
-      { this->vtkDataSetAttributes::FieldList::SetFieldIndex(i, index); }
+      { this->SetFieldIndex(i, index); }
 };
 
 // ----------------------
