@@ -35,6 +35,8 @@
 #include "vtkSVIntegrateAttributes.h"
 #include "vtkSVIntegrateFlowThroughSurface.h"
 
+using namespace std;
+
 // Enumeration of the different options used by the program.
 enum class OptionType 
 {
