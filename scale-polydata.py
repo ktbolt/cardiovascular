@@ -7,8 +7,13 @@ Usage:
 
         Writes scaled polydata to file named 'scaled_POLYDATA.vtp'
 '''
+import os
+from pathlib import Path
 import vtk
 import sys
+
+## Set some directory paths.
+script_path = Path(os.path.realpath(__file__)).parent
 
 ## Read in the .vtp file.
 #
@@ -45,7 +50,8 @@ transformFilter.Update()
 
 ## Write the scaled model.
 #
-scaled_file_name = "scaled_" + file_name 
+scaled_file_name = str(script_path / ("scaled_" + file_name))
+print("Scaled file: {0:s}".format(scaled_file_name))
 writer = vtk.vtkXMLPolyDataWriter()
 writer.SetFileName(scaled_file_name)
 writer.SetInputData(transformFilter.GetOutput())
