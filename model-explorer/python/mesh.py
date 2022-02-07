@@ -33,7 +33,98 @@ class Mesh(object):
         self.boundary_edges = None
         self.boundary_edge_components = None
         self.boundary_face_components = None
+        self.hue_lut = None 
+        self.area_list = None 
+        self.scalar_range = None 
         self.logger = logging.getLogger(get_logger_name())
+
+    def create_hue_lut(self, scalar_range):
+        '''create a lookup table that consists of the full hue circle (from HSV).
+        '''
+        vmin = scalar_range[0]
+        vmax = scalar_range[1]
+        table = vtk.vtkLookupTable()
+        table.SetTableRange(vmin, vmax)
+        table.SetHueRange(0, 1)
+        table.SetSaturationRange(1, 1)
+        table.SetValueRange(1, 1)
+        table.Build()
+        self.hue_lut = table
+
+    def check_area(self, tol=1e-4):
+        print("[checl_ara] ---------- check area ---------- ")
+        print("[check_area] tolerace: {0:g}".format(tol))
+        max_area = -1e9
+        min_area = 1e9
+        avg_area = 0.0
+        points = self.surface.GetPoints()
+        num_cells = self.surface.GetNumberOfCells()
+
+        area_property = vtk.vtkDoubleArray()
+        area_property.SetName("cell_area")
+        area_property.SetNumberOfComponents(1)
+        area_property.SetNumberOfTuples(num_cells)
+        self.failed_area_check_list = []
+        num_failed_check = 0
+
+        for i in range(num_cells):
+            cell = self.surface.GetCell(i)
+            dim = cell.GetCellDimension()
+            num_cell_nodes = cell.GetNumberOfPoints()
+            #print("Cell: {0:d}".format(cell_id))
+            #print("    dim: {0:d}".format(dim))
+            #print("    cell_num_nodes: {0:d}".format(num_cell_nodes))
+            tri = vtk.vtkTriangle()
+            tri_points = []
+            center = [0.0, 0.0, 0.0]
+            for j in range(0, num_cell_nodes):
+                node_id = cell.GetPointId(j)
+                pt = points.GetPoint(node_id)
+                tri_points.append(pt)
+                center[0] += pt[0]
+                center[1] += pt[1]
+                center[2] += pt[2]
+            area = vtk.vtkTriangle.TriangleArea(tri_points[0], tri_points[1], tri_points[2])
+            center[0] /= 3.0
+            center[1] /= 3.0
+            center[2] /= 3.0
+
+            #area = tri.ComputeArea()            
+            if area < min_area:
+                min_area = area
+            if area > max_area:
+                max_area = area
+            if area < tol:
+                area_property.SetValue(i, 0.0)
+                self.failed_area_check_list.append(center)
+                num_failed_check += 1
+                print("[check_area] area {0:g} < tolerance".format(area))
+            else:
+                area_property.SetValue(i, area)
+            avg_area += area
+
+        avg_area /= num_cells 
+        print("[check_area] Max area: {0:g}".format(max_area))
+        print("[check_area] Min area: {0:g}".format(min_area))
+        print("[check_area] Avg area: {0:g}".format(avg_area))
+        print("[check_area] Number of surface trangles < tolerance: {0:d}".format(num_failed_check))
+
+        self.avg_area = avg_area 
+        self.max_area = max_area 
+        self.surface.GetCellData().AddArray(area_property)
+        self.scalar_range = [min_area, max_area]
+        self.create_hue_lut( self.scalar_range ) 
+
+        threshold = vtk.vtkThreshold()
+        threshold.SetInputData(self.surface)
+        threshold.SetInputArrayToProcess(0,0,0,1,'cell_area')
+        threshold.ThresholdBetween(0.0,0.0)
+        threshold.Update();
+
+        surfacer = vtk.vtkDataSetSurfaceFilter()
+        surfacer.SetInputData(threshold.GetOutput())
+        surfacer.Update()
+        self.area_surface = surfacer.GetOutput()
 
     def extract_faces(self):
         '''Extract the surface faces using an angle between faces.

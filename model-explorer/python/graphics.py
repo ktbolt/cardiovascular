@@ -156,6 +156,28 @@ class Graphics(object):
         self.interactor.SetInteractorStyle(style)
         style.SetCurrentRenderer(self.renderer)
 
+    def add_markers(self, marker_points, color, size=4):
+        points = vtk.vtkPoints()
+        vertices = vtk.vtkCellArray()
+
+        for pt in marker_points:
+            pid = points.InsertNextPoint(pt)
+            vertices.InsertNextCell(1)
+            vertices.InsertCellPoint(pid)
+
+        points_pd = vtk.vtkPolyData()
+        points_pd.SetPoints(points)
+        points_pd.SetVerts(vertices)
+
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputData(points_pd)
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(color)
+        actor.GetProperty().SetPointSize(size)
+        self.renderer.AddActor(actor)
+
     def add_sphere(self, center, color, radius=1.0):
         sphere = vtk.vtkSphereSource()
         sphere.SetCenter(center[0], center[1], center[2])
@@ -172,7 +194,8 @@ class Graphics(object):
         actor.SetMapper(mapper)
         #actor.GetProperty().SetRepresentationToWireframe()
         actor.GetProperty().SetColor(color)
-        actor.GetProperty().SetOpacity(0.5)
+        #actor.GetProperty().SetOpacity(0.5)
+        actor.GetProperty().SetRepresentationToWireframe()
         self.renderer.AddActor(actor)
 
     def add_line(self, pt1, pt2, color=[1.0, 1.0, 1.0], width=2):

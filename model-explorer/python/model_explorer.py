@@ -6,6 +6,7 @@ import argparse
 import sys
 import os
 import logging
+import vtk 
 
 from manage import get_logger_name, init_logging, get_log_file_name
 from parameters import Parameters
@@ -19,6 +20,8 @@ class Args(object):
     '''
     PREFIX = "--"
 
+    CHECK_AREA = "check_area"
+    AREA_TOLERANCE = "area_tolerance"
     ANGLE = "angle"
     FILTER_FACES = "filter_faces"
     MODEL_FILE = "model_file_name"
@@ -35,6 +38,9 @@ def parse_args():
     ''' Parse command-line arguments.
     '''
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(cmd(Args.CHECK_AREA), type=bool, help="Check the area of surface triangles.") 
+    parser.add_argument(cmd(Args.AREA_TOLERANCE), help="The tolerance for checking for the area of surface triangles.") 
 
     parser.add_argument(cmd(Args.ANGLE), type=float, help="The face angle.") 
     parser.add_argument(cmd(Args.FILTER_FACES), help="Filter faces with the number of cells. ")
@@ -63,6 +69,12 @@ def set_parameters(**kwargs):
             logger.error("The model file '%s' was not found." % params.model_file_name)
             return None
 
+    if kwargs.get(Args.CHECK_AREA):
+        params.check_area = int(kwargs.get(Args.CHECK_AREA))
+
+    if kwargs.get(Args.AREA_TOLERANCE):
+        params.area_tolerance = float(kwargs.get(Args.AREA_TOLERANCE))
+
     if kwargs.get(Args.FILTER_FACES):
         params.filter_faces = int(kwargs.get(Args.FILTER_FACES))
 
@@ -90,8 +102,37 @@ if __name__ == '__main__':
     mesh = Mesh(params)
     mesh.graphics = graphics
     mesh.read_mesh()
+    graphics.mesh = mesh
+
+    if params.check_area:
+      mesh.check_area(params.area_tolerance)
+      '''
+      mapper = vtk.vtkPolyDataMapper()
+      mapper.SetInputData(mesh.surface)
+      mapper.SetScalarVisibility(True)
+      mapper.SetScalarModeToUseCellFieldData()
+      mapper.SetScalarRange(mesh.scalar_range)
+      mapper.SetScalarModeToUseCellData()
+      mapper.SetLookupTable(mesh.hue_lut)
+
+      actor = vtk.vtkActor()
+      actor.SetMapper(mapper)
+      actor.GetProperty().EdgeVisibilityOn();
+      graphics.renderer.AddActor(actor)
+      '''
+      #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=True)
+      graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=False, edges=True)
+      graphics.add_graphics_geometry(mesh.area_surface, [1.0, 0.0, 0.0])
+
+      color = [1.0, 0.0, 0.0]
+      radius = 1.0
+      size = 10
+      for pt in mesh.failed_area_check_list:
+        #graphics.add_sphere(pt, color, radius)
+        graphics.add_markers([pt], color, size)
 
     ## Show faces with the number of cells.
+    '''
     if params.filter_faces:
         mesh.filter_faces(params.filter_faces)
         show_wire = True
@@ -101,16 +142,23 @@ if __name__ == '__main__':
     if params.show_edges:
         mesh.show_edges()
 
-    graphics.mesh = mesh
 
-    '''
     if params.show_faces:
         mesh.show_faces()
     else:
         #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=show_wire)
         graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
     '''
-    graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
+    #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
+
+    #mesh.show_edges()
+
+    color = [0.0, 1.0, 0.0]
+    pt = [ -56.4576,-0.248084,1734.31]
+    radius = 2.0
+    size = 20
+    #graphics.add_sphere(pt, color, radius)
+    #graphics.add_markers([pt], color, size)
 
     graphics.mesh = mesh
     graphics.show()

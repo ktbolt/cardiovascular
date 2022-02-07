@@ -8,6 +8,70 @@ import vtk
 from vtk.util.colors import tomato
 print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
 
+class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
+
+    def __init__(self, graphics):
+        #self.AddObserver("LeftButtonPressEvent", self.leftButtonPressEvent)
+        self.AddObserver("KeyPressEvent", self.onKeyPressEvent)
+        self.AddObserver("CharEvent", self.onCharEvent)
+        self.graphics = graphics
+        self.selected_points = []
+        self.picked_actor = None
+        self.last_picked_node_actor = None
+        self.last_picked_segment_actor = None
+
+    def select_event(self, obj, event):
+        '''Process a select event. 
+        '''
+        print("Select ...")
+        clickPos = self.GetInteractor().GetEventPosition()
+        picker = vtk.vtkCellPicker()
+        picker.Pick(clickPos[0], clickPos[1], 0, self.renderer)
+
+        # Get selecected geometry. 
+        self.picked_actor = picker.GetActor()
+        if self.picked_actor == None:
+            print("No actor selected")
+            #self.OnLeftButtonDown()
+            return
+
+        graphics = self.graphics
+
+        for node_id, node in self.graphics.node_actors.items():
+            if self.picked_actor == node[0]:
+                pos = [node[1].x, node[1].y, node[1].z]
+                print("Selected node ID: {0:d}  position: {1:s}".format(node_id, str(pos)))
+                self.picked_actor.GetProperty().SetColor(1.0, 1.0, 0.0)
+                if self.last_picked_node_actor != None:
+                    self.last_picked_node_actor.GetProperty().SetColor(0.0, 1.0, 0.0)
+                self.last_picked_node_actor = self.picked_actor
+
+        for segment_id, segment in self.graphics.segment_actors.items():
+            if self.picked_actor == segment[0]:
+                print("Selected segment ID: {0:s}".format(segment_id))
+                self.picked_actor.GetProperty().SetColor(1.0, 1.0, 0.0)
+                if self.last_picked_segment_actor != None:
+                    self.last_picked_segment_actor.GetProperty().SetColor(1.0, 0.0, 0.0)
+                self.last_picked_segment_actor = self.picked_actor
+
+    def onCharEvent(self, renderer, event):
+        '''Process an on char event.
+
+        This is used to prevent passing the shortcut key 'w' to vtk which we use
+        to write selected results and vtk uses to switch to wireframe display. 
+        '''
+        key = self.GetInteractor().GetKeySym()
+        if (key != 'w'):
+            self.OnChar()
+
+    def onKeyPressEvent(self, renderer, event):
+        '''Process a key press event.
+        '''
+        key = self.GetInteractor().GetKeySym()
+
+        if (key == 's'):
+            self.select_event(None, event)
+
 class Graphics(object):
 
     def __init__(self):
@@ -17,12 +81,15 @@ class Graphics(object):
         self.colors = vtk.vtkNamedColors()
         self.logger = logging.getLogger(get_logger_name())
         self.initialize_graphics()
+        self.segment_actors = {}
+        self.node_actors = {}
 
     def create_graphics_geometry(self, poly_data):
         """ Create geometry for display.
         """
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputData(poly_data)
+        mapper.ScalarVisibilityOff()
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
         return actor
@@ -41,21 +108,26 @@ class Graphics(object):
         self.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
         self.interactor.SetRenderWindow(self.window)
 
-        style = ClickInteractorStyle(self)
+        # Add the custom style.
+        style = MouseInteractorStyle(self)
+        style.renderer = self.renderer
+        style.graphics = self
         self.interactor.SetInteractorStyle(style)
         style.SetCurrentRenderer(self.renderer)
 
-    def add_sphere(self, center, color):
+    def add_sphere(self, radius, center, color):
         sphere = vtk.vtkSphereSource()
         sphere.SetCenter(center[0], center[1], center[2])
-        sphere.SetRadius(0.2)
-        poly_data = sphere.GetOutputPort()
-        self.add_graphics_geometry(poly_data, color, True)
+        sphere.SetThetaResolution(64)
+        sphere.SetPhiResolution(64)
+        sphere.SetRadius(radius)
+        sphere.Update()
+        poly_data = sphere.GetOutput()
+        return self.add_graphics_geometry(poly_data, color)
 
-    def add_cyl(self, pt1, pt2):
+    def add_cyl(self, pt1, pt2, radius=0.1):
         cyl = vtk.vtkCylinderSource()
-        r = 0.1
-        cyl.SetRadius(r)
+        cyl.SetRadius(radius)
         cyl.SetResolution(15)
         x = [0,0,0]
         y = [0,0,0]
@@ -106,8 +178,7 @@ class Graphics(object):
 
         actor.SetMapper(mapper)
         self.renderer.AddActor(actor)
-
-
+        return actor
         
         """
         sphereStartSource = vtk.vtkSphereSource()
@@ -129,17 +200,18 @@ class Graphics(object):
         self.renderer.AddActor(sphereStart1)
         """
 
-
-    def add_graphics_geometry(self, poly_data, color):
+    def add_graphics_geometry(self, poly_data, color, line_width=1.0):
         gr_geom = self.create_graphics_geometry(poly_data)
         gr_geom.GetProperty().SetColor(color[0], color[1], color[2])
         gr_geom.GetProperty().SetPointSize(20)
+        gr_geom.GetProperty().SetLineWidth(line_width)
         self.renderer.AddActor(gr_geom)
         self.window.Render()
+        return gr_geom
 
-    def add_graphics_points(self, poly_data, color):
+    def add_graphics_points(self, poly_data, color, radius=0.05):
         ball = vtk.vtkSphereSource()
-        ball.SetRadius(0.2)
+        ball.SetRadius(radius)
         ball.SetThetaResolution(12)
         ball.SetPhiResolution(12)
         balls = vtk.vtkGlyph3D()
@@ -186,7 +258,7 @@ class Graphics(object):
 
         self.window.Render()
 
-    def add_graphics_edges(self, poly_data, color):
+    def add_graphics_edges(self, poly_data, color, radius):
         pt1 = [0,0,0]
         pt2 = [0,0,0]
         points = poly_data.GetPoints();
@@ -204,7 +276,7 @@ class Graphics(object):
             node2 = idList.GetId(1)
             points.GetPoint(node1,pt1)
             points.GetPoint(node2,pt2)
-            self.add_cyl(pt1, pt2)
+            self.add_cyl(pt1, pt2, radius)
   
 
     def show(self):
