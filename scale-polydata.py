@@ -18,6 +18,7 @@ script_path = Path(os.path.realpath(__file__)).parent
 ## Read in the .vtp file.
 #
 file_name = sys.argv[1];  
+file_path, base_name = os.path.split(file_name)
 reader = vtk.vtkXMLPolyDataReader()
 reader.SetFileName(file_name)
 reader.Update()
@@ -50,7 +51,7 @@ transformFilter.Update()
 
 ## Write the scaled model.
 #
-scaled_file_name = str(script_path / ("scaled_" + file_name))
+scaled_file_name = str(script_path / ("scaled_" + base_name))
 print("Scaled file: {0:s}".format(scaled_file_name))
 writer = vtk.vtkXMLPolyDataWriter()
 writer.SetFileName(scaled_file_name)
