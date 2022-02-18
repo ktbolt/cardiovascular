@@ -3,12 +3,12 @@
 # This shell script is used to execute a Python script to convert 
 # solver 1d files to csv format. 
 
-SV_HOME=/Users/parkerda/software/ktbolt/SimVascular/build/SimVascular-build/
+SV_HOME=$HOME/software/ktbolt/SimVascular/build/SimVascular-build/
 
 # Set the Python interpreter if the default it not Python 3.
 python=python
 python=python3
-python=/Users/parkerda/software/ktbolt/SimVascular/build/Externals-build/svExternals/bin/python-3.5.5/bin/python
+python=$HOME/software/ktbolt/SimVascular/build/Externals-build/svExternals/bin/python-3.5.5/bin/python
 
 export PATH=""
 

@@ -12,22 +12,10 @@ export PYTHONPATH=$PYTHONPATH:/Applications/SimVascular.app/Contents/Resources/P
 ## Set input parameters
 #
 res_dir=./example
-res_dir=/Users/parkerda/SimVascular/sim-1d-SU201_2005-resistance/Simulations1d/su201/
-res_dir=/Users/parkerda/SimVascular/sim-1d-demo-rom/ROMSimulations/demo/
+res_dir=$HOME/SimVascular/sim-1d-SU201_2005-resistance/Simulations1d/su201/
+res_dir=$HOME/SimVascular/sim-1d-demo-rom/ROMSimulations/demo/
 solver_file=solver_1d.in
 #
-#res_dir=/home/davep/tmp/1d-solver
-#file=12_AortoFem_Pulse_R.in
-#
-#res_dir=/Users/parkerda/tmp/1d-sim-results/
-#file=12_AortoFem_Pulse_R.in
-#
-#res_dir=/Users/parkerda/tmp/1d-bif
-#file=05_bifurcation_RCR.in
-#
-#res_dir=/Users/parkerda/SimVascular/sim-1d-SU201_2005-resistance/Simulations1d/su201/
-#file=solver.in
-
 ## Set output parameters.
 #
 out_dir=./output
