@@ -15,11 +15,13 @@ Model slices data are written to files named model_slice_PATH_POINT_ID.vti
 
 PATH_POINT_ID is the the value of each path point id given in the .pth file. 
 
+```
   <path_point id="1">
     <pos x="-2.24355483017504" y="-2.03100002186194" z="13.535332348831323" />
     <tangent x="0.459604696925632" y="0.399318918662815" z="-0.793289306471389" />
     <rotation x="0" y="0.89321949067228" z="0.449620886395586" />
   </path_point>
+```
 
 
 Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-slices EXTRACT_SLICES] [--image-file-name IMAGE_FILE_NAME]
@@ -36,7 +38,7 @@ Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-s
 
   PATH_FILE_NAME The SV path (.pth) file.
 
-  RESULTS_DIRECTORY The directory to write image slice and model slice files.
+  RESULTS_DIRECTORY - The directory to write image and model slice files.
 
   SLICE_INCREMENT - The slice increment along a path.
 
