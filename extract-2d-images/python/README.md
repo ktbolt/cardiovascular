@@ -1,5 +1,5 @@
 
-# Extract 2D Images 
+# Extract 2D Images from an Image Volume
 
 This Python code is used to extract 2D slices from a 3D image volume and surface geometry using VTK.
 Slices are extracted using data along a SimVascular path (position, tangent and normal to a path line)
