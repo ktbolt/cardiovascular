@@ -281,7 +281,7 @@ class Image(object):
         mapper.SetScalarRange(polydata.GetScalarRange())
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
-        actor.GetProperty().SetPointSize(2)
+        actor.GetProperty().SetPointSize(4)
         #actor.GetProperty().SetColor(1.0, 1.0, 0.0)
         self.graphics.add_actor(actor)
 
