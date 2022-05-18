@@ -1,5 +1,5 @@
 
-# Extract 2D Images 
+# Extract 2D Images from an Image Volume
 
 This Python code is used to extract 2D slices from a 3D image volume and surface geometry using VTK.
 Slices are extracted using data along a SimVascular path (position, tangent and normal to a path line)
@@ -23,6 +23,7 @@ PATH_POINT_ID is the the value of each path point id given in the .pth file.
   </path_point>
 ```
 
+Path, model, and image slices can be displayed in a graphics window. A slice can be created interactively by moving the mouse cursor over a path location and pressing the **s** key. 
 
 Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-slices EXTRACT_SLICES] [--image-file-name IMAGE_FILE_NAME]
                            [--model-file-name MODEL_FILE_NAME] [--path-file-name PATH_FILE_NAME] [--results-directory RESULTS_DIRECTORY]
@@ -34,9 +35,9 @@ Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-s
 
   IMAGE_FILE_NAME - The image volume (.vti) file.
 
-  MODEL_FILE_NAME The SV model (.vtp) file.
+  MODEL_FILE_NAME - The SV model (.vtp) file.
 
-  PATH_FILE_NAME The SV path (.pth) file.
+  PATH_FILE_NAME - The SV path (.pth) file.
 
   RESULTS_DIRECTORY - The directory to write image and model slice files.
 
@@ -45,7 +46,7 @@ Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-s
   SLICE_WIDTH - The width of a slice plane.
 
 
-Example:
+Example: Automatically extracting all slices every 50 path points. 
 
     python extact-2d-images.py     \
         --image-file aorta.vti     \
