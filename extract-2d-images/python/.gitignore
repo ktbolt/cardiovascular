@@ -1,0 +1,7 @@
+Notes
+back/
+*.sh
+*.vti
+*.vtp
+*.pth
+*.log
