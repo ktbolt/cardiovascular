@@ -6,6 +6,11 @@ from math import sqrt
 import logging
 from manage import get_logger_name
 
+class PathSampleMethod:
+    CONTROL_POINTS = "control_points"
+    DISTANCE = "distance"
+    NUMBER = "number"
+
 class PathData(object):
     def __init__(self, pid, index, point, tangent, rotation):
         self.id = pid
@@ -28,8 +33,8 @@ class PathElement(object):
 class Path(object):
     '''The Path class is used to represent a SimVascular path.
     '''
-    def __init__(self, id, graphic):
-        self.id = id
+    def __init__(self, pid, graphic):
+        self.id = pid
         self.elements = []
         self.graphics = graphic
         self.logger = logging.getLogger(get_logger_name())
@@ -54,8 +59,8 @@ class Path(object):
             #_for i in range(0, len(pts)-1)
         #_for element in self.elements
         
-        print("[Path.select] index: {0:d}".format(min_i))
-        print("[Path.select] min_element_i: {0:d}".format(min_element_i))
+        #print("[Path.select] index: {0:d}".format(min_i))
+        #print("[Path.select] min_element_i: {0:d}".format(min_element_i))
         pid = min_element.ids[min_i]
         index = min_i
         point = min_element.points[min_i]
@@ -71,6 +76,52 @@ class Path(object):
         tangent = element.tangents[index]
         rotation = element.rotations[index]
         return PathData(pid, index, point, tangent, rotation)
+
+    def get_point_ids(self, parameters, element):
+        '''Get the list of element point IDs used to create slices along a path.
+        '''
+        
+        # Sample every parameters.slice_increment path points.
+        #
+        if parameters.path_sample_method == PathSampleMethod.NUMBER:
+            point_ids = element.ids[::parameters.slice_increment]
+
+        # Sample path at parameters.slice_increment points equidistance along the path.
+        #
+        elif parameters.path_sample_method == PathSampleMethod.DISTANCE:
+            path_length = 0.0
+            pt1 = element.points[0]
+
+            for i in range(1, len(element.points)):
+                pt2 = element.points[i]
+                path_length += sqrt(sum([(pt1[j]-pt2[j])*(pt1[j]-pt2[j]) for j in range(0,3)]))
+                pt1 = pt2
+
+            dist_inc = path_length / parameters.slice_increment
+            point_ids = [ element.ids[0] ]
+            path_dist = 0.0
+            pt1 = element.points[0]
+
+            for i in range(1, len(element.points)):
+                pt2 = element.points[i]
+                path_dist += sqrt(sum([(pt1[j]-pt2[j])*(pt1[j]-pt2[j]) for j in range(0,3)]))
+                if path_dist >= dist_inc: 
+                    point_ids.append(element.ids[i])
+                    path_dist = 0.0
+                    pt1 = element.points[i]
+
+        # Sample path at every parameters.slice_increment control points. 
+        #
+        elif parameters.path_sample_method == PathSampleMethod.CONTROL_POINTS:
+            point_ids = [] 
+            for cpt in element.control_points[::parameters.slice_increment]:
+                path_data = self.select(cpt)
+                point_ids.append(path_data.index)
+
+        else:
+            raise Exception("Unknown path sample method '{0:s}'".format(parameters.path_sample_method))
+  
+        return point_ids 
 
     @classmethod
     def read_path_file(cls, params, graphics):

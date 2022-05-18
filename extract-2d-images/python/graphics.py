@@ -220,7 +220,8 @@ class Graphics(object):
             print("path id: " + str(path.id))
             for elem_id, element in enumerate(path.elements):
                 print("element id: " + str(elem_id))
-                point_ids = element.ids[::slice_increment]
+                point_ids = path.get_point_ids(self.parameters, element)
+                #point_ids = element.ids[::slice_increment]
                 for point_id in point_ids:
                     #print("point id: " + str(point_id))
                     path_data = path.get_data(elem_id, int(point_id))

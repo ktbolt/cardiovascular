@@ -26,24 +26,29 @@ PATH_POINT_ID is the the value of each path point id given in the .pth file.
 Path, model, and image slices can be displayed in a graphics window. A slice can be created interactively by moving the mouse cursor over a path location and pressing the **s** key. 
 
 Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-slices EXTRACT_SLICES] [--image-file-name IMAGE_FILE_NAME]
-                           [--model-file-name MODEL_FILE_NAME] [--path-file-name PATH_FILE_NAME] [--results-directory RESULTS_DIRECTORY]
-                           [--slice-increment SLICE_INCREMENT] [--slice-width SLICE_WIDTH]
+                           [--model-file-name MODEL_FILE_NAME] [--path-file-name PATH_FILE_NAME] [--path-sample-method PATH_SAMPLE_METHOD]
+                           [--results-directory RESULTS_DIRECTORY] [--slice-increment SLICE_INCREMENT] [--slice-width SLICE_WIDTH]
 
   ENABLE_GRAPHICS - Enable graphics to show geomemtry in a graphics window.
 
-  EXTRACT_SLICES  - Automatically extract slices using the slice increment.
+  EXTRACT_SLICES - Automatically extract slices using the slice increment.
 
   IMAGE_FILE_NAME - The image volume (.vti) file.
 
-  MODEL_FILE_NAME - The SV model (.vtp) file.
+  MODEL_FILE_NAME - The model (.vtp) file.
 
-  PATH_FILE_NAME - The SV path (.pth) file.
+  PATH_FILE_NAME - The path (.pth) file.
 
-  RESULTS_DIRECTORY - The directory to write image and model slice files.
+  PATH_SAMPLE_METHOD - The method used to sample path points for slicing. Valid options: 'number', 'distance', or 'control_points'. 
+    'number' - Sample every SLICE_INCREMENT number of path points.
+    'distance' - Sample SLICE_INCREMENT number of equi-distance path points.
+    'control_points' - Sample every SLICE_INCREMENT number of path control_points.
 
-  SLICE_INCREMENT - The slice increment along a path.
+  RESULTS_DIRECTORY - The directory to write image slice and model slice files.
 
-  SLICE_WIDTH - The width of a slice plane.
+  SLICE_INCREMENT - The increment along a path to sample slices.
+
+  SLICE_WIDTH - The width of a slice plane in image Cartesian space.
 
 
 Example: Automatically extracting all slices every 50 path points. 
@@ -53,6 +58,7 @@ Example: Automatically extracting all slices every 50 path points.
         --path-file aorta.pth      \
         --model-file demo.vtp      \
         --slice-increment 50       \
+        --path-sample-method number \
         --slice-width 5            \
         --extract-slices true      \
         --results-directory ./results \

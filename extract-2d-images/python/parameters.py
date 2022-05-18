@@ -9,6 +9,7 @@ class Parameters():
         self.image_file_name = None
         self.model_file_name = None
         self.path_file_name = None
+        self.path_sample_method = "number"
         self.results_directory = "./"
         self.slice_increment = 10
         self.slice_width = 5

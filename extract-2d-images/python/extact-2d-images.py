@@ -27,6 +27,7 @@ class Args(object):
     IMAGE_FILE = "image_file_name"
     MODEL_FILE = "model_file_name"
     PATH_FILE = "path_file_name"
+    PATH_SAMPLE_METHOD = "path_sample_method"
     RESULTS_DIRECTORY = "results_directory"
     SLICE_INCREMENT = "slice_increment"
     SLICE_WIDTH = "slice_width"
@@ -45,6 +46,7 @@ def parse_args():
     parser.add_argument(cmd(Args.IMAGE_FILE), help="The image (.vti) file.")
     parser.add_argument(cmd(Args.MODEL_FILE), help="The model (.vtp) file.")
     parser.add_argument(cmd(Args.PATH_FILE), help="The path (.pth) file.")
+    parser.add_argument(cmd(Args.PATH_SAMPLE_METHOD), help="The method used to sample path points: number, distance")
     parser.add_argument(cmd(Args.RESULTS_DIRECTORY), help="The directory to write image slice and model slice files.")
     parser.add_argument(cmd(Args.SLICE_INCREMENT), help="The slice increment along a path.")
     parser.add_argument(cmd(Args.SLICE_WIDTH), help="The width of a slice plane.")
@@ -88,6 +90,9 @@ def set_parameters(**kwargs):
         if not os.path.exists(params.path_file_name):
             logger.error("The path file '%s' was not found." % params.path_file_name)
             return None
+
+    if kwargs.get(Args.PATH_SAMPLE_METHOD):
+        params.path_sample_method = kwargs.get(Args.PATH_SAMPLE_METHOD)
 
     if kwargs.get(Args.RESULTS_DIRECTORY):
         params.results_directory = kwargs.get(Args.RESULTS_DIRECTORY)
