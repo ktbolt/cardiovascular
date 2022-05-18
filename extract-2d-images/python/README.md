@@ -34,9 +34,9 @@ Usage: extact-2d-images.py [-h] [--enable-graphics ENABLE_GRAPHICS] [--extract-s
 
   IMAGE_FILE_NAME - The image volume (.vti) file.
 
-  MODEL_FILE_NAME The SV model (.vtp) file.
+  MODEL_FILE_NAME - The SV model (.vtp) file.
 
-  PATH_FILE_NAME The SV path (.pth) file.
+  PATH_FILE_NAME - The SV path (.pth) file.
 
   RESULTS_DIRECTORY - The directory to write image and model slice files.
 
