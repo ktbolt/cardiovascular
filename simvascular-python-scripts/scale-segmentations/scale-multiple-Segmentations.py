@@ -1,15 +1,22 @@
 import os
 from pathlib import Path
 
+# This script is used to scale the x,y,z and resclice sizes of
+# existing .ctgr segmentation files by a user set scale factor.
+# 
+# Edit the values below and then run the script. E.g:
+# >py scale-multiple-segmentations.py 
+# $python3 scale-multiple-segmentations.py
+# 
 # Edit this section:
 #   data_loc:
-#       Directory containg the segments you wish to scale.
-#       Windows users: Either replace "\" with "/" or use "\\".
+#       Directory containg the segmentations you wish to scale.
+#       Windows users: Replace "\" with "/" or use "\\".
 #   scale_factor:
 #       The scale factor which you wish to scale the points around the origin.
 #
-data_loc = "Relative/path/to/directory/"
-data_loc = "C:\\Absolute\\path\\to\\Directory\\"
+data_loc = "Relative/path/to/segmentations/directory/"
+data_loc = "C:\\Absolute\\path\\to\\segmentations\\directory\\"
 scale_factor = 0.1
 
 # Do not edit this section.
