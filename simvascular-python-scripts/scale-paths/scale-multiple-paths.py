@@ -1,15 +1,22 @@
 import os
 from pathlib import Path
 
+# This script is used to scale the x,y,z and resclice sizes of
+# existing .pth path files by a user set scale factor.
+# 
+# Edit the values below and then run the script. E.g:
+# >py scale-multiple-paths.py 
+# $python3 scale-multiple-paths.py
+# 
 # Edit this section:
 #   data_loc:
 #       Directory containg the paths you wish to scale.
-#       Windows users: Either replace "\" with "/" or use "\\".
+#       Windows users: Replace "\" with "/" or use "\\".
 #   scale_factor:
 #       The scale factor which you wish to scale the points around the origin.
 #
-data_loc = "Relative/path/to/directory/"
-data_loc = "C:\\Absolute\\path\\to\\Directory\\"
+data_loc = "Relative/path/to/paths/directory/"
+data_loc = "C:\\Absolute\\path\\to\\paths\\directory\\"
 scale_factor = 0.1
 
 # Do not edit this section.
@@ -55,9 +62,15 @@ for sv_path in sv_path_list:
                          
                          elif '<path id="' in line:
                               values = line.split()
-                              values[5] = 'reslice_size="' + str(round(int(values[5][14:-1])*scale_factor)) + '"'
-                              values[6] = 'point_2D_display_size=""'
-                              values[7] = 'point_size="">'
+                              
+                              for i in range(len(values)):
+                                   if values[i].startswith('reslice_size="'):
+                                        values[i] = 'reslice_size="' + str(round(int(values[i][14:-1])*scale_factor)) + '"'
+                                   elif values[i].startswith('point_2D_display_size="'):
+                                        values[i] = 'point_2D_display_size=""'
+                                   elif values[i].startswith('point_size"'):
+                                        values[i] = 'point_size="">'
+                              
                               scaled_line = indentation(line)*' ' + ' '.join(values) + '\n'
                               scaled_data.write(scaled_line)
                          
