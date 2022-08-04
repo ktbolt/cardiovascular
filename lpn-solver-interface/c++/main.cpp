@@ -29,10 +29,16 @@ int main(int argc, char** argv)
   // Increment in time.
   int num_time_steps = 3001;
   double time = 0.0;
+  std::vector<double> solution(interface.system_size_);
 
   for (int i = 0; i < num_time_steps; i++) {
     time += time_step;
-    interface.increment_time(time);
+    interface.increment_time(time, solution);
+    std::cout << "[main] time: " << time << " solution: ";
+    for (auto value : solution) {
+      std::cout << value << " "; 
+    }
+    std::cout << std::endl;
   }
 
   return 0;

@@ -8,7 +8,7 @@ copt = -g
 copt = -O
 flags =  -std=c++11 -stdlib=libc++ -w $(inc) $(copt)
 
-p: $(obj) 
+p: $(obj) LPNSolverInterface.h
 	$(CC) -o $@ $(obj) $(libs)
 
 .cpp.o: 
