@@ -3,6 +3,7 @@
 from os import path
 import logging
 from manage import get_logger_name
+import math
 
 import vtk
 from vtk.util.colors import tomato
@@ -48,7 +49,10 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         for segment_id, segment in self.graphics.segment_actors.items():
             if self.picked_actor == segment[0]:
+                segment = self.graphics.mesh.segments[segment_id]
                 print("Selected segment ID: {0:s}".format(segment_id))
+                print("  Inlet area: {0:g}".format(segment.inlet_area))
+                print("  Outlet area: {0:g}".format(segment.outlet_area))
                 self.picked_actor.GetProperty().SetColor(1.0, 1.0, 0.0)
                 if self.last_picked_segment_actor != None:
                     self.last_picked_segment_actor.GetProperty().SetColor(1.0, 0.0, 0.0)
@@ -83,6 +87,7 @@ class Graphics(object):
         self.initialize_graphics()
         self.segment_actors = {}
         self.node_actors = {}
+        self.mesh = None
 
     def create_graphics_geometry(self, poly_data):
         """ Create geometry for display.
@@ -125,7 +130,7 @@ class Graphics(object):
         poly_data = sphere.GetOutput()
         return self.add_graphics_geometry(poly_data, color)
 
-    def add_cyl(self, pt1, pt2, radius=0.1):
+    def add_cyl(self, pt1, pt2, radius=0.1, color=[1,1,1]):
         cyl = vtk.vtkCylinderSource()
         cyl.SetRadius(radius)
         cyl.SetResolution(15)
@@ -174,31 +179,83 @@ class Graphics(object):
         #mapper.SetInputConnection(transformPD.GetOutputPort())
         mapper.SetInputConnection(cyl.GetOutputPort())
         actor.SetUserMatrix(transform.GetMatrix())
+        actor.GetProperty().SetColor(color)
+
+        actor.SetMapper(mapper)
+        self.renderer.AddActor(actor)
+        return actor
+
+    def add_tapered_cyl(self, pt1, radius1, pt2, radius2):
+
+        ## Compute the cylinder axis and center.
+        axis = [pt1[i] - pt2[i] for i in range(0,3)]
+        length = vtk.vtkMath.Normalize(axis)
+        center = [(pt1[i] + pt2[i])/2.0 for i in range(0,3)]
+
+        diskSource = vtk.vtkDiskSource()
+        diskSource.SetInnerRadius(0.0);
+        diskSource.SetOuterRadius(radius1);
+        diskSource.SetRadialResolution(1);
+        diskSource.SetCircumferentialResolution(40);
+
+        # Apply linear extrusion
+        extrude = vtk.vtkLinearExtrusionFilter()
+        extrude.SetInputConnection(diskSource.GetOutputPort())
+        #extrude.SetExtrusionTypeToVectorExtrusion()
+        extrude.SetExtrusionTypeToNormalExtrusion()
+        #extrude.SetVector(axis[0], axis[1], axis[2])
+        extrude.SetScaleFactor(length)
+        extrude.CappingOn()
+        extrude.Update()
+        cylinder = extrude.GetOutput()
+
+        # Taper the cylinder
+        scale = radius2 / radius1
+        scale = radius1 / radius2
+        points = cylinder.GetPoints()
+        numPts = cylinder.GetNumberOfPoints()
+        for ptId in range(int(numPts/2), numPts):
+          point = points.GetPoint(ptId)
+          points.SetPoint(ptId, point[0]*scale, point[1]*scale, point[2])
+
+        com_filter = vtk.vtkCenterOfMass()
+        com_filter.SetInputData(cylinder)
+        com_filter.Update()
+        cyl_center = com_filter.GetCenter()
+        print("cylinder center: {0:s}".format(str(center)))
+
+        # Set up transofrm to rotate given axis
+        vec = [ 0.0, 0.0, 1.0 ]
+        #vec = [ 0.0, 1.0, 0.0 ]
+        rotate_axis = 3*[0.0]
+        tmp_cross = 3*[0.0]
+        #print(tmp_cross)
+        vtk.vtkMath.Cross(vec, axis, rotate_axis)
+        vtk.vtkMath.Cross(vec, axis, tmp_cross)
+
+        radangle = math.acos(vtk.vtkMath.Dot(axis,vec))
+        #radangle = math.atan2(vtk.vtkMath.Norm(rotate_axis), vtk.vtkMath.Dot(axis,vec))
+        degangle = vtk.vtkMath.DegreesFromRadians(radangle)
+
+        # Transform
+        transformer = vtk.vtkTransform()
+        transformer.Translate(center[0], center[1], center[2])
+        transformer.RotateWXYZ(degangle,rotate_axis)
+        transformer.Translate(-cyl_center[0], -cyl_center[1], -cyl_center[2])
+
+        polyDataTransformer = vtk.vtkTransformPolyDataFilter()
+        polyDataTransformer.SetInputData(cylinder)
+        polyDataTransformer.SetTransform(transformer)
+        polyDataTransformer.Update()
+
+        mapper = vtk.vtkPolyDataMapper()
+        actor = vtk.vtkActor()
+        mapper.SetInputConnection(polyDataTransformer.GetOutputPort())
         actor.GetProperty().SetColor(1.0, 0.0, 0.0)
 
         actor.SetMapper(mapper)
         self.renderer.AddActor(actor)
         return actor
-        
-        """
-        sphereStartSource = vtk.vtkSphereSource()
-        sphereStartSource.SetCenter(pt1)
-        sphereStartMapper = vtk.vtkPolyDataMapper()
-        sphereStartMapper.SetInputConnection(sphereStartSource.GetOutputPort())
-        sphereStart = vtk.vtkActor()
-        sphereStart.SetMapper(sphereStartMapper)
-        sphereStart.GetProperty().SetColor(1.0, 1.0, .3)
-        self.renderer.AddActor(sphereStart)
-
-        sphereStartSource1 = vtk.vtkSphereSource()
-        sphereStartSource1.SetCenter(pt2)
-        sphereStartMapper1 = vtk.vtkPolyDataMapper()
-        sphereStartMapper1.SetInputConnection(sphereStartSource1.GetOutputPort())
-        sphereStart1 = vtk.vtkActor()
-        sphereStart1.SetMapper(sphereStartMapper1)
-        sphereStart1.GetProperty().SetColor(1.0, 1.0, .3)
-        self.renderer.AddActor(sphereStart1)
-        """
 
     def add_graphics_geometry(self, poly_data, color, line_width=1.0):
         gr_geom = self.create_graphics_geometry(poly_data)

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 from os import path
+import sys
 import logging
 from manage import get_logger_name
 from node import Node
 from segment import Segment 
+from math import pi, sqrt
 
 import vtk
 print(" vtk version %s\n" % str(vtk.VTK_MAJOR_VERSION))
@@ -22,6 +24,7 @@ class Mesh(object):
         self.vertices = vtk.vtkCellArray()
         self.points_polydata = None
         self.lines_polydata = None
+        self.num_elements = 0
 
     def read_solver_file(self):
         """ Read in a solver.in file.
@@ -44,6 +47,8 @@ class Mesh(object):
                     self.add_segment(tokens)
             #__while line
         #__with open(self.params.solver_file_name) as fp:
+        self.logger.info("Number of segments: {0:d}".format(len(self.segments)))
+        self.logger.info("Number of elements: {0:d}".format(self.num_elements))
 
         # Create a points polydata object
         self.points_polydata = vtk.vtkPolyData()
@@ -79,7 +84,10 @@ class Mesh(object):
         sid = tokens[1]
         node1 = int(tokens[5])
         node2 = int(tokens[6])
-        self.segments[sid] = Segment(sid,node1,node2)
+        inlet_area = float(tokens[7])
+        outlet_area = float(tokens[8])
+        self.segments[sid] = Segment(sid,node1,node2,inlet_area,outlet_area)
+        self.num_elements += int(tokens[4])
 
     def show_nodes(self):
         radius = self.params.radius
@@ -92,8 +100,18 @@ class Mesh(object):
         for sid, segment in self.segments.items():
             node1 = self.nodes[segment.node1]
             pt1 = [node1.x, node1.y, node1.z]
+            radius1 = sqrt(segment.inlet_area / pi)
+
             node2 = self.nodes[segment.node2]
             pt2= [node2.x, node2.y, node2.z]
-            self.graphics.segment_actors[sid] = (self.graphics.add_cyl( pt1, pt2, radius), segment)
+            radius2 = sqrt(segment.outlet_area / pi)
+
+            radius = min(radius1, radius2)
+            #print("segment: {0:s}  radius1: {1:g}  radius2: {2:g}".format(segment.id,radius1, radius2))
+
+            #self.graphics.segment_actors[sid] = (self.graphics.add_tapered_cyl( pt1, radius1, pt2, radius2), segment)
+            self.graphics.segment_actors[sid] = (self.graphics.add_cyl( pt1, pt2, radius, [0.8, 0.8, 0.8]), segment)
+            self.graphics.add_sphere(radius1, pt1, [0.0, 1.0, 0.0])
+            self.graphics.add_sphere(radius2, pt2, [1.0, 0.0, 1.0])
 
 

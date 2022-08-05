@@ -59,7 +59,7 @@ def set_parameters(**kwargs):
             return None
 
     if kwargs.get(Args.RADIUS):
-        params.radisu = float(kwargs.get(Args.radius))
+        params.radius = float(kwargs.get(Args.RADIUS))
 
     if kwargs.get(Args.SOLVER_FILE):
         params.solver_file_name = kwargs.get(Args.SOLVER_FILE)
