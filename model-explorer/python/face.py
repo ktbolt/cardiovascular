@@ -14,6 +14,26 @@ class Face(object):
         self.surface = surface
         self.cell_ids = None
 
+    def get_area(self):
+        area = 0.0
+        points = self.surface.GetPoints()
+
+        for i in range(self.surface.GetNumberOfCells()):
+            cell = self.surface.GetCell(i)
+            dim = cell.GetCellDimension()
+            num_cell_nodes = cell.GetNumberOfPoints()
+            tri = vtk.vtkTriangle()
+            tri_points = []
+
+            for j in range(0, num_cell_nodes):
+                node_id = cell.GetPointId(j)
+                pt = points.GetPoint(node_id)
+                tri_points.append(pt)
+
+            area += vtk.vtkTriangle.TriangleArea(tri_points[0], tri_points[1], tri_points[2])
+           
+        return area
+
     def get_center(self):
         ''' Get the center of the face.
         '''
@@ -23,7 +43,7 @@ class Face(object):
         cz = 0.0;
         point = [0.0, 0.0, 0.0]
         num_face_pts = 0
-        for cellID in self.cell_ids:
+        for cellID in range(self.surface.GetNumberOfCells()):
             pointIdList = vtk.vtkIdList()
             surface.GetCellPoints(cellID, pointIdList)
             num_pts = pointIdList.GetNumberOfIds()

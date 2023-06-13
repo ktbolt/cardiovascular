@@ -35,6 +35,7 @@ class Mesh(object):
         self.boundary_face_components = None
         self.hue_lut = None 
         self.area_list = None 
+        self.non_manifold_components = {}
         self.scalar_range = None 
         self.logger = logging.getLogger(get_logger_name())
 
@@ -158,7 +159,7 @@ class Mesh(object):
         self.boundary_face_components = {}
         self.boundary_faces = {}
 
-        rid = 1
+        rid = 0
         while True:
             conn_filter.AddSpecifiedRegion(rid)
             conn_filter.Update()
@@ -166,13 +167,62 @@ class Mesh(object):
             component.DeepCopy(conn_filter.GetOutput())
             if component.GetNumberOfCells() <= 0:
                 break
-            print("{0:d}: Number of boundary lines: {1:d}".format(rid, component.GetNumberOfCells()))
+            #print("{0:d}: Number of boundary lines: {1:d}".format(rid, component.GetNumberOfCells()))
+            self.boundary_face_components[rid] = component
             self.boundary_faces[rid] = Face(rid, component)
             #self.boundary_face_components[rid] = component
             conn_filter.DeleteSpecifiedRegion(rid)
             rid += 1
 
+        self.logger.info("Number of connected edges: {0:d}".format(rid))
+
     #_extract_faces(self):
+
+    def extract_nonmanifold_edges(self):
+        self.logger.info("========== extract_nonmanifold_edges ========== ")
+        angle = self.params.angle
+        surface = self.surface
+        self.logger.info("Angle: {0:f}".format(angle))
+
+        feature_edges = vtk.vtkFeatureEdges()
+        feature_edges.SetInputData(surface)
+        feature_edges.BoundaryEdgesOff();
+        feature_edges.ManifoldEdgesOff();
+        feature_edges.NonManifoldEdgesOn();
+        feature_edges.FeatureEdgesOff();
+        feature_edges.SetFeatureAngle(angle);
+        feature_edges.Update()
+
+        boundary_edges = feature_edges.GetOutput()
+        clean_filter = vtk.vtkCleanPolyData()
+        clean_filter.SetInputData(boundary_edges)
+        clean_filter.Update();
+        cleaned_edges = clean_filter.GetOutput()
+
+        if cleaned_edges.GetNumberOfCells() == 0: 
+            self.logger.info("Number of non-manifold edges: {0:d}".format(0))
+            return
+
+        conn_filter = vtk.vtkPolyDataConnectivityFilter()
+        conn_filter.SetInputData(cleaned_edges)
+        conn_filter.SetExtractionModeToSpecifiedRegions()
+
+        self.non_manifold_components = {}
+
+        rid = 0
+        while True:
+            conn_filter.AddSpecifiedRegion(rid)
+            conn_filter.Update()
+            component = vtk.vtkPolyData()
+            component.DeepCopy(conn_filter.GetOutput())
+            print("{0:d}: Number of lines: {1:d}".format(rid, component.GetNumberOfCells()))
+            if component.GetNumberOfCells() <= 0:
+                break
+            self.non_manifold_components[rid] = component
+            conn_filter.DeleteSpecifiedRegion(rid)
+            rid += 1
+
+        self.logger.info("Number of non-manifold edges: {0:d}".format(rid))
 
     def get_surface_faces(self):
         '''Get the faces from the surface mesh using the ModelFaceID data array.
@@ -232,7 +282,19 @@ class Mesh(object):
     def show_edges(self):
         self.logger.info("========== show_edges ==========")
         for rid,edge in self.boundary_edges.items():
-            self.graphics.add_graphics_geometry(edge, [1.0,1.0,1.0], line_width=4.0)
+            self.logger.info("rid: {0:d}".format(rid))
+            color = []
+            if rid == 0:
+                color = [0,1,1]
+            else:
+                color = [1,1,0]
+            self.graphics.add_graphics_geometry(edge, color, line_width=4.0)
+
+    def show_nonmanifold_edges(self):
+        self.logger.info("========== show_nonmanifold_edges ==========")
+        for rid,edge in self.non_manifold_components.items():
+            self.logger.info("rid: {0:d}".format(rid))
+            self.graphics.add_graphics_geometry(edge, [1.0,0.0,1.0], line_width=8.0)
 
     def show_faces(self):
         self.logger.info("========== show_faces ==========")
@@ -248,15 +310,26 @@ class Mesh(object):
                 max_face = face
 
         for fid,face in self.boundary_faces.items():
+            self.logger.info("Face {0:d}".format(fid))
             npts = face.surface.GetNumberOfPoints()
             ncells = face.surface.GetNumberOfCells()
             self.logger.info("  id:{0:d} num cells: {1:d}".format(face.model_face_id, ncells))
+            if ncells == 0:
+                continue
             if face == max_face:
                 color = [0.8, 0.8, 0.8]
             else:
                 color = [1.0, 0.0, 0.0]
             actor = self.graphics.add_graphics_geometry(face.surface, color)
-            self.graphics.face_actors[fid] = (actor, color)
+            #self.graphics.face_actors[fid] = (actor, color)
+            center = face.get_center()
+            area = face.get_area()
+            self.logger.info("  area: {0:g}".format(area))
+            color = [1,1,1]
+            radius = 0.25
+            if ncells == 1:
+                color = [1,1,0]
+                actor = self.graphics.add_sphere(center, color, radius)
 
     def filter_faces(self, min_num_cells):
         self.logger.info("========== filter_faces ==========")
@@ -327,18 +400,20 @@ class Mesh(object):
         conn_filter.SetExtractionModeToSpecifiedRegions()
 
         self.boundary_edges = {}
-        rid = 1
+        rid = 0
         while True:
             conn_filter.AddSpecifiedRegion(rid)
             conn_filter.Update()
             component = vtk.vtkPolyData()
             component.DeepCopy(conn_filter.GetOutput())
+            print("{0:d}: Number of edge points: {1:d}".format(rid, component.GetNumberOfCells()))
             if component.GetNumberOfCells() <= 0:
                 break
-            print("{0:d}: Number of boundary lines: {1:d}".format(rid, component.GetNumberOfCells()))
             self.boundary_edges[rid] = component
             conn_filter.DeleteSpecifiedRegion(rid)
             rid += 1
+
+        self.logger.info("Number of connected edges: {0:d}".format(rid))
 
     def read_mesh(self):
         ''' Read in a surface mesh.
@@ -360,6 +435,7 @@ class Mesh(object):
         self.logger.info("Number of triangles: %d" % num_polys)
 
         self.extract_edges()
+        self.extract_nonmanifold_edges()
 
         if self.mesh_from_vtp:
             self.get_surface_faces()

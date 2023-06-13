@@ -121,8 +121,12 @@ if __name__ == '__main__':
       graphics.renderer.AddActor(actor)
       '''
       #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=True)
-      graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=False, edges=True)
-      graphics.add_graphics_geometry(mesh.area_surface, [1.0, 0.0, 0.0])
+      gr_surf = graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], wire=True, edges=True)
+
+      gr_surf_area = graphics.add_graphics_geometry(mesh.area_surface, [1.0, 0.0, 0.0])
+      gr_surf_area.GetProperty().SetEdgeColor(1.0, 0.0, 0.0)
+      gr_surf_area.GetProperty().EdgeVisibilityOn()
+      gr_surf_area.GetProperty().SetLineWidth(10.0)
 
       color = [1.0, 0.0, 0.0]
       radius = 1.0
@@ -151,7 +155,11 @@ if __name__ == '__main__':
     '''
     #graphics.add_graphics_geometry(mesh.surface, [0.8, 0.8, 0.8], edges=True)
 
-    #mesh.show_edges()
+    mesh.show_edges()
+
+    mesh.show_nonmanifold_edges()
+
+    mesh.show_faces()
 
     color = [0.0, 1.0, 0.0]
     pt = [ -56.4576,-0.248084,1734.31]
