@@ -45,16 +45,17 @@ Slice geometry is written to a .txt file with the NAME of the input surface file
 
 The NAME-slices.txt file contains the point coordinates for each slice stored as 
 SimVascular segmentation .ctgr file <contour_points> section
-
+```
    <contour_points>
    <point id="0" x="{x-coord-0"    y="{y-coord-0}"  z="{z-coord-0}" /> 
    <point id="1" x="{x-coord-1"    y="{y-coord-1}"  z="{z-coord-1}" /> 
    ...
    <point id="N" x="{x-coord-N"    y="{y-coord-N}"  z="{z-coord-N}" /> 
    </contour_points>
+```
 
 Example:
-
+```
    <contour_points>
    <point id="0" x="-28.691776275634766"    y="-56.26897430419922"  z="-151.2576904296875" /> 
    <point id="1" x="-28.481586456298828"    y="-56.267723083496094"  z="-151.2626190185547" /> 
@@ -62,25 +63,26 @@ Example:
    ...
    <point id="562" x="-34.31920623779297"    y="-76.07221984863281"  z="-151.87835693359375" />
    </contour_points>
+```
 
 The create_surface_segmentations.py script accepts several argumnents 
+```
+--average-normals (optional) 
 
-     --average-normals (optional) 
+   Average normals along sampling distance.
 
-       Average normals along sampling distance.
+--centerline-file (optional)
 
-    --centerline-file (optional)
+   The name of a centerlines .vtp file.
 
-      The name of a centerlines .vtp file.
+--sample-distance
 
-   --sample-distance
+   The distance used to sample points along a centerline.
 
-     The distance used to sample points along a centerline.
+--surface-file (required) 
 
-   --surface-file (required) 
-
-     The name of the input surface (.vtp or .stl) file.
-
+   The name of the input surface (.vtp or .stl) file.
+```
 
 Example:
 
