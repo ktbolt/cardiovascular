@@ -20,7 +20,7 @@ The following files are created for an input VTK VTU named FILE_NAME.vtu
     FILE_NAME-mesh.mdl - An XML file defining meshing parameters 
 ```  
 Create a SimVascular project and then copy these files into the project's Models and Meshes directories. 
-All faces have their type set to **wall** the the face types will need to be changed to **caps** for inlet/outlet faces.
+All faces have their type set to **wall** so the face types will need to be changed to **caps** for inlet/outlet faces.
    
 Note that the mesh scale needs to match the units used in a simulation. A mesh defined too small may not display
 correctly in SimVascular. A scale factor can be set to scale the mesh; see the call to the `read_mesh` function.
